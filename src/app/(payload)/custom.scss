@@ -1500,3 +1500,80 @@ html[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
   overflow: hidden !important;
   box-sizing: border-box !important;
 }
+
+
+/* =========================================================
+   LEXICAL UPLOAD NODE — ALL ORIENTATIONS (portrait/square)
+   Non-landscape images (icons, favicons, square logos) were
+   not covered by the landscape-only fix and stretched to
+   fill the table row's height, distorting their aspect ratio.
+========================================================= */
+
+.LexicalEditorTheme__upload_media .thumbnail,
+.LexicalEditorTheme__upload_media .thumbnail img {
+  height: auto !important;
+  max-height: 300px !important;
+  object-fit: contain !important;
+}
+
+/* Catch every orientation variant, not just landscape */
+[class*="LexicalEditorTheme__upload__contents--"] img,
+[class*="LexicalEditorTheme__upload__contents--"] svg {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  max-height: 300px !important;
+  object-fit: contain !important;
+}
+
+
+/* =========================================================
+   LEXICAL UPLOAD CARD — PREVENT STRETCHING TO FILL TALL
+   TABLE ROWS. Card should hug its content height, not grow
+   to match a taller neighboring cell in the same row.
+========================================================= */
+
+.LexicalEditorTheme__upload_card {
+  height: auto !important;
+  align-self: flex-start !important;
+  flex-grow: 0 !important;
+}
+
+.LexicalEditorTheme__tableCell {
+  vertical-align: top !important;
+}
+
+
+
+/* =========================================================
+   LEXICAL UPLOAD WRAPPER — REMOVE INLINE HEIGHT/ASPECT-RATIO
+   The wrapper div around the image reserves space based on
+   the original image's pixel dimensions (aspect-ratio or a
+   fixed height), independent of the img element itself.
+   Force it to shrink to the actual (now-constrained) image.
+========================================================= */
+
+.LexicalEditorTheme__upload_card,
+.LexicalEditorTheme__upload_media,
+.LexicalEditorTheme__upload_media > div,
+.LexicalEditorTheme__upload_media .thumbnail {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 300px !important;
+  aspect-ratio: auto !important;
+}
+
+
+/* =========================================================
+   LEXICAL UPLOAD — PORTRAIT VARIANT MIN-HEIGHT OVERRIDE
+   Payload forces min-height: 450px on portrait-oriented
+   images specifically (separate from the landscape rule),
+   which was still winning over the wildcard fix.
+========================================================= */
+
+.LexicalEditorTheme__upload__contents--portrait img,
+.LexicalEditorTheme__upload__contents--portrait svg {
+  min-height: 0 !important;
+  max-height: 300px !important;
+}
