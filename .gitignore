@@ -58,3 +58,8 @@ node_modules/
 !.env.example
 .netlify
 .next
+
+failed-post-*.json
+post.json
+rankmath-404-logs.json
+test.env
