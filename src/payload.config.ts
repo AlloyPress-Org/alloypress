@@ -77,9 +77,10 @@ export default buildConfig({
   },
 
   cors: [
-    "https://alloypress-web.vercel.app",
-    "http://localhost:3000",
-  ],
+  "https://web.sakthiparthibans.workers.dev",
+  "https://alloypress-web.vercel.app",
+  "http://localhost:3000",
+],
 
 
   // =========================================================
