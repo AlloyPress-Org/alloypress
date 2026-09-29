@@ -201,13 +201,9 @@ export default function BlogArticleHeader({
                 featuredImage?.height ||
                 675
               }
-              priority
               unoptimized
-              sizes="
-                (max-width: 768px) 100vw,
-                (max-width: 1200px) 92vw,
-                900px
-              "
+              priority
+               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 92vw, 900px"
             />
           </figure>
         )}

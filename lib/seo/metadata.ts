@@ -201,7 +201,6 @@ export function buildPageMetadata(
     openGraph: {
       type: "website",
       siteName: SITE_NAME,
-      locale: "en_IN",
       title:
         cleanText(
           input.openGraph?.title,
@@ -320,7 +319,6 @@ export function buildArticleMetadata(
     openGraph: {
       type: "article",
       siteName: SITE_NAME,
-      locale: "en_IN",
       title: ogTitle,
       ...(ogDescription
         ? { description: ogDescription }

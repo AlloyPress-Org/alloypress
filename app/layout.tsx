@@ -78,6 +78,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning className={inter.variable}>
+      <head>
+        <link rel="preconnect" href="https://pub-c555bbd45f8b41b3bd6910202b4ee75d.r2.dev" />
+      </head>
       <body>
         <script
           type="application/ld+json"
@@ -92,7 +95,7 @@ export default function RootLayout({
         <Navbar />
 
         <main>{children}</main>
-         <BackToTop />
+        <BackToTop />
 
         <Footer />
         <EmailCtaModal />

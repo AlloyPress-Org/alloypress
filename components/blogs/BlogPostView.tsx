@@ -1720,14 +1720,16 @@ export default function BlogPostView({
     setShareOpen(false);
   }
 
-  const badgeArticleUrl = `https://alloypress-web.vercel.app/reviews/${post?.slug || ""}`;
+  const badgeArticleUrl =
+  articleUrl ||
+  `https://alloypress-web.vercel.app/${category}/${post?.slug || ""}`;
 
-  const badgeToolName =
-    typeof post?.title === "string" && post.title.trim()
-      ? post.title.trim()
-      : "This tool";
+const badgeToolName =
+  typeof post?.title === "string" && post.title.trim()
+    ? post.title.trim()
+    : "This tool";
 
-  const badgeEmbedCode = `<a href="${badgeArticleUrl}"
+const badgeEmbedCode = `<a href="${badgeArticleUrl}"
   target="_blank"
   rel="noopener noreferrer"
   aria-label="Featured on AlloyPress — ${badgeToolName}">
@@ -1737,7 +1739,7 @@ export default function BlogPostView({
     width="320"
     height="117"
   />
-</a>`;
+</a>`
 
   async function copyBadgeEmbedCode() {
     try {

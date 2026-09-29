@@ -182,11 +182,11 @@ function FooterColumn({
 export default function Footer() {
   const [badgeCopied, setBadgeCopied] = useState(false);
 
-  const footerBadgeCode = `<a href="https://alloypress.com"
+  const footerBadgeCode = `<a href="https://alloypress-web.vercel.app"
    target="_blank"
    rel="noopener noreferrer"
    aria-label="Featured on AlloyPress">
- <img src="https://alloypress.com/badges/featured.png"
+ <img src="https://alloypress-web.vercel.app/badges/featured.png"
      alt="Featured on AlloyPress"
      width="320"
      height="117">
@@ -264,7 +264,7 @@ export default function Footer() {
 
                 <div className="footer-featured-row">
                   <a
-                    href="https://alloypress.com"
+                    href="https://alloypress-web.vercel.app/"
                     className="footer-featured-card"
                     aria-label="Featured on AlloyPress"
                   >

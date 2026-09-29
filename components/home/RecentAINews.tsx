@@ -295,7 +295,6 @@ export default async function RecentAINews() {
                     }
                     fill
                     sizes="(max-width: 900px) 100vw, 58vw"
-                    priority
                   />
                 ) : (
                   <div

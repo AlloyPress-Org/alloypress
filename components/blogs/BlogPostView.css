@@ -5030,7 +5030,7 @@ html[data-theme="dark"] .single-post .ai-panel {
 
   color: var(--ink);
 
-  font: 800 clamp(38px, 4.2vw, 56px)/1.05 var(--blog-heading-font, var(--font-ui));
+  font: 800 clamp(38px, 5.2vw, 56px)/1.05 var(--blog-heading-font, var(--font-ui));
 
   letter-spacing: 0.010em;
   text-wrap: balance;
