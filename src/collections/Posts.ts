@@ -1105,14 +1105,53 @@ export const Posts: CollectionConfig = {
                       { label: 'Right', value: 'right' },
                     ],
                   },
-                  {
+                                    {
                     name: 'openInNewTab',
                     type: 'checkbox',
                     label: 'Open in New Tab',
                     defaultValue: false,
                   },
                 ],
-              }
+              },
+
+              {
+                slug: 'faq',
+
+                labels: {
+                  singular: 'FAQ',
+                  plural: 'FAQs',
+                },
+
+                fields: [
+                  {
+                    name: 'items',
+                    type: 'array',
+                    label: 'Questions',
+                    minRows: 1,
+                    required: true,
+
+                    admin: {
+                      description:
+                        'Add only ONE FAQ block per post. Answers are plain text.',
+                    },
+
+                    fields: [
+                      {
+                        name: 'question',
+                        type: 'text',
+                        required: true,
+                        label: 'Question',
+                      },
+                      {
+                        name: 'answer',
+                        type: 'textarea',
+                        required: true,
+                        label: 'Answer',
+                      },
+                    ],
+                  },
+                ],
+              },
             ],
           }),
 

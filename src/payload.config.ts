@@ -204,8 +204,16 @@ export default buildConfig({
       tabbedUI: true,
 
       fields: ({ defaultFields }) => [
+    ...defaultFields.map((field) => {
+      if ('name' in field && field.name === 'description') {
+        return {
+          ...field,
+          required: true,
+        }
+      }
 
-        ...defaultFields,
+      return field
+    }),
 
 
         // ----------------------------------------------------

@@ -29,32 +29,32 @@ type StaticPageSeed = {
 const STATIC_PAGES: readonly StaticPageSeed[] = [
   {
     title: 'About AlloyPress',
-    slug: 'about',
+    slug: 'about-us',
     seo: {
       title: 'About AlloyPress',
       description:
         'AlloyPress is an independent AI editorial publication. We test AI tools hands-on, write what we actually find, and help readers choose without expensive trial and error.',
-      canonicalURL: '/about',
+      canonicalURL: '/about-us',
     },
   },
   {
     title: 'Contact AlloyPress',
-    slug: 'contact',
+    slug: 'contact-us',
     seo: {
       title: 'Contact AlloyPress — AI Reviews, Partnerships & Enquiries',
       description:
         'Contact AlloyPress for AI tool reviews, article inclusion, partnerships, editorial enquiries, and other collaboration requests.',
-      canonicalURL: '/contact',
+      canonicalURL: '/contact-us',
     },
   },
   {
     title: 'Do Not Sell or Share My Personal Information',
-    slug: 'do-not-sell',
+    slug: 'do-not-sell-my-info',
     seo: {
       title: 'Do Not Sell or Share My Personal Information | AlloyPress',
       description:
         'Learn how AlloyPress handles personal information and how to submit a request regarding the sale or sharing of personal information.',
-      canonicalURL: '/do-not-sell',
+      canonicalURL: '/do-not-sell-my-info',
     },
   },
   {
@@ -79,12 +79,12 @@ const STATIC_PAGES: readonly StaticPageSeed[] = [
   },
   {
     title: 'Terms and Conditions',
-    slug: 'terms',
+    slug: 'terms-and-conditions',
     seo: {
       title: 'Terms and Conditions',
       description:
         'Read the Terms and Conditions governing use of AlloyPress, editorial coverage, sponsored content, payments, affiliate relationships, intellectual property, privacy, and website use.',
-      canonicalURL: '/terms',
+      canonicalURL: '/terms-and-conditions',
     },
   },
   {
@@ -99,12 +99,12 @@ const STATIC_PAGES: readonly StaticPageSeed[] = [
   },
   {
     title: 'AI Tool Reviews — Tested Before We Recommend',
-    slug: 'review-tool',
+    slug: 'get-reviewed',
     seo: {
       title: 'AI Tool Reviews — Tested Before We Recommend',
       description:
         'Request an AlloyPress AI tool review. We test real workflows, verify claims, explain limitations, and publish practical, reader-first reviews.',
-      canonicalURL: '/review-tool',
+      canonicalURL: '/get-reviewed',
     },
   },
 ]

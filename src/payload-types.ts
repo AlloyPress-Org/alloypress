@@ -388,9 +388,9 @@ export interface Post {
      */
     wordpressModifiedAt?: string | null;
   };
-  meta?: {
+  meta: {
     title?: string | null;
-    description?: string | null;
+    description: string;
     /**
      * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
      */
