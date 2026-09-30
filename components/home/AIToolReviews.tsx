@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { payloadFetch } from "@/lib/payload";
+import { cleanEditorialText } from "@/lib/content/cleanEditorialText";
 
 // ============================================================
 // CONFIG
@@ -304,9 +305,7 @@ export default async function AIToolReviews() {
       id: post.id,
       title: post.title,
       slug: post.slug,
-      excerpt: (post.excerpt || "")
-        .replace(/^TL;DR\s*:\s*/i, "")
-        .trim(),
+      excerpt: cleanEditorialText(post.excerpt || ""),
       publishedAt: formatDate(
         post.publishedAt,
       ),

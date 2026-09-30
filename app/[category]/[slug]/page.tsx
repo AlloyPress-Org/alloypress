@@ -28,7 +28,7 @@ import { CATEGORY_PATHS } from "@/lib/seo/constants";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  "https://alloypress-web.vercel.app";
+  "https://alloypress.com";
 
 // ============================================================
 // ALLOWED CATEGORIES

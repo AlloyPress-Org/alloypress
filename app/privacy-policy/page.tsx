@@ -305,12 +305,12 @@ export default function PrivacyPolicyPage() {
                 Privacy Policy
               </a>
 
-              <a href="/terms">
+              <a href="/terms-and-conditions">
                 <span>02</span>
                 Terms &amp; Conditions
               </a>
 
-              <a href="/do-not-sell">
+              <a href="/do-not-sell-my-info">
                 <span>03</span>
                 Do Not Sell My Info
               </a>

@@ -209,6 +209,7 @@ export default function Navbar() {
             href="/search"
             className="header-icon-button"
             aria-label="Search AlloyPress"
+            title="Search AlloyPress"
           >
             <SearchIcon />
           </Link>
@@ -254,6 +255,7 @@ export default function Navbar() {
             href="/search"
             className="header-icon-button"
             aria-label="Search AlloyPress"
+            title="Search AlloyPress"
             onClick={closeMobileMenu}
           >
             <SearchIcon />

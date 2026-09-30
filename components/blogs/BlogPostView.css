@@ -5896,3 +5896,35 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
     line-height: 1.55;
   }
 }
+
+
+.post-faq { margin: 30px 0; }
+
+.post-faq-item {
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  border-radius: 12px;
+  margin-bottom: 14px;
+  padding: 0 20px;
+  background: transparent;
+  color: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.post-faq-item:hover,
+.post-faq-item[open] {
+  border-color: #22c55e;
+}
+
+.post-faq-item summary {
+  padding: 18px 0;
+  font-weight: 700;
+  cursor: pointer;
+  color: inherit;
+}
+
+.post-faq-item p {
+  margin: 0 0 18px;
+  line-height: 1.7;
+  color: inherit;
+  opacity: 0.8;
+}

@@ -15,7 +15,8 @@ import {
   Clock3,
   X as LucideX,
 } from "lucide-react";
-
+import FaqAccordion from './FaqAccordion'
+import { extractFaqs } from '@/lib/faq-from-html'
 import {
   FaWhatsapp,
   FaLinkedinIn,
@@ -227,19 +228,32 @@ function cleanEditorialText(value: unknown): string {
   if (typeof value !== "string") return "";
 
   let text = value
+    // Remove WordPress/editor headings completely before stripping
+    // the remaining HTML tags.
+    .replace(/<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/gi, " ")
+
+    // Remove remaining HTML tags.
     .replace(/<[^>]*>/g, " ")
+
+    // Decode common WordPress HTML entities.
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/gi, "&")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
     .replace(/&hellip;/gi, "…")
     .replace(/&#038;/gi, "&")
     .replace(/&#38;/gi, "&")
+    .replace(/&#8230;/gi, "…")
+    .replace(/&#x26;/gi, "&")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&#x22;/gi, '"')
+
+    // Normalize whitespace.
     .replace(/\s+/g, " ")
     .trim();
 
-  // Remove migrated WordPress/AI-toolbar UI that was accidentally saved
-  // inside the excerpt. Preserve the real TL;DR content that follows it.
+  // Remove migrated WordPress / AI toolbar artifacts.
   text = text.replace(
     /Ask AI which software may suit your team[\s\S]*?(?=TL;DR\s*:|$)/i,
     ""
@@ -250,14 +264,16 @@ function cleanEditorialText(value: unknown): string {
     ""
   );
 
+  // Remove TL;DR label and migrated excerpt markers.
   text = text.replace(/^TL;DR\s*:\s*/i, "");
-  text = text.replace(/\s*\[…\]\s*$/, "");
-  text = text.replace(/\s*\[\.\.\.\]\s*$/, "");
-  text = text.replace(/…\s*$/, "");
-  text = text.replace(/^[-–—•\s]+/, "");
-  text = text.replace(/\s+/g, " ").trim();
+  text = text.replace(/\s*\[…\]\s*$/i, "");
+  text = text.replace(/\s*\[\.\.\.\]\s*$/i, "");
+  text = text.replace(/…\s*$/i, "");
 
-  return text;
+  // Clean leading punctuation / whitespace.
+  text = text.replace(/^[-–—•\s]+/, "");
+
+  return text.replace(/\s+/g, " ").trim();
 }
 
 /* -------------------------------------------------------------------------- */
@@ -965,6 +981,22 @@ html, body {
       );
     }
 
+        /* FAQ block */
+    if (blockType === "faq") {
+      const items = Array.isArray(fields.items) ? fields.items : [];
+
+      const faqs = items
+        .map((it: any) => ({
+          q: String(it?.question || "").trim(),
+          a: String(it?.answer || "").trim(),
+        }))
+        .filter((f: { q: string; a: string }) => f.q && f.a);
+
+      if (!faqs.length) return null;
+
+      return <FaqAccordion faqs={faqs} />;
+    }
+
     /* Raw code / HTML / CSS / JS block (FIXED: now a sibling check, not
        nested and unreachable inside styledBox; Payload's built-in
        CodeBlock saves blockType as "Code" with capital C) */
@@ -1009,7 +1041,12 @@ html, body {
             />
           );
         }
-
+                if (code.includes("ai-faq-item")) {
+          const faqs = extractFaqs(code);
+          if (faqs.length > 0) {
+            return <FaqAccordion faqs={faqs} />;
+          }
+        }
         /*
          * Genuine HTML examples can still use the existing
          * live-preview behaviour.
@@ -1722,7 +1759,7 @@ export default function BlogPostView({
 
   const badgeArticleUrl =
   articleUrl ||
-  `https://alloypress-web.vercel.app/${category}/${post?.slug || ""}`;
+  `https://alloypress.com/${category}/${post?.slug || ""}`;
 
 const badgeToolName =
   typeof post?.title === "string" && post.title.trim()
@@ -1734,7 +1771,7 @@ const badgeEmbedCode = `<a href="${badgeArticleUrl}"
   rel="noopener noreferrer"
   aria-label="Featured on AlloyPress — ${badgeToolName}">
   <img
-    src="https://alloypress-web.vercel.app/badges/featured.png"
+    src="https://alloypress.com/badges/featured.png"
     alt="Featured on AlloyPress"
     width="320"
     height="117"

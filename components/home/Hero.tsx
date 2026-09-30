@@ -116,7 +116,7 @@ const getHeroCards = cache(
         post: comparisonPost,
       },
     ];
-  }
+  },
 );
 
 
@@ -153,18 +153,16 @@ export default async function Hero() {
 
 
             <h1 id="hero-title" className="hero-title">
-              <span className="hero-line">Every AI tool</span>
-              <span className="hero-line">
-                <span className="hero-highlight">tested,</span> before we
-              </span>
-              <span className="hero-line">write about it.</span>
+              Every AI tool{" "}
+              <span className="hero-highlight">tested,</span>{" "}
+              before we write about it.
             </h1>
 
 
             <p className="hero-description">
               Honest AI tool reviews, real comparisons,
               practical alternatives, and clear explanations
-              — based on hands-on testing.
+              based on hands-on testing.
             </p>
 
 

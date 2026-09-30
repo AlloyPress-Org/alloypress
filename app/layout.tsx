@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter } from "next/font/google";
 
 import "./globals.css";
@@ -79,8 +80,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
-        <link rel="preconnect" href="https://pub-c555bbd45f8b41b3bd6910202b4ee75d.r2.dev" />
-      </head>
+  <link
+    rel="preconnect"
+    href="https://pub-c555bbd45f8b41b3bd6910202b4ee75d.r2.dev"
+  />
+
+  <Script
+    async
+    src="https://news.google.com/swg/js/v1/publisher.js"
+  />
+</head>
       <body>
         <script
           type="application/ld+json"

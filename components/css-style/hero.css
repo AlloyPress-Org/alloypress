@@ -173,14 +173,6 @@
   -webkit-text-fill-color: var(--text-primary) !important;
 }
 
-.hero-title .hero-line {
-  display: block;
-  color: var(--text-primary) !important;
-  opacity: 1 !important;
-  -webkit-text-fill-color: var(--text-primary) !important;
-  text-shadow: none !important;
-}
-
 .hero-title .hero-highlight {
   color: var(--brand) !important;
   opacity: 1 !important;
@@ -2617,27 +2609,6 @@
   }
 }
 
-.hero-title {
-  margin: 0;
-  width: max-content;
-  max-width: none;
-  text-align: left;
-  color: #0b0e13 !important;
-  line-height: 1.20;
-  letter-spacing: -0.055em;
-}
-
-.hero-title .hero-line {
-  display: block;
-  white-space: nowrap;
-  color: #0b0e13 !important;
-}
-
-.hero-title .hero-highlight {
-  color: var(--brand) !important;
-}
-
-
 .hero-stats-section {
   margin-top: 56px;
 }
@@ -2654,4 +2625,16 @@
   font-weight: 700;
   letter-spacing: -0.03em;
   color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .orbit-spin-slow,
+  .orbit-spin-reverse,
+  .orbit-ellipse,
+  .orbit-moving-node,
+  .orbit-marker,
+  .orbit-ambient-glow,
+  .hero-floating-card {
+    animation: none !important;
+  }
 }

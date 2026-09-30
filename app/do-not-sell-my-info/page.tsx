@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description:
     "Learn how AlloyPress handles personal information and how to submit a request regarding the sale or sharing of personal information.",
   alternates: {
-    canonical: "/do-not-sell",
+    canonical: "/do-not-sell-my-info",
   },
   robots: {
     index: true,
@@ -21,7 +21,7 @@ const breadcrumbSchema = {
   "@graph": [
     createBreadcrumbSchema([
       { name: "Home", url: "/" },
-      { name: "Do Not Sell or Share My Personal Information", url: "/do-not-sell" },
+      { name: "Do Not Sell or Share My Personal Information", url: "/do-not-sell-my-info" },
     ]),
   ],
 };

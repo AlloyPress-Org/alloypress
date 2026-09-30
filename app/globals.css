@@ -1523,3 +1523,11 @@ html[data-theme="light"]
   background: #f1f3f3;
   color: #10151b;
 }
+
+@media (max-width: 768px) {
+  html[data-theme="dark"] body,
+  html[data-theme="light"] body,
+  html:not([data-theme]) body {
+    background-attachment: scroll;
+  }
+}

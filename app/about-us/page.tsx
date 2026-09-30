@@ -38,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata({
     title: seo?.title || FALLBACK_TITLE,
     description: seo?.description || FALLBACK_DESCRIPTION,
-    canonicalPath: "/about",
+    canonicalPath: "/about-us",
     canonicalUrl: seo?.canonicalURL,
     imageUrl: seo?.openGraphImage?.url,
   });
@@ -49,7 +49,7 @@ const breadcrumbSchema = {
   "@graph": [
     createBreadcrumbSchema([
       { name: "Home", url: "/" },
-      { name: "About", url: "/about" },
+      { name: "About", url: "/about-us" },
     ]),
   ],
 };

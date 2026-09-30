@@ -225,20 +225,46 @@ function formatDate(
 // EXCERPT
 // ============================================================
 
-function getExcerpt(post: Post): string {
-  const excerpt = post.excerpt?.trim();
+function getExcerpt(value: unknown): string {
+  if (typeof value !== "string") return "";
 
-  if (!excerpt) {
-    return "Practical insights, testing, and analysis from AlloyPress.";
-  }
+  let text = value;
 
-  return excerpt
-    .replace(/^TL;DR\s*:?\s*/i, "")
-    .replace(/^TLDR\s*:?\s*/i, "")
-    .replace(/\s*📋\s*Copied!.*$/i, "")
-    .replace(/\s*Press Ctrl\+V.*$/i, "")
-    .replace(/\s*Press Cmd\+V.*$/i, "")
-    .trim();
+  // Remove leaked HTML headings and their content
+  text = text.replace(/<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/gi, " ");
+
+  // Remove remaining HTML tags
+  text = text.replace(/<[^>]+>/g, " ");
+
+  // Decode common HTML entities
+  const entityMap: Record<string, string> = {
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#039;": "'",
+    "&#39;": "'",
+    "&#038;": "&",
+    "&hellip;": "…",
+    "&#8230;": "…",
+    "&nbsp;": " ",
+  };
+
+  text = text.replace(
+    /&(?:amp|lt|gt|quot|#039|#39|#038|hellip|#8230|nbsp);/gi,
+    (entity) => entityMap[entity.toLowerCase()] ?? entity,
+  );
+
+  // Remove leaked WordPress/editor prefixes
+  text = text.replace(
+    /^\s*(?:quick\s+blog\s+summary|blog\s+summary)\s*:?\s*/i,
+    "",
+  );
+
+  // Remove extra whitespace
+  text = text.replace(/\s+/g, " ").trim();
+
+  return text;
 }
 // ============================================================
 // AUTHOR

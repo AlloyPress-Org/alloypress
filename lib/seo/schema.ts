@@ -2,23 +2,30 @@ import {
   LOGO_ID,
   ORGANIZATION_ID,
   SITE_DESCRIPTION,
+  SITE_LANGUAGE,
   SITE_LOGO_URL,
   SITE_NAME,
   SITE_URL,
+  SOCIAL_PROFILES,
   WEBSITE_ID,
+  buildSiteUrl,
 } from "./constants";
+import { absoluteUrl as toAbsolute, cleanText } from "./text";
 
 // ============================================================
-// AlloyPress Schema.org builders
-// ============================================================
-// Keep JSON-LD construction centralized.
-// Route files should only provide page/content data.
+// Types
 // ============================================================
 
-export type BreadcrumbItem = {
-  name: string;
-  url: string;
-};
+export type BreadcrumbItem = { name: string; url: string };
+export type FAQItem = { question: string; answer: string };
+export type ItemListEntry = { name: string; url: string };
+
+export type WebPageType =
+  | "WebPage"
+  | "AboutPage"
+  | "ContactPage"
+  | "CollectionPage"
+  | "ProfilePage";
 
 export type ArticleSchemaInput = {
   url: string;
@@ -31,101 +38,61 @@ export type ArticleSchemaInput = {
   authorName?: string | null;
   authorUrl?: string | null;
   wordCount?: number | null;
-  // Defaults to "BlogPosting" — AlloyPress content is blog-style
-  // editorial content, and BlogPosting is the more specific
-  // Schema.org subtype of Article for this. Pass "Article"
-  // explicitly only for non-blog editorial content.
   type?: "Article" | "BlogPosting";
 };
 
-export type ReviewSchemaInput = ArticleSchemaInput & {
-  itemReviewed?: {
-    type:
-      | "SoftwareApplication"
-      | "Product"
-      | "Organization"
-      | "Service"
-      | "WebApplication";
-    name: string;
-    url?: string | null;
-  } | null;
-  ratingValue?: number | null;
-  bestRating?: number | null;
-  worstRating?: number | null;
-};
-
-export type WebPageSchemaInput = {
+export type PageSchemaInput = {
   url: string;
   name: string;
   description?: string | null;
-  type?:
-    | "WebPage"
-    | "AboutPage"
-    | "ContactPage"
-    | "CollectionPage"
-    | "ProfilePage";
+  type?: WebPageType;
+  image?: string | null;
+  breadcrumbs?: BreadcrumbItem[];
+  article?: Omit<ArticleSchemaInput, "url" | "title" | "description" | "image"> & {
+    // optional overrides; defaults come from the page fields
+    title?: string;
+    description?: string | null;
+    image?: string | null;
+  };
+  faqs?: FAQItem[];
+  itemList?: ItemListEntry[];
 };
 
-function cleanText(value?: string | null): string | undefined {
-  const cleaned = value
-    ?.replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/\s+/g, " ")
-    .trim();
+type Node = Record<string, unknown>;
 
-  return cleaned || undefined;
-}
-
-function absoluteUrl(value?: string | null): string | undefined {
-  const input = value?.trim();
-
-  if (!input) return undefined;
-
-  try {
-    return new URL(input, `${SITE_URL}/`).toString();
-  } catch {
-    return undefined;
-  }
-}
+const abs = (v?: string | null) => toAbsolute(v, SITE_URL);
 
 // ============================================================
-// ORGANIZATION
+// Core entities (included in EVERY page graph)
 // ============================================================
 
-export function createOrganizationSchema() {
+export function createOrganizationSchema(): Node {
   return {
     "@type": "Organization",
     "@id": ORGANIZATION_ID,
     name: SITE_NAME,
-    url: SITE_URL,
+    url: buildSiteUrl("/"),
+    description: SITE_DESCRIPTION,
     logo: {
       "@type": "ImageObject",
       "@id": LOGO_ID,
       url: SITE_LOGO_URL,
       contentUrl: SITE_LOGO_URL,
     },
+    image: { "@id": LOGO_ID },
+    sameAs: [...SOCIAL_PROFILES],
   };
 }
 
-// ============================================================
-// WEBSITE
-// ============================================================
-// Includes a SearchAction so Google can show a sitelinks
-// searchbox for the site, since /search?q= already exists.
-// ============================================================
-
-export function createWebSiteSchema() {
+export function createWebSiteSchema(): Node {
   return {
     "@type": "WebSite",
     "@id": WEBSITE_ID,
-    url: SITE_URL,
+    url: buildSiteUrl("/"),
     name: SITE_NAME,
     description: SITE_DESCRIPTION,
-    publisher: {
-      "@id": ORGANIZATION_ID,
-    },
-    inLanguage: "en-IN",
+    publisher: { "@id": ORGANIZATION_ID },
+    inLanguage: SITE_LANGUAGE,
     potentialAction: {
       "@type": "SearchAction",
       target: {
@@ -138,272 +105,241 @@ export function createWebSiteSchema() {
 }
 
 // ============================================================
-// WEB PAGE / ABOUT / CONTACT / COLLECTION / PROFILE
+// Page-level nodes
 // ============================================================
 
-export function createWebPageSchema(input: WebPageSchemaInput) {
-  return {
-    "@type": input.type || "WebPage",
-    "@id": `${absoluteUrl(input.url) || SITE_URL}#webpage`,
-    url: absoluteUrl(input.url) || SITE_URL,
-    name: cleanText(input.name) || SITE_NAME,
-    ...(cleanText(input.description)
-      ? { description: cleanText(input.description) }
-      : {}),
-    // NOTE: no `isPartOf: { "@id": WEBSITE_ID }` here on purpose.
-    // WebSite schema only exists on the Home page in this
-    // architecture, so referencing WEBSITE_ID from any other page
-    // is a dangling @id — that entity doesn't exist on the page
-    // being validated. Only Home's own schema should point to it.
-    publisher: {
-      "@id": ORGANIZATION_ID,
-    },
-    inLanguage: "en-IN",
-  };
-}
-
-// ============================================================
-// COLLECTION PAGE
-// ============================================================
-
-export function createCollectionPageSchema(input: WebPageSchemaInput) {
-  return createWebPageSchema({
-    ...input,
-    type: "CollectionPage",
-  });
-}
-
-// ============================================================
-// ARTICLE
-// ============================================================
-// FIX (2026-09): author now correctly resolves to a Person when
-// a real CMS author name is supplied. Previously this always
-// emitted "@type": "Organization" even when a real author name
-// was passed in, which loses the E-E-A-T signal Google looks for
-// on individually-bylined articles.
-// ============================================================
-
-export function createArticleSchema(input: ArticleSchemaInput) {
-  const articleUrl = absoluteUrl(input.url) || SITE_URL;
-
-  const article: Record<string, unknown> = {
-    "@type": input.type || "BlogPosting",
-    "@id": `${articleUrl}#article`,
-    url: articleUrl,
-    headline: cleanText(input.title) || SITE_NAME,
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": `${articleUrl}#webpage`,
-    },
-    publisher: {
-      "@id": ORGANIZATION_ID,
-    },
-  };
-
-  const description = cleanText(input.description);
-
-  if (description) {
-    article.description = description;
-  }
-
-  const image = absoluteUrl(input.image);
-
-  if (image) {
-    // Article structured data should use a real representative
-    // article image. Do not fall back to the site logo here.
-    article.image = [image];
-  }
-
-  if (input.publishedAt) {
-    article.datePublished = input.publishedAt;
-  }
-
-  if (input.modifiedAt) {
-    article.dateModified = input.modifiedAt;
-  }
-
-  if (cleanText(input.category)) {
-    article.articleSection = cleanText(input.category);
-  }
-
-  if (
-    typeof input.wordCount === "number" &&
-    Number.isFinite(input.wordCount)
-  ) {
-    article.wordCount = input.wordCount;
-  }
-
-  const realAuthorName = cleanText(input.authorName);
-
-  article.author = realAuthorName
-    ? {
-        "@type": "Person",
-        name: realAuthorName,
-        ...(absoluteUrl(input.authorUrl)
-          ? { url: absoluteUrl(input.authorUrl) }
-          : {}),
-      }
-    : {
-        "@type": "Organization",
-        "@id": ORGANIZATION_ID,
-        name: SITE_NAME,
-      };
-
-  return article;
-}
-
-// ============================================================
-// REVIEW ARTICLE
-// ============================================================
-// Emits ["BlogPosting", "Review"] — a review post IS a blog
-// post, plus the Review-specific fields (itemReviewed,
-// reviewRating). Test in the Rich Results Test
-// (search.google.com/test/rich-results); if the star-rating
-// snippet doesn't show, fall back to
-// createStandaloneReviewSchema() below.
-// ============================================================
-
-export function createReviewSchema(input: ReviewSchemaInput) {
-  const reviewArticle = createArticleSchema(input);
-
-  const schema = {
-    ...reviewArticle,
-    "@type": [input.type || "BlogPosting", "Review"],
-  } as Record<string, unknown>;
-
-  applyReviewFields(schema, input);
-
-  return schema;
-}
-
-// ============================================================
-// STANDALONE REVIEW (safer for star-rating rich results)
-// ============================================================
-
-export function createStandaloneReviewSchema(input: ReviewSchemaInput) {
-  const articleUrl = absoluteUrl(input.url) || SITE_URL;
-  const realAuthorName = cleanText(input.authorName);
-
-  const schema: Record<string, unknown> = {
-    "@type": "Review",
-    "@id": `${articleUrl}#review`,
-    url: articleUrl,
-    name: cleanText(input.title) || SITE_NAME,
-    author: realAuthorName
-      ? { "@type": "Person", name: realAuthorName }
-      : { "@type": "Organization", "@id": ORGANIZATION_ID, name: SITE_NAME },
-  };
-
-  const description = cleanText(input.description);
-  if (description) schema.reviewBody = description;
-
-  if (input.publishedAt) schema.datePublished = input.publishedAt;
-
-  applyReviewFields(schema, input);
-
-  return schema;
-}
-
-function applyReviewFields(
-  schema: Record<string, unknown>,
-  input: ReviewSchemaInput,
-) {
-  if (input.itemReviewed) {
-    schema.itemReviewed = {
-      "@type": input.itemReviewed.type,
-      name: cleanText(input.itemReviewed.name) || "Reviewed item",
-      ...(absoluteUrl(input.itemReviewed.url)
-        ? { url: absoluteUrl(input.itemReviewed.url) }
-        : {}),
-    };
-  }
-
-  if (
-    typeof input.ratingValue === "number" &&
-    Number.isFinite(input.ratingValue)
-  ) {
-    schema.reviewRating = {
-      "@type": "Rating",
-      ratingValue: input.ratingValue,
-      bestRating: input.bestRating ?? 5,
-      worstRating: input.worstRating ?? 1,
-    };
-  }
-}
-
-// ============================================================
-// BREADCRUMB
-// ============================================================
-
-export function createBreadcrumbSchema(items: BreadcrumbItem[]) {
+export function createBreadcrumbSchema(
+  items: BreadcrumbItem[],
+  pageUrl?: string,
+): Node | null {
   const listItems = items
     .map((item, index) => {
       const name = cleanText(item.name);
-      const url = absoluteUrl(item.url);
+      const url = abs(item.url);
 
-      if (!name || !url) {
-        return null;
-      }
-
-      return {
-        "@type": "ListItem",
-        position: index + 1,
-        name,
-        item: url,
-      };
+      return name && url
+        ? {
+            "@type": "ListItem",
+            position: index + 1,
+            name,
+            item: url,
+          }
+        : null;
     })
     .filter(
-      (
-        item,
-      ): item is {
-        "@type": "ListItem";
-        position: number;
-        name: string;
-        item: string;
-      } => item !== null,
-    );
+      (item): item is NonNullable<typeof item> =>
+        item !== null,
+    )
+    .map((item, index) => ({
+      ...item,
+      position: index + 1,
+    }));
 
-  return {
+  if (listItems.length < 2) {
+    return null;
+  }
+
+  const breadcrumb: Node = {
     "@type": "BreadcrumbList",
     itemListElement: listItems,
+  };
+
+  // Only add @id when the parent page explicitly provides
+  // its canonical URL.
+  if (pageUrl) {
+    const url = abs(pageUrl);
+
+    if (url) {
+      breadcrumb["@id"] = `${url}#breadcrumb`;
+    }
+  }
+
+  return breadcrumb;
+}
+
+export function createFAQSchema(items: FAQItem[], pageUrl: string): Node | null {
+  const mainEntity = items
+    .map((item) => {
+      const question = cleanText(item.question);
+      const answer = cleanText(item.answer);
+      return question && answer
+        ? {
+            "@type": "Question",
+            name: question,
+            acceptedAnswer: { "@type": "Answer", text: answer },
+          }
+        : null;
+    })
+    .filter((i): i is NonNullable<typeof i> => i !== null);
+
+  if (!mainEntity.length) return null;
+
+  return {
+    "@type": "FAQPage",
+    "@id": `${pageUrl}#faq`,
+    mainEntityOfPage: { "@id": `${pageUrl}#webpage` },
+    mainEntity,
+  };
+}
+
+export function createItemListSchema(
+  entries: ItemListEntry[],
+  pageUrl: string,
+): Node | null {
+  const itemListElement = entries
+    .map((e) => {
+      const name = cleanText(e.name);
+      const url = abs(e.url);
+      return name && url ? { name, url } : null;
+    })
+    .filter((i): i is NonNullable<typeof i> => i !== null)
+    .map((e, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      url: e.url,
+      name: e.name,
+    }));
+
+  if (!itemListElement.length) return null;
+
+  return {
+    "@type": "ItemList",
+    "@id": `${pageUrl}#itemlist`,
+    numberOfItems: itemListElement.length,
+    itemListElement,
+  };
+}
+
+export function createArticleSchema(input: ArticleSchemaInput): Node {
+  const url = abs(input.url) || SITE_URL;
+  const description = cleanText(input.description);
+  const image = abs(input.image);
+  const category = cleanText(input.category);
+  const authorName = cleanText(input.authorName);
+  const authorUrl = abs(input.authorUrl);
+
+  const article: Node = {
+    "@type": input.type || "BlogPosting",
+    "@id": `${url}#article`,
+    url,
+    headline: (cleanText(input.title) || SITE_NAME).slice(0, 110),
+    mainEntityOfPage: { "@id": `${url}#webpage` },
+    isPartOf: { "@id": `${url}#webpage` },
+    publisher: { "@id": ORGANIZATION_ID },
+    inLanguage: SITE_LANGUAGE,
+    author: authorName
+      ? { "@type": "Person", name: authorName, ...(authorUrl ? { url: authorUrl } : {}) }
+      : { "@id": ORGANIZATION_ID },
+  };
+
+  if (description) article.description = description;
+  if (image) article.image = [image];
+  if (input.publishedAt) article.datePublished = input.publishedAt;
+  if (input.modifiedAt) article.dateModified = input.modifiedAt;
+  if (category) article.articleSection = category;
+  if (typeof input.wordCount === "number" && Number.isFinite(input.wordCount)) {
+    article.wordCount = input.wordCount;
+  }
+  return article;
+}
+
+export function createWebPageSchema(input: {
+  url: string;
+  name: string;
+  description?: string | null;
+  type?: WebPageType;
+  image?: string | null;
+  publishedAt?: string | null;
+  modifiedAt?: string | null;
+  hasBreadcrumb?: boolean;
+}): Node {
+  const url = abs(input.url) || SITE_URL;
+  const description = cleanText(input.description);
+  const image = abs(input.image);
+
+  return {
+    "@type": input.type || "WebPage",
+    "@id": `${url}#webpage`,
+    url,
+    name: cleanText(input.name) || SITE_NAME,
+    ...(description ? { description } : {}),
+    isPartOf: { "@id": WEBSITE_ID },
+    about: { "@id": ORGANIZATION_ID },
+    publisher: { "@id": ORGANIZATION_ID },
+    inLanguage: SITE_LANGUAGE,
+    ...(image ? { primaryImageOfPage: { "@type": "ImageObject", url: image } } : {}),
+    ...(input.publishedAt ? { datePublished: input.publishedAt } : {}),
+    ...(input.modifiedAt ? { dateModified: input.modifiedAt } : {}),
+    ...(input.hasBreadcrumb ? { breadcrumb: { "@id": `${url}#breadcrumb` } } : {}),
   };
 }
 
 // ============================================================
-// FAQ PAGE
-// ============================================================
-// Use only when the FAQ is genuinely visible on the page.
-// This is semantic structured data; do not treat it as a
-// guaranteed Google FAQ rich-result mechanism (Google restricted
-// FAQ rich results to a small set of authoritative sites in 2023).
+// ONE function for every route. Always includes Organization + WebSite.
 // ============================================================
 
-export type FAQItem = {
-  question: string;
-  answer: string;
-};
+export function createCollectionPageSchema(input: {
+  url: string;
+  name: string;
+  description?: string | null;
+  image?: string | null;
+  breadcrumbs?: BreadcrumbItem[];
+  itemList?: ItemListEntry[];
+}) {
+  return createPageSchema({
+    url: input.url,
+    name: input.name,
+    description: input.description,
+    type: "CollectionPage",
+    image: input.image,
+    breadcrumbs: input.breadcrumbs,
+    itemList: input.itemList,
+  });
+}
 
-export function createFAQSchema(items: FAQItem[]) {
-  return {
-    "@type": "FAQPage",
-    mainEntity: items
-      .map((item) => {
-        const question = cleanText(item.question);
-        const answer = cleanText(item.answer);
+export function createPageSchema(input: PageSchemaInput) {
+  const url = abs(input.url) || SITE_URL;
 
-        if (!question || !answer) {
-          return null;
-        }
+  const breadcrumb = input.breadcrumbs
+    ? createBreadcrumbSchema(input.breadcrumbs, url)
+    : null;
 
-        return {
-          "@type": "Question",
-          name: question,
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: answer,
-          },
-        };
+  const webPage = createWebPageSchema({
+    url,
+    name: input.name,
+    description: input.description,
+    type: input.type,
+    image: input.image,
+    publishedAt: input.article?.publishedAt,
+    modifiedAt: input.article?.modifiedAt,
+    hasBreadcrumb: Boolean(breadcrumb),
+  });
+
+  const article = input.article
+    ? createArticleSchema({
+        ...input.article,
+        url,
+        title: input.article.title || input.name,
+        description: input.article.description ?? input.description,
+        image: input.article.image ?? input.image,
       })
-      .filter(Boolean),
+    : null;
+
+  const faq = input.faqs ? createFAQSchema(input.faqs, url) : null;
+  const itemList = input.itemList ? createItemListSchema(input.itemList, url) : null;
+
+  if (itemList) webPage.mainEntity = { "@id": `${url}#itemlist` };
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      createOrganizationSchema(),
+      createWebSiteSchema(),
+      webPage,
+      breadcrumb,
+      article,
+      faq,
+      itemList,
+    ].filter(Boolean),
   };
 }

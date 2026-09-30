@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description:
     "Read the Terms and Conditions governing use of AlloyPress, editorial coverage, sponsored content, payments, affiliate relationships, intellectual property, privacy, and website use.",
   alternates: {
-    canonical: "/terms",
+    canonical: "/terms-and-conditions",
   },
 };
 
@@ -211,7 +211,7 @@ const breadcrumbSchema = {
   "@graph": [
     createBreadcrumbSchema([
       { name: "Home", url: "/" },
-      { name: "Terms and Conditions", url: "/terms" },
+      { name: "Terms and Conditions", url: "/terms-and-conditions" },
     ]),
   ],
 };
@@ -273,7 +273,7 @@ export default function TermsPage() {
                 Privacy Policy
               </a>
 
-              <a href="/do-not-sell">
+              <a href="/do-not-sell-my-info">
                 <span>03</span>
                 Do Not Sell My Info
               </a>

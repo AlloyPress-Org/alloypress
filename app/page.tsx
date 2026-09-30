@@ -61,7 +61,6 @@ export default function Home() {
       <AIToolReviews />
       <NewsletterSection />
       <ToolSubmissionCTA />
-      <BackToTop />
     </>
   );
 }

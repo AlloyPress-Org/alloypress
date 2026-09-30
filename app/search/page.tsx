@@ -36,6 +36,10 @@ type Post = {
   title?: string | null;
   slug?: string | null;
   excerpt?: string | null;
+  // NEW: same source the blog post page uses for its hero excerpt
+  meta?: {
+    description?: string | null;
+  } | null;
   publishedAt?: string | null;
   featuredImage?: Media | number | string | null;
   category?: Category | number | string | null;
@@ -65,19 +69,139 @@ const SUGGESTED_SEARCHES = [
 ];
 
 function cleanText(value?: string | null) {
-  return (
-    value
-      ?.replace(/<[^>]*>/g, "")
-      .replace(/TL;DR\s*:/gi, "")
-      .replace(/📋?\s*Copied!\s*Press\s*Ctrl\+V\s*\(or\s*Cmd\+V on Mac\)\s*in the box that just opened\.?/gi, "")
-      .replace(/Copy again\s*[×x]?/gi, "")
-      .replace(/\[&hellip;\]/gi, "")
-      .replace(/&hellip;/gi, "")
-      .replace(/&#8230;/gi, "")
-      .replace(/&#x2026;/gi, "")
-      .replace(/\s+/g, " ")
-      .trim() || ""
+  if (!value) return "";
+
+  return value
+    // Remove WordPress/editor headings completely
+    .replace(/<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/gi, " ")
+
+    // Remove common WordPress/editor blocks
+    .replace(
+      /<div[^>]*class=["'][^"']*(?:table[-\s]?of[-\s]?contents|toc)[^"']*["'][^>]*>[\s\S]*?<\/div>/gi,
+      " ",
+    )
+
+    // Remove remaining HTML tags
+    .replace(/<[^>]*>/g, " ")
+
+    // Remove leaked editor labels
+    .replace(
+      /\b(?:Table of Contents|Quick Blog Summary|Independent Review)\b\s*:?\s*/gi,
+      " ",
+    )
+
+    // Remove WordPress/editor leftovers
+    .replace(/TL;DR\s*:/gi, "")
+    .replace(
+      /📋?\s*Copied!\s*Press\s*Ctrl\+V\s*\(or\s*Cmd\+V on Mac\)\s*in the box that just opened\.?/gi,
+      "",
+    )
+    .replace(/Copy again\s*[×x]?/gi, "")
+
+    // Decode common HTML entities
+    .replace(/&#038;|&#x26;|&amp;/gi, "&")
+    .replace(/&#8230;|&#x2026;|&hellip;/gi, "…")
+    .replace(/&#39;|&#x27;|&apos;/gi, "'")
+    .replace(/&quot;|&#34;|&#x22;/gi, '"')
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&nbsp;/gi, " ")
+
+    // Remove remaining raw entity patterns
+    .replace(/&#x?[0-9a-f]+;/gi, " ")
+    // Remove leaked TOC markers and heading separators
+    .replace(/[≡☰]/g, " ")
+    .replace(/\^/g, " ")
+
+    // Clean whitespace
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/*
+ * NEW: Same cleaning logic used by BlogPostView (cleanEditorialText),
+ * so the search excerpt matches the excerpt shown on the article page.
+ */
+function cleanEditorialText(value: unknown): string {
+  if (typeof value !== "string") return "";
+
+  let text = value
+    .replace(/<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/&hellip;/gi, "…")
+    .replace(/&#038;/gi, "&")
+    .replace(/&#38;/gi, "&")
+    .replace(/&#8230;/gi, "…")
+    .replace(/&#x26;/gi, "&")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&#x22;/gi, '"')
+    .replace(/\s+/g, " ")
+    .trim();
+
+  text = text.replace(
+    /Ask AI which software may suit your team[\s\S]*?(?=TL;DR\s*:|$)/i,
+    "",
   );
+
+  text = text.replace(
+    /📋\s*Copied!.*?(?:Copy again\s*[✕×x]?|$)/i,
+    "",
+  );
+
+  text = text.replace(/^TL;DR\s*:\s*/i, "");
+  text = text.replace(/\s*\[…\]\s*$/i, "");
+  text = text.replace(/\s*\[\.\.\.\]\s*$/i, "");
+  text = text.replace(/…\s*$/i, "");
+  text = text.replace(/^[-–—•\s]+/, "");
+
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/*
+ * NEW: Clean, short excerpt for cards.
+ *
+ * Priority:
+ *   1. meta.description  (same as the blog post hero excerpt)
+ *   2. excerpt           (fallback, cleaned of TOC / editor junk)
+ *
+ * Truncates at a word boundary so it never cuts mid-word.
+ */
+function getPostExcerpt(post: Post, maxLength: number) {
+  const hasMeta = Boolean(post.meta?.description?.trim());
+  const source = post.meta?.description || post.excerpt || "";
+
+  let text = cleanEditorialText(cleanText(source));
+
+  // Strip any leading symbol/junk char (any Unicode symbol, not just ^)
+  text = text.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+
+  // No meta description + excerpt looks like leaked TOC → hide it
+  // (a blank excerpt is better than junk text on the card)
+  if (!hasMeta) {
+    const questionMarks = (text.slice(0, 200).match(/\?/g) || []).length;
+    const looksLikeToc =
+      questionMarks >= 2 ||
+      /quick overview|how we tested|comparison table|table of contents/i.test(
+        text.slice(0, 200),
+      );
+
+    if (looksLikeToc) return "";
+  }
+
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
+
+  const sliced = text.slice(0, maxLength);
+  const lastSpace = sliced.lastIndexOf(" ");
+  const safe =
+    lastSpace > maxLength * 0.6 ? sliced.slice(0, lastSpace) : sliced;
+
+  return `${safe.replace(/[\s,.;:–—-]+$/, "")}…`;
 }
 
 function getCategory(post: Post): Category | null {
@@ -91,15 +215,54 @@ function isValidPost(post: Post) {
 
   return Boolean(
     post.id &&
-      post.slug &&
-      post.title &&
-      category?.slug &&
-      ALLOWED_CATEGORIES.has(category.slug),
+    post.slug &&
+    post.title &&
+    category?.slug &&
+    ALLOWED_CATEGORIES.has(category.slug),
   );
 }
 
 const MAX_SEARCH_RESULTS = 8;
 const MAX_QUERY_LENGTH = 100;
+async function attachMetaDescriptions(posts: Post[]): Promise<Post[]> {
+  if (!posts.length) return posts;
+
+  try {
+    const ids = posts.map((p) => p.id).join(",");
+
+    const data = await payloadFetch<PayloadResponse<Post>>(
+      "/posts" +
+      `?where[id][in]=${encodeURIComponent(ids)}` +
+      `&limit=${posts.length}` +
+      "&depth=0" +
+      "&select[id]=true" +
+      "&select[meta][description]=true",
+      {
+        next: {
+          revalidate: 300,
+          tags: ["search", "posts"],
+        },
+      },
+    );
+
+    const byId = new Map(
+      (data?.docs || []).map((d) => [
+        String(d.id),
+        d.meta?.description ?? null,
+      ]),
+    );
+
+    return posts.map((p) => ({
+      ...p,
+      meta: {
+        description: byId.get(String(p.id)) ?? p.meta?.description ?? null,
+      },
+    }));
+  } catch (error) {
+    console.error("[AlloyPress Search] Meta fetch failed:", error);
+    return posts;
+  }
+}
 
 async function searchPosts(query: string): Promise<Post[]> {
   const normalizedQuery = query.trim().slice(
@@ -127,7 +290,7 @@ async function searchPosts(query: string): Promise<Post[]> {
       },
     );
 
-    return (data?.docs || []).filter(isValidPost);
+    return attachMetaDescriptions((data?.docs || []).filter(isValidPost));
   } catch (error) {
     console.error(
       "[AlloyPress Search] Search request failed:",
@@ -144,17 +307,18 @@ const getSuggestedPosts = cache(
       const data =
         await payloadFetch<PayloadResponse<Post>>(
           "/posts" +
-            "?where[workflowStatus][equals]=published" +
-            "&limit=4" +
-            "&depth=1" +
-            "&sort=-publishedAt" +
-            "&select[id]=true" +
-            "&select[title]=true" +
-            "&select[slug]=true" +
-            "&select[excerpt]=true" +
-            "&select[publishedAt]=true" +
-            "&select[category]=true" +
-            "&select[featuredImage]=true",
+          "?where[workflowStatus][equals]=published" +
+          "&limit=4" +
+          "&depth=1" +
+          "&sort=-publishedAt" +
+          "&select[id]=true" +
+          "&select[title]=true" +
+          "&select[slug]=true" +
+          "&select[excerpt]=true" +
+          "&select[meta][description]=true" + // NEW
+          "&select[publishedAt]=true" +
+          "&select[category]=true" +
+          "&select[featuredImage]=true",
           {
             next: {
               revalidate: 300,
@@ -188,10 +352,9 @@ function getImageUrl(
   ) {
     return featuredImage.url.startsWith("http")
       ? featuredImage.url
-      : `${
-          process.env.PAYLOAD_API_URL?.replace(/\/api$/, "") ||
-          "http://localhost:3001"
-        }${featuredImage.url}`;
+      : `${process.env.PAYLOAD_API_URL?.replace(/\/api$/, "") ||
+      "http://localhost:3001"
+      }${featuredImage.url}`;
   }
 
   return null;
@@ -341,6 +504,8 @@ export default async function SearchPage({
                       post.featuredImage,
                     );
 
+                    const excerpt = getPostExcerpt(post, 120);
+
                     return (
                       <Link
                         key={post.id}
@@ -353,8 +518,8 @@ export default async function SearchPage({
                               src={imageUrl}
                               alt={
                                 post.featuredImage &&
-                                typeof post.featuredImage === "object" &&
-                                post.featuredImage.alt
+                                  typeof post.featuredImage === "object" &&
+                                  post.featuredImage.alt
                                   ? post.featuredImage.alt
                                   : post.title || "AlloyPress article"
                               }
@@ -378,14 +543,7 @@ export default async function SearchPage({
 
                           <h3>{post.title}</h3>
 
-                          {post.excerpt && (
-                            <p>
-                              {cleanText(post.excerpt).slice(0, 120)}
-                              {cleanText(post.excerpt).length > 120
-                                ? "..."
-                                : ""}
-                            </p>
-                          )}
+                          {excerpt ? <p>{excerpt}</p> : null}
                         </div>
                       </Link>
                     );
@@ -422,6 +580,8 @@ export default async function SearchPage({
                     return null;
                   }
 
+                  const excerpt = getPostExcerpt(post, 180);
+
                   return (
                     <Link
                       key={post.id}
@@ -434,8 +594,8 @@ export default async function SearchPage({
                             src={getImageUrl(post.featuredImage)!}
                             alt={
                               post.featuredImage &&
-                              typeof post.featuredImage === "object" &&
-                              post.featuredImage.alt
+                                typeof post.featuredImage === "object" &&
+                                post.featuredImage.alt
                                 ? post.featuredImage.alt
                                 : post.title || "AlloyPress article"
                             }
@@ -463,14 +623,7 @@ export default async function SearchPage({
 
                         <h2>{post.title}</h2>
 
-                        {post.excerpt && (
-                          <p>
-                            {cleanText(post.excerpt).slice(0, 180)}
-                            {cleanText(post.excerpt).length > 180
-                              ? "..."
-                              : ""}
-                          </p>
-                        )}
+                        {excerpt ? <p>{excerpt}</p> : null}
                       </div>
                     </Link>
                   );

@@ -4,6 +4,37 @@ import { cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
 
+function cleanNewsExcerpt(value?: string | null): string {
+  if (!value) return "";
+
+  return value
+    // Remove HTML tags
+    .replace(/<[^>]*>/g, " ")
+
+    // Remove leaked WordPress/editor headings
+    .replace(
+      /^\s*(quick\s+blog\s+summary|blog\s+summary)\s*[:\-]?\s*/i,
+      "",
+    )
+
+    // Decode common HTML entities
+    .replace(/&#038;|&#38;|&amp;/gi, "&")
+    .replace(/&#8217;|&#x2019;|&rsquo;/gi, "’")
+    .replace(/&#8220;|&#x201c;|&ldquo;/gi, "“")
+    .replace(/&#8221;|&#x201d;|&rdquo;/gi, "”")
+    .replace(/&#8211;|&#x2013;|&ndash;/gi, "–")
+    .replace(/&#8212;|&#x2014;|&mdash;/gi, "—")
+    .replace(/&#8230;|&#x2026;|&hellip;/gi, "…")
+
+    // Remove WordPress leftover bracketed ellipsis
+    .replace(/\[\s*…\s*\]/g, "…")
+    .replace(/\[\s*&hellip;\s*\]/gi, "…")
+
+    // Normalize whitespace
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const PAYLOAD_URL =
   process.env.PAYLOAD_API_URL ||
   "http://localhost:3001/api";
@@ -336,8 +367,8 @@ export default async function RecentAINews() {
                 <h3>{featured.title}</h3>
 
                 {featured.excerpt && (
-                  <p>{featured.excerpt}</p>
-                )}
+  <p>{cleanNewsExcerpt(featured.excerpt)}</p>
+)}
 
                 <span className="recent-news-read">
                   Read story

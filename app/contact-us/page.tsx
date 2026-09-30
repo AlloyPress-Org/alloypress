@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description:
     "Contact AlloyPress for AI tool reviews, article inclusion, partnerships, editorial enquiries, and other collaboration requests.",
   alternates: {
-    canonical: "/contact",
+    canonical: "/contact-us",
   },
   openGraph: {
     title: "Contact AlloyPress — AI Reviews & Partnerships",
@@ -24,7 +24,7 @@ const breadcrumbSchema = {
   "@graph": [
     createBreadcrumbSchema([
       { name: "Home", url: "/" },
-      { name: "Contact", url: "/contact" },
+      { name: "Contact", url: "/contact-us" },
     ]),
   ],
 };

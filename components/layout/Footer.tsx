@@ -42,8 +42,8 @@ const resourceLinks = [
 ];
 
 const companyLinks = [
-  { label: "About Us", href: "/about" },
-  { label: "Contact", href: "/contact" },
+  { label: "About Us", href: "/about-us" },
+  { label: "Contact", href: "/contact-us" },
   { label: "Feature Your Tool", href: "/get-featured" },
   { label: "Testing Partner", href: "/testing-partner" },
   {
@@ -182,11 +182,11 @@ function FooterColumn({
 export default function Footer() {
   const [badgeCopied, setBadgeCopied] = useState(false);
 
-  const footerBadgeCode = `<a href="https://alloypress-web.vercel.app"
+  const footerBadgeCode = `<a href="https://alloypress.com"
    target="_blank"
    rel="noopener noreferrer"
    aria-label="Featured on AlloyPress">
- <img src="https://alloypress-web.vercel.app/badges/featured.png"
+ <img src="https://alloypress.com/badges/featured.png"
      alt="Featured on AlloyPress"
      width="320"
      height="117">
@@ -264,7 +264,7 @@ export default function Footer() {
 
                 <div className="footer-featured-row">
                   <a
-                    href="https://alloypress-web.vercel.app/"
+                    href="https://alloypress.com"
                     className="footer-featured-card"
                     aria-label="Featured on AlloyPress"
                   >
@@ -352,15 +352,17 @@ export default function Footer() {
 
       {/* Source */}
       <div className="footer-source">
-        <div className="container">
-          <Link
-            href="/about"
-            className="footer-source-link"
-          >
-            Set AlloyPress as the preferred source for AI on Google
-          </Link>
-        </div>
-      </div>
+  <div className="container">
+    <a
+      href="https://www.google.com/preferences/source?q=alloypress.com"
+      className="footer-source-link"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Set AlloyPress as the preferred source for AI on Google
+    </a>
+  </div>
+</div>
 
       {/* Brand Wordmark */}
       <div
@@ -381,11 +383,11 @@ export default function Footer() {
               Privacy Policy
             </Link>
 
-            <Link href="/terms">
+            <Link href="/terms-and-conditions">
               Terms and Conditions
             </Link>
 
-            <Link href="/do-not-sell">
+            <Link href="/do-not-sell-my-info">
               Do Not Sell My Info
             </Link>
           </nav>
