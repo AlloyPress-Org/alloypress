@@ -18,6 +18,7 @@ import "@/components/css-style/news-letter.css";
 import "@/components/css-style/tool-submit.css";
 import "@/components/css-style/testing-partner.css";
 import EmailCtaModal from "@/components/ui/EmailCtaModal";
+import HtmlWidgetRuntime from "@/components/HtmlWidgetRuntime";
 
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -102,6 +103,7 @@ export default function RootLayout({
         <ThemeScript />
 
         <Navbar />
+        <HtmlWidgetRuntime />
 
         <main>{children}</main>
         <BackToTop />

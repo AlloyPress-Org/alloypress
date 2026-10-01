@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   Copy,
@@ -275,7 +275,50 @@ function cleanEditorialText(value: unknown): string {
 
   return text.replace(/\s+/g, " ").trim();
 }
+async function copyText(text: string): Promise<boolean> {
+  const value = text.trim();
+  if (!value) return false;
 
+  /*
+   * Primary path: Clipboard API.
+   * Works on HTTPS and localhost.
+   */
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch {
+      // Continue to the legacy fallback below.
+    }
+  }
+
+  /*
+   * Fallback: textarea + execCommand.
+   * Required for browsers/contexts where Clipboard API is unavailable
+   * or permission is denied.
+   */
+  const ta = document.createElement("textarea");
+  ta.value = value;
+  ta.setAttribute("readonly", "");
+  ta.style.position = "fixed";
+  ta.style.top = "-9999px";
+  ta.style.left = "-9999px";
+  ta.style.opacity = "0";
+  ta.style.pointerEvents = "none";
+
+  document.body.appendChild(ta);
+
+  try {
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    ta.remove();
+  }
+}
 /* -------------------------------------------------------------------------- */
 /* Inline renderer                                                            */
 /* -------------------------------------------------------------------------- */
@@ -981,7 +1024,7 @@ html, body {
       );
     }
 
-        /* FAQ block */
+    /* FAQ block */
     if (blockType === "faq") {
       const items = Array.isArray(fields.items) ? fields.items : [];
 
@@ -1041,7 +1084,7 @@ html, body {
             />
           );
         }
-                if (code.includes("ai-faq-item")) {
+        if (code.includes("ai-faq-item")) {
           const faqs = extractFaqs(code);
           if (faqs.length > 0) {
             return <FaqAccordion faqs={faqs} />;
@@ -1447,21 +1490,220 @@ function ArticleRenderer({
   content: any;
   headingIds: Map<any, string>;
 }) {
-  const children = normalizeArticleContent(
-    content?.root?.children || []
-  );
+  const rootRef = useRef<HTMLDivElement>(null);
+  const children = normalizeArticleContent(content?.root?.children || []);
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const onClick = async (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target) return;
+
+      /* ============================================================
+ * Prompt Challenge widget
+ * ============================================================ */
+      const promptChallenge = target.closest<HTMLElement>(
+        ".apx-prompt-challenge"
+      );
+
+      if (promptChallenge && root.contains(promptChallenge)) {
+        const promptButton = target.closest<HTMLButtonElement>(
+          ".apx-pc-btn"
+        );
+
+        if (promptButton && promptChallenge.contains(promptButton)) {
+          const isBetter = promptButton.textContent
+            ?.toLowerCase()
+            .includes("refined");
+
+          const panelName = isBetter ? "better" : "first";
+
+          promptChallenge
+            .querySelectorAll<HTMLElement>(".apx-pc-panel")
+            .forEach((panel) => {
+              panel.classList.toggle(
+                "active",
+                panel.id === `apx-pc-${panelName}`
+              );
+            });
+
+          promptChallenge
+            .querySelectorAll<HTMLButtonElement>(".apx-pc-btn")
+            .forEach((button) => {
+              button.classList.toggle(
+                "active",
+                button === promptButton
+              );
+            });
+
+          return;
+        }
+      }
+      /*
+       * ============================================================
+       * 1. Generic HTML article widgets
+       * ============================================================
+       *
+       * IMPORTANT:
+       * Article HTML is rendered with dangerouslySetInnerHTML. React does
+       * not execute the inline <script> or onclick handlers stored inside
+       * the migrated HTML. Those handlers are also deliberately removed by
+       * cleanArticleHtml() for security.
+       *
+       * Therefore the widget must be controlled from this single delegated
+       * listener. This keeps all 100+ existing HTML blocks unchanged.
+       */
+      const bikeWidget = target.closest<HTMLElement>(".apx-bike-widget");
+
+      if (bikeWidget && root.contains(bikeWidget)) {
+        /* Image / Prompt tabs */
+        const bikeTab = target.closest<HTMLButtonElement>(
+          ".apx-bike-tab-btn"
+        );
+
+        if (bikeTab && bikeWidget.contains(bikeTab)) {
+          const name = bikeTab.textContent?.toLowerCase().includes("prompt")
+            ? "prompt"
+            : "image";
+
+          bikeWidget
+            .querySelectorAll<HTMLElement>(".apx-bike-panel")
+            .forEach((panel) => {
+              panel.classList.toggle(
+                "active",
+                panel.dataset.apxBikePanel === name
+              );
+            });
+
+          bikeWidget
+            .querySelectorAll<HTMLButtonElement>(".apx-bike-tab-btn")
+            .forEach((button) => {
+              button.classList.toggle("active", button === bikeTab);
+            });
+
+          return;
+        }
+
+        /* Copy Prompt */
+        const bikeCopyBtn = target.closest<HTMLButtonElement>(
+          ".apx-bike-copy-btn"
+        );
+
+        if (bikeCopyBtn && bikeWidget.contains(bikeCopyBtn)) {
+          const promptBox = bikeWidget.querySelector<HTMLElement>(
+            ".apx-bike-prompt-box"
+          );
+
+          const text = promptBox?.textContent?.trim() || "";
+
+          if (!text) {
+            console.warn(
+              "[AlloyPress] Copy Prompt: prompt text not found."
+            );
+            return;
+          }
+
+          const copied = await copyText(text);
+
+          if (!copied) {
+            bikeCopyBtn.innerHTML = "⚠️ Copy Failed";
+            window.setTimeout(() => {
+              bikeCopyBtn.innerHTML = "📋 Copy Prompt";
+            }, 1800);
+            return;
+          }
+
+          bikeCopyBtn.innerHTML = "✓ Copied!";
+          bikeCopyBtn.classList.add("copied");
+
+          window.setTimeout(() => {
+            bikeCopyBtn.innerHTML = "📋 Copy Prompt";
+            bikeCopyBtn.classList.remove("copied");
+          }, 1800);
+
+          return;
+        }
+      }
+
+      /*
+       * ============================================================
+       * 2. Existing reference gallery functionality
+       * ============================================================
+       */
+      const gallery = target.closest<HTMLElement>(".apx-reference-gallery");
+      if (!gallery || !root.contains(gallery)) return;
+
+      /* Prompt toggle */
+      const toggle = target.closest<HTMLElement>(".apx-prompt-toggle");
+      if (toggle) {
+        const isActive = toggle.classList.toggle("active");
+        const panel = gallery.querySelector<HTMLElement>(
+          ".apx-prompt-panel, .apx-prompt-box, .apx-prompt-content"
+        );
+        if (panel) {
+          panel.classList.toggle("active", isActive);
+          panel.classList.toggle("open", isActive);
+          panel.style.display = isActive ? "block" : "none";
+        }
+        return;
+      }
+
+      /* 2. Copy button */
+      const copyBtn = target.closest<HTMLElement>("[class*='copy'], [data-copy]");
+      if (copyBtn && gallery.contains(copyBtn)) {
+        const promptEl = gallery.querySelector<HTMLElement>(
+          "[class*='prompt-text'], [class*='prompt-content'], pre, textarea"
+        );
+        const text = (
+          copyBtn.dataset.copy ??
+          (promptEl as HTMLTextAreaElement)?.value ??
+          promptEl?.textContent ??
+          ""
+        ).trim();
+        if (!text) return;
+
+        const copied = await copyText(text);
+        if (!copied) {
+          copyBtn.textContent = "Copy failed";
+          window.setTimeout(() => {
+            copyBtn.textContent = "Copy";
+          }, 1500);
+          return;
+        }
+
+        const original = copyBtn.textContent;
+        copyBtn.textContent = "Copied ✓";
+        window.setTimeout(() => (copyBtn.textContent = original), 1500);
+        return;
+      }
+
+      /* 3. Thumbnails */
+      const thumb = target.closest<HTMLElement>("[class*='thumb']");
+      if (thumb) {
+        const thumbImg = thumb.querySelector("img");
+        const mainImg = gallery.querySelector<HTMLImageElement>(".apx-ref-main img");
+        if (thumbImg && mainImg) {
+          mainImg.src = thumbImg.src;
+          mainImg.alt = thumbImg.alt;
+          gallery
+            .querySelectorAll("[class*='thumb']")
+            .forEach((t) => t.classList.remove("active"));
+          thumb.classList.add("active");
+        }
+      }
+    };
+
+    root.addEventListener("click", onClick);
+    return () => root.removeEventListener("click", onClick);
+  }, []);
+
   return (
-    <div className="post-content">
-      {children.map(
-        (node: any, i: number) => (
-          <RenderNode
-            key={i}
-            node={node}
-            index={i}
-            headingIds={headingIds}
-          />
-        )
-      )}
+    <div className="post-content" ref={rootRef}>
+      {children.map((node: any, i: number) => (
+        <RenderNode key={i} node={node} index={i} headingIds={headingIds} />
+      ))}
     </div>
   );
 }
@@ -1758,15 +2000,15 @@ export default function BlogPostView({
   }
 
   const badgeArticleUrl =
-  articleUrl ||
-  `https://alloypress.com/${category}/${post?.slug || ""}`;
+    articleUrl ||
+    `https://alloypress.com/${category}/${post?.slug || ""}`;
 
-const badgeToolName =
-  typeof post?.title === "string" && post.title.trim()
-    ? post.title.trim()
-    : "This tool";
+  const badgeToolName =
+    typeof post?.title === "string" && post.title.trim()
+      ? post.title.trim()
+      : "This tool";
 
-const badgeEmbedCode = `<a href="${badgeArticleUrl}"
+  const badgeEmbedCode = `<a href="${badgeArticleUrl}"
   target="_blank"
   rel="noopener noreferrer"
   aria-label="Featured on AlloyPress — ${badgeToolName}">
@@ -2102,6 +2344,40 @@ const badgeEmbedCode = `<a href="${badgeArticleUrl}"
                   <div className="toc-empty">Article sections will appear here.</div>
                 )}
               </div>
+              <div className="sidebar-card alloypress-badge-card desktop-featured-badge">
+                <div className="side-label">FEATURED BADGE</div>
+
+                <div className="alloypress-badge-copy-box">
+                  <div className="alloypress-badge-preview">
+                    <img
+                      src="/badges/featured.png"
+                      alt="Featured on AlloyPress"
+                      width={320}
+                      height={117}
+                      className="alloypress-badge-image"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    className="alloypress-badge-copy-button"
+                    onClick={copyBadgeEmbedCode}
+                    aria-label={badgeCopied ? "Badge code copied" : "Copy badge code"}
+                    title={badgeCopied ? "Copied!" : "Copy badge code"}
+                  >
+                    {badgeCopied ? (
+                      <Check aria-hidden="true" />
+                    ) : (
+                      <Copy aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
+
+                <p className="alloypress-badge-text">
+                  Copy this badge and add it to your website to show that this tool is
+                  featured on AlloyPress.
+                </p>
+              </div>
             </aside>
             {/* Center: article */}
             <article className="article-column">
@@ -2204,41 +2480,6 @@ const badgeEmbedCode = `<a href="${badgeArticleUrl}"
                     Share
                   </span>
                 </button>
-              </div>
-
-              <div className="sidebar-card alloypress-badge-card">
-                <div className="side-label">Featured badge</div>
-
-                <div className="alloypress-badge-copy-box">
-                  <div className="alloypress-badge-preview">
-                    <img
-                      src="/badges/featured.png"
-                      alt="Featured on AlloyPress"
-                      width={320}
-                      height={117}
-                      className="alloypress-badge-image"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    className="alloypress-badge-copy-button"
-                    onClick={copyBadgeEmbedCode}
-                    aria-label={badgeCopied ? "Badge code copied" : "Copy badge code"}
-                    title={badgeCopied ? "Copied!" : "Copy badge code"}
-                  >
-                    {badgeCopied ? (
-                      <Check aria-hidden="true" />
-                    ) : (
-                      <Copy aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-
-                <p className="alloypress-badge-text">
-                  Copy this badge and add it to your website to show that
-                  this tool is featured on AlloyPress.
-                </p>
               </div>
 
               {AI_ENABLED && (
