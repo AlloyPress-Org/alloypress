@@ -343,20 +343,15 @@ const getPost = cache(
     params.set("select[legacy]", "true");
     params.set("select[meta]", "true");
 
-    const data =
-      await payloadFetch<
-        PayloadResponse<PostWithMeta>
-      >(
-        `/posts?${params.toString()}`,
-        {
-          next: isDraft
-            ? { revalidate: 0 }
-            : {
-              revalidate: 0,
-              tags: [`post:${slug}`],
-            },
-        },
-      );
+    const data = await payloadFetch<PayloadResponse<PostWithMeta>>(
+      `/posts?${params.toString()}`,
+      {
+        strict: true, // 429/5xx na 404 kaattaama error
+        next: isDraft
+          ? { revalidate: 0 }
+          : { revalidate: 3600, tags: [`post:${slug}`] },
+      },
+    );
 
     const post =
       data?.docs?.[0] ?? null;
