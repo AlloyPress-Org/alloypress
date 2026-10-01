@@ -51,7 +51,8 @@ function buildCanonical(input: BuildPageMetadataInput): string {
       const ownHost =
         parsed.hostname === siteHost ||
         parsed.hostname === `www.${siteHost}` ||
-        parsed.hostname.endsWith(".vercel.app");
+        parsed.hostname.endsWith(".vercel.app") ||
+        parsed.hostname.endsWith(".workers.dev");
 
       return ownHost
         ? new URL(parsed.pathname + parsed.search, `${SITE_URL}/`).toString()
@@ -70,9 +71,9 @@ function buildRobots(input?: SeoRobotsInput | null): Metadata["robots"] {
   return {
     index,
     follow,
-    noarchive: input?.noArchive === true,
-    noimageindex: input?.noImageIndex === true,
-    nosnippet: input?.noSnippet === true,
+    ...(input?.noArchive === true ? { noarchive: true } : {}),
+    ...(input?.noImageIndex === true ? { noimageindex: true } : {}),
+    ...(input?.noSnippet === true ? { nosnippet: true } : {}),
     googleBot: {
       index,
       follow,
