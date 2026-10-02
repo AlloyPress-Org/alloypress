@@ -34,6 +34,62 @@ type Props = {
   categoryLabel?: string;
 };
 
+/* next.config.ts remotePatterns la irukkura hostnames mattum */
+const OPTIMIZABLE_HOSTS = [
+  "pub-c555bbd45f8b41b3bd6910202b4ee75d.r2.dev",
+  // production la R2 custom domain use pannina, adhaiyum inga add pannu
+];
+
+function isOptimizable(url: string): boolean {
+  if (url.startsWith("/") && !url.startsWith("//")) return true;
+  try {
+    return OPTIMIZABLE_HOSTS.includes(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+type SmartImageProps = {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  sizes?: string;
+  className?: string;
+  preload?: boolean;
+};
+
+function SmartImage({ src, alt, width, height, sizes, className, preload }: SmartImageProps) {
+  if (isOptimizable(src)) {
+    return (
+      <Image
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        sizes={sizes}
+        className={className}
+        preload={preload}
+      />
+    );
+  }
+
+  // allowed host illaadha images (old WP URLs) crash aagaama fallback
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      loading={preload ? "eager" : "lazy"}
+      decoding="async"
+      fetchPriority={preload ? "high" : undefined}
+    />
+  );
+}
+
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
@@ -446,7 +502,8 @@ function cleanArticleHtml(code: string): string {
     .replace(/<embed\b[^>]*>/gi, "")
     .replace(/\son[a-z]+\s*=\s*(['"])[\s\S]*?\1/gi, "")
     .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
-    .replace(/javascript\s*:/gi, "");
+    .replace(/javascript\s*:/gi, "")
+    .replace(/<img\b(?![^>]*\sloading\s*=)/gi, '<img loading="lazy" decoding="async"');
 }
 
 function isInlineArticleTocList(node: any): boolean {
@@ -688,17 +745,16 @@ function RenderNode({
     return (
       <figure className="post-figure">
         <div className="post-image-frame">
-          <img
+          <SmartImage
             src={url}
             alt={
               media?.alt ||
               media?.title ||
               "AlloyPress article image"
             }
-            width={media?.width || undefined}
-            height={media?.height || undefined}
-            loading="lazy"
-            decoding="async"
+            width={media?.width || 1200}
+            height={media?.height || 800}
+            sizes="(max-width: 820px) 100vw, 720px"
           />
         </div>
 
@@ -781,18 +837,25 @@ function RenderNode({
      * Migrated article HTML must render as normal article content,
      * not inside an iframe/code-preview container.
      */
-    if (
-      normalizedLanguage === "html" &&
-      isArticleHtml(code)
-    ) {
-      return (
-        <div
-          className="post-html-content"
-          dangerouslySetInnerHTML={{
-            __html: cleanArticleHtml(code),
-          }}
-        />
-      );
+    if (normalizedLanguage === "html") {
+      if (/ai-faq-question|ai-faq-answer/i.test(code)) {
+        const faqs = extractFaqs(code);
+
+        if (faqs.length > 0) {
+          return <FaqAccordion faqs={faqs} />;
+        }
+      }
+
+      if (isArticleHtml(code)) {
+        return (
+          <div
+            className="post-html-content"
+            dangerouslySetInnerHTML={{
+              __html: cleanArticleHtml(code),
+            }}
+          />
+        );
+      }
     }
 
     const isExecutable =
@@ -1074,6 +1137,14 @@ html, body {
         language === "html5" ||
         language === "htmlmixed"
       ) {
+        if (/ai-faq-question|ai-faq-answer/i.test(code)) {
+          const faqs = extractFaqs(code);
+
+          if (faqs.length > 0) {
+            return <FaqAccordion faqs={faqs} />;
+          }
+        }
+
         if (isArticleHtml(code)) {
           return (
             <div
@@ -1083,12 +1154,6 @@ html, body {
               }}
             />
           );
-        }
-        if (code.includes("ai-faq-item")) {
-          const faqs = extractFaqs(code);
-          if (faqs.length > 0) {
-            return <FaqAccordion faqs={faqs} />;
-          }
         }
         /*
          * Genuine HTML examples can still use the existing
@@ -2012,12 +2077,14 @@ export default function BlogPostView({
   target="_blank"
   rel="noopener noreferrer"
   aria-label="Featured on AlloyPress — ${badgeToolName}">
-  <img
-    src="https://alloypress.com/badges/featured.png"
-    alt="Featured on AlloyPress"
-    width="320"
-    height="117"
-  />
+ <Image
+  src="/badges/featured.png"
+  alt="Featured on AlloyPress"
+  width={320}
+  height={117}
+  sizes="(max-width: 820px) 200px, 170px"
+  className="alloypress-badge-image"
+/>
 </a>`
 
   async function copyBadgeEmbedCode() {
@@ -2199,13 +2266,17 @@ export default function BlogPostView({
                 {/* RIGHT — featured image */}
                 {articleImage ? (
                   <figure className="hero-image">
-                    <img
+                    <SmartImage
                       src={articleImage}
                       alt={
                         post?.featuredImage?.alt ||
                         post?.title ||
                         "AlloyPress article image"
                       }
+                      width={post?.featuredImage?.width || 1536}
+                      height={post?.featuredImage?.height || 1024}
+                      sizes="(max-width: 820px) 100vw, (max-width: 1100px) 45vw, 600px"
+                      preload
                     />
                   </figure>
                 ) : null}
@@ -2349,11 +2420,12 @@ export default function BlogPostView({
 
                 <div className="alloypress-badge-copy-box">
                   <div className="alloypress-badge-preview">
-                    <img
+                    <Image
                       src="/badges/featured.png"
                       alt="Featured on AlloyPress"
                       width={320}
                       height={117}
+                      sizes="(max-width: 820px) 200px, 170px"
                       className="alloypress-badge-image"
                     />
                   </div>
@@ -2410,11 +2482,12 @@ export default function BlogPostView({
 
                   <div className="alloypress-badge-copy-box">
                     <div className="alloypress-badge-preview">
-                      <img
+                      <Image
                         src="/badges/featured.png"
                         alt="Featured on AlloyPress"
                         width={320}
                         height={117}
+                        sizes="(max-width: 820px) 200px, 170px"
                         className="alloypress-badge-image"
                       />
                     </div>
@@ -2544,11 +2617,12 @@ export default function BlogPostView({
                       >
                         {relatedImage ? (
                           <div className="related-image">
-                            <img
+                            <SmartImage
                               src={relatedImage}
                               alt={item.title || "Related article"}
-                              loading="lazy"
-                              decoding="async"
+                              width={640}
+                              height={360}
+                              sizes="(max-width: 820px) 100vw, 400px"
                             />
                           </div>
                         ) : null}

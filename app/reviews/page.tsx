@@ -7,7 +7,6 @@ import { CATEGORY_PATHS, SITE_URL } from "@/lib/seo/constants";
 import {
   createBreadcrumbSchema,
   createCollectionPageSchema,
-  createOrganizationSchema,
 } from "@/lib/seo/schema";
 
 const PAGE_TITLE = "AI Tool Reviews";
@@ -30,7 +29,6 @@ export default function ReviewsPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      createOrganizationSchema(),
 
       createCollectionPageSchema({
         url: pageUrl,

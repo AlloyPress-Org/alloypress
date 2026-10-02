@@ -16,6 +16,8 @@ import {
   createBreadcrumbSchema,
 } from "@/lib/seo/schema";
 import { SITE_URL } from "@/lib/seo/constants";
+import FaqAccordion from "@/components/blogs/FaqAccordion";
+import { extractFaqs } from "@/lib/faq-from-html";
 
 // ============================================================
 // BREADCRUMB CONSTANTS
@@ -604,6 +606,11 @@ export default async function BlogPostPage({
   const articleImage =
     imageUrl(post.featuredImage);
 
+  const faqs =
+  typeof post.content === "string"
+    ? extractFaqs(post.content)
+    : [];
+
   // ==========================================================
   // JSON-LD
   // ==========================================================
@@ -621,18 +628,38 @@ export default async function BlogPostPage({
         publishedAt: post.publishedAt,
         modifiedAt: post.updatedAt || post.publishedAt,
         category: categoryName,
-        // Real CMS author (Payload `author` relationship) — falls
-        // back to the AlloyPress Organization inside
-        // createArticleSchema() when a post has no author set.
         authorName: post.author?.name,
       }),
 
       createBreadcrumbSchema([
         { name: "Home", url: SITE_URL },
-        { name: categoryName, url: `${SITE_URL}/${categorySlugValue}` },
-        { name: post.title || "", url: articleUrl },
+        {
+          name: categoryName,
+          url: `${SITE_URL}/${categorySlugValue}`,
+        },
+        {
+          name: post.title || "",
+          url: articleUrl,
+        },
       ]),
-    ],
+
+      ...(faqs.length > 0
+        ? [
+          {
+            "@type": "FAQPage",
+            "@id": `${articleUrl}#faq`,
+            mainEntity: faqs.map((faq) => ({
+              "@type": "Question",
+              name: faq.q,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: faq.a,
+              },
+            })),
+          },
+        ]
+        : []),
+    ].filter(Boolean),
   };
 
   // ==========================================================

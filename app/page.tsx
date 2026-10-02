@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 
 import Hero from "@/components/home/Hero";
 import LatestUpdate from "@/components/home/LatestUpdates";
@@ -11,11 +10,11 @@ import AIToolReviews from "@/components/home/AIToolReviews";
 import PopularResources from "@/components/home/PopularResources";
 import ToolSubmissionCTA from "@/components/home/ToolSubmissionCTA";
 import NewsletterSection from "@/components/home/NewsletterSection";
-import BackToTop from "@/components/BackToTop";
 import TestingPartnerPromo from "@/components/home/testing-cta";
 
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { createWebSiteSchema } from "@/lib/seo/schema";
+import { JsonLd } from "@/components/seo/JsonLd";
 
 export const metadata: Metadata = buildPageMetadata({
   title: "AI Tools Tested, Reviewed & Explained",
@@ -34,6 +33,12 @@ export const metadata: Metadata = buildPageMetadata({
   },
 });
 
+/**
+ * WebSite schema belongs ONLY on the homepage.
+ *
+ * Organization schema is rendered globally from app/layout.tsx.
+ * Do not add Organization here to avoid duplicate schema.
+ */
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@graph": [createWebSiteSchema()],
@@ -42,24 +47,28 @@ const websiteJsonLd = {
 export default function Home() {
   return (
     <>
-      <Script
-        id="home-website-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(websiteJsonLd),
-        }}
-      />
+      <JsonLd data={websiteJsonLd} />
 
       <Hero />
+
       <TestingPartnerPromo />
+
       <CategorySection />
+
       <AlloyPick />
+
       <LatestUpdate />
+
       <PopularResources />
+
       <LearnAboutAI />
+
       <RecentAINews />
+
       <AIToolReviews />
+
       <NewsletterSection />
+
       <ToolSubmissionCTA />
     </>
   );

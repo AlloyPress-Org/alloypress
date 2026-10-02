@@ -62,8 +62,8 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-    verification: {
-    google:"u-tEyx4uriJ97Uw5PGR_BZS1fghdWv8q28OLfQPpQpc",
+  verification: {
+    google: "u-tEyx4uriJ97Uw5PGR_BZS1fghdWv8q28OLfQPpQpc",
   },
 };
 
@@ -82,18 +82,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={inter.variable}>
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+      className={inter.variable}
+    >
       <head>
-  <link
-    rel="preconnect"
-    href="https://pub-c555bbd45f8b41b3bd6910202b4ee75d.r2.dev"
-  />
+        <link
+          rel="preconnect"
+          href="https://pub-c555bbd45f8b41b3bd6910202b4ee75d.r2.dev"
+        />
 
-  <Script
-    async
-    src="https://news.google.com/swg/js/v1/publisher.js"
-  />
-</head>
+        <Script
+          async
+          src="https://news.google.com/swg/js/v1/publisher.js"
+        />
+      </head>
       <body>
         <script
           type="application/ld+json"

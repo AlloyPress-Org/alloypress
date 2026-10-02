@@ -7,7 +7,6 @@ import { CATEGORY_PATHS, SITE_URL } from "@/lib/seo/constants";
 import {
   createBreadcrumbSchema,
   createCollectionPageSchema,
-  createOrganizationSchema,
 } from "@/lib/seo/schema";
 
 // NOTE: title is passed WITHOUT "| AlloyPress" — the root layout's
@@ -29,7 +28,6 @@ export default function AlternativesPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      createOrganizationSchema(),
 
       createCollectionPageSchema({
         url: pageUrl,
