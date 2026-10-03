@@ -28,6 +28,10 @@
 	"images": {
 		"binding": "IMAGES"
 	},
+	"vars": {
+		"NEXT_PUBLIC_PAYLOAD_URL": "https://api.alloypress.com/api",
+		"PAYLOAD_API_URL": "https://api.alloypress.com/api"
+	},
 	"kv_namespaces": [
 		{
 			"binding": "VINEXT_KV_CACHE",
