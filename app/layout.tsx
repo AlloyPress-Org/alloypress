@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Inter } from "next/font/google";
 
 import "./globals.css";
@@ -17,6 +16,7 @@ import "@/components/css-style/popular.css";
 import "@/components/css-style/news-letter.css";
 import "@/components/css-style/tool-submit.css";
 import "@/components/css-style/testing-partner.css";
+
 import EmailCtaModal from "@/components/ui/EmailCtaModal";
 import HtmlWidgetRuntime from "@/components/HtmlWidgetRuntime";
 
@@ -24,10 +24,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ThemeScript from "@/components/ThemeScript";
 import BackToTop from "@/components/BackToTop";
+import ScrollToTop from "@/components/ScrollToTop";
 
-// ------------------------------------------------------------
-// NEW: centralized SEO constants + site-wide JSON-LD builders
-// ------------------------------------------------------------
 import { SITE_URL } from "@/lib/seo/constants";
 import { createOrganizationSchema } from "@/lib/seo/schema";
 
@@ -35,6 +33,7 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
+  preload: false,
   weight: ["400", "500", "600", "700", "800"],
 });
 
@@ -55,15 +54,12 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+
   verification: {
     google: "u-tEyx4uriJ97Uw5PGR_BZS1fghdWv8q28OLfQPpQpc",
   },
 };
 
-// ------------------------------------------------------------
-// Site-wide JSON-LD: Organization only.
-// WebSite schema is intentionally rendered on the Home page only.
-// ------------------------------------------------------------
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@graph": [createOrganizationSchema()],
@@ -77,7 +73,6 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={inter.variable}
     >
@@ -86,12 +81,8 @@ export default function RootLayout({
           rel="preconnect"
           href="https://media.alloypress.com"
         />
-
-        <Script
-          src="https://news.google.com/swg/js/v1/publisher.js"
-          strategy="lazyOnload"
-        />
       </head>
+
       <body>
         <script
           type="application/ld+json"
@@ -103,10 +94,13 @@ export default function RootLayout({
 
         <ThemeScript />
 
+        <ScrollToTop />
+
         <Navbar />
         <HtmlWidgetRuntime />
 
         <main>{children}</main>
+
         <BackToTop />
 
         <Footer />
