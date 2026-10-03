@@ -34,6 +34,79 @@ type Props = {
   categoryLabel?: string;
 };
 
+import { useId } from "react"; // existing react import-la add pannu
+
+const INTERACTIVE_RE = /<script\b|\son[a-z]+\s*=/i;
+
+// Un existing 100+ widgets (site CSS + delegated listener use pannum) ippadiye work aagum
+const LEGACY_WIDGET_RE =
+  /apx-bike-widget|apx-prompt-challenge|apx-reference-gallery|class=["'][^"']*prompt-box/i;
+
+function isInteractiveHtml(code: string): boolean {
+  return INTERACTIVE_RE.test(code) && !LEGACY_WIDGET_RE.test(code);
+}
+
+function SandboxedHtml({ html, title }: { html: string; title: string }) {
+  const ref = useRef<HTMLIFrameElement>(null);
+  const id = useId();
+  const [height, setHeight] = useState(320);
+
+  const srcDoc = useMemo(
+    () => `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<base target="_blank" />
+<style>
+  html, body { margin: 0; padding: 0; font-family: system-ui, sans-serif; color: #111; background: transparent; }
+  *, *::before, *::after { box-sizing: border-box; }
+</style>
+</head>
+<body>
+${html}
+<script>
+(function () {
+  var id = ${JSON.stringify(id)};
+  function send() {
+    parent.postMessage({ type: "apx-height", id: id, height: document.documentElement.scrollHeight }, "*");
+  }
+  window.addEventListener("load", send);
+  if (window.ResizeObserver) new ResizeObserver(send).observe(document.body);
+})();
+</script>
+</body>
+</html>`,
+    [html, id]
+  );
+
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.source !== ref.current?.contentWindow) return;
+      if (e.data?.type === "apx-height" && e.data.id === id) {
+        setHeight(Math.max(120, Math.ceil(e.data.height)));
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [id]);
+
+  return (
+    <div className="post-live-code">
+      <iframe
+        ref={ref}
+        title={title}
+        srcDoc={srcDoc}
+        loading="lazy"
+        sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+        allow="clipboard-write"
+        className="post-live-code-frame"
+        style={{ width: "100%", height, border: 0 }}
+      />
+    </div>
+  );
+}
+
 /* next.config.ts remotePatterns la irukkura hostnames mattum */
 const OPTIMIZABLE_HOSTS = [
   "pub-c555bbd45f8b41b3bd6910202b4ee75d.r2.dev",
@@ -139,6 +212,107 @@ function mediaUrl(value: any): string | null {
     media.filename ||
     media.fields?.url ||
     null
+  );
+}
+function getYouTubeVideoId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+
+    const hostname = parsed.hostname.replace(/^www\./, "").toLowerCase();
+
+    if (hostname === "youtu.be") {
+      return parsed.pathname.slice(1).split("/")[0] || null;
+    }
+
+    if (
+      hostname === "youtube.com" ||
+      hostname === "m.youtube.com" ||
+      hostname === "youtube-nocookie.com"
+    ) {
+      const watchId = parsed.searchParams.get("v");
+
+      if (watchId) {
+        return watchId;
+      }
+
+      const pathMatch = parsed.pathname.match(
+        /^\/(?:embed|shorts|live)\/([^/?#]+)/
+      );
+
+      return pathMatch?.[1] || null;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function LiteYouTubeEmbed({
+  url,
+  title,
+}: {
+  url: string;
+  title: string;
+}) {
+  const [activated, setActivated] = useState(false);
+
+  const videoId = getYouTubeVideoId(url);
+
+  if (!videoId) {
+    return (
+      <iframe
+        src={url}
+        title={title}
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+      />
+    );
+  }
+
+  if (activated) {
+    return (
+      <iframe
+        src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(
+          videoId
+        )}?autoplay=1&rel=0`}
+        title={title}
+        loading="eager"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowFullScreen
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="lite-youtube"
+      onClick={() => setActivated(true)}
+      aria-label={`Play ${title}`}
+    >
+      <img
+        src={`https://i.ytimg.com/vi/${encodeURIComponent(
+          videoId
+        )}/hqdefault.jpg`}
+        alt=""
+        className="lite-youtube-thumbnail"
+        loading="lazy"
+        decoding="async"
+      />
+
+      <span
+        className="lite-youtube-play"
+        aria-hidden="true"
+      >
+        <span />
+      </span>
+
+      <span className="lite-youtube-label">
+        Play video
+      </span>
+    </button>
   );
 }
 const BLOCK_NODE_TYPES = new Set([
@@ -833,6 +1007,9 @@ function RenderNode({
                 ? "ts"
                 : language;
 
+    if (isInteractiveHtml(code)) {
+      return <SandboxedHtml html={code} title="Interactive widget" />;
+    }
     /*
      * Migrated article HTML must render as normal article content,
      * not inside an iframe/code-preview container.
@@ -1313,26 +1490,25 @@ body {
     }
 
     /* YouTube / video embed */
-    if (
-      blockType === "videoEmbed"
-    ) {
+    /* YouTube / video embed */
+    if (blockType === "videoEmbed") {
       const url =
-        fields.url || "";
+        typeof fields.url === "string"
+          ? fields.url.trim()
+          : "";
 
       if (!url) return null;
+
+      const title =
+        fields.caption ||
+        "AlloyPress article video";
 
       return (
         <figure className="post-video">
           <div className="post-video-frame">
-            <iframe
-              src={url}
-              title={
-                fields.caption ||
-                "AlloyPress article video"
-              }
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
+            <LiteYouTubeEmbed
+              url={url}
+              title={title}
             />
           </div>
 
@@ -1402,7 +1578,7 @@ body {
 
           <audio
             controls
-            preload="metadata"
+            preload="none"
             src={url}
           >
             Your browser does not support
@@ -1583,6 +1759,33 @@ function ArticleRenderer({
             ?.toLowerCase()
             .includes("refined");
 
+          const promptBox = target.closest<HTMLElement>(".prompt-box");
+
+          if (promptBox && root.contains(promptBox)) {
+            const toggleButton = target.closest<HTMLButtonElement>(".toggle-btn");
+
+            if (toggleButton && promptBox.contains(toggleButton)) {
+              const promptContent =
+                promptBox.querySelector<HTMLElement>(".prompt-content");
+
+              if (!promptContent) return;
+
+              const isOpen = !promptContent.hidden;
+
+              promptContent.hidden = isOpen;
+
+              promptBox.classList.toggle("is-open", !isOpen);
+              toggleButton.classList.toggle("active", !isOpen);
+
+              toggleButton.setAttribute(
+                "aria-expanded",
+                String(!isOpen)
+              );
+
+              return;
+            }
+          }
+
           const panelName = isBetter ? "better" : "first";
 
           promptChallenge
@@ -1691,7 +1894,47 @@ function ArticleRenderer({
           return;
         }
       }
+      const promptBox = target.closest<HTMLElement>(".prompt-box");
 
+      if (promptBox && root.contains(promptBox)) {
+        const toggleBtn = target.closest<HTMLButtonElement>(".toggle-btn");
+
+        if (toggleBtn && promptBox.contains(toggleBtn)) {
+          const isOpen = promptBox.classList.toggle("open");
+
+          toggleBtn.setAttribute(
+            "aria-expanded",
+            String(isOpen)
+          );
+
+          return;
+        }
+
+        const copyBtn = target.closest<HTMLButtonElement>(".copy-btn");
+
+        if (copyBtn && promptBox.contains(copyBtn)) {
+          const promptContent =
+            promptBox.querySelector<HTMLElement>(".prompt-content");
+
+          const text = promptContent?.textContent?.trim() || "";
+
+          if (!text) return;
+
+          const copied = await copyText(text);
+
+          if (copied) {
+            const originalText = copyBtn.textContent || "Copy";
+
+            copyBtn.textContent = "Copied!";
+
+            window.setTimeout(() => {
+              copyBtn.textContent = originalText;
+            }, 1500);
+          }
+
+          return;
+        }
+      }
       /*
        * ============================================================
        * 2. Existing reference gallery functionality
