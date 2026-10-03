@@ -54,7 +54,11 @@ export default function NotFound() {
           <div className="alloy-404__orbit alloy-404__orbit--inner" />
 
           <div className="alloy-404__core">
-            <span className="alloy-404__core-mark">A</span>
+            <img
+              src="/ap-icon.png"
+              alt="AlloyPress"
+              className="alloy-404__core-mark"
+            />
           </div>
 
           <span className="alloy-404__floating alloy-404__floating--one">
