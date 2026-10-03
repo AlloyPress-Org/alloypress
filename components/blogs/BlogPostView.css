@@ -6271,3 +6271,8 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
     padding: 13px;
   }
 }
+
+.article-cta:hover {
+  background: var(--cta-hover-bg, #15803d) !important;
+  color: var(--cta-hover-color, #fff) !important;
+}

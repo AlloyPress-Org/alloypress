@@ -20,14 +20,16 @@ const strip = (s: string) =>
 export function extractFaqs(html: string): FaqItem[] {
   const out: FaqItem[] = [];
 
+  // Question: button | summary | div | h2-h6 | p | span with class ai-faq-question
+  // Answer:   div | p | section with class ai-faq-answer
   const re =
-    /<button[^>]*class="[^"]*ai-faq-question[^"]*"[^>]*>([\s\S]*?)<\/button>\s*<div[^>]*class="[^"]*ai-faq-answer[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
+    /<(button|summary|div|h[2-6]|p|span)\b[^>]*class=["'][^"']*ai-faq-question[^"']*["'][^>]*>([\s\S]*?)<\/\1>\s*<(div|p|section)\b[^>]*class=["'][^"']*ai-faq-answer[^"']*["'][^>]*>([\s\S]*?)<\/\3>/gi;
 
   let match: RegExpExecArray | null;
 
   while ((match = re.exec(html))) {
-    const q = strip(match[1]).replace(/^\d+\.\s*/, "");
-    const a = strip(match[2]);
+    const q = strip(match[2]).replace(/^\d+\.\s*/, "");
+    const a = strip(match[4]);
 
     if (q && a) {
       out.push({ q, a });

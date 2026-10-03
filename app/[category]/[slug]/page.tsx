@@ -19,8 +19,11 @@ import { buildArticleMetadata } from "@/lib/seo/metadata";
 import {
   createArticleSchema,
   createBreadcrumbSchema,
+  createFAQSchema,
+  createWebPageSchema,
 } from "@/lib/seo/schema";
 import { CATEGORY_PATHS } from "@/lib/seo/constants";
+import { collectFaqs } from "@/lib/faq-from-content";
 
 // ============================================================
 // SITE
@@ -1109,35 +1112,49 @@ export default async function CategoryPostPage({
   const reviewedSoftwareName =
   getReviewedSoftwareName(post.slug || slug);
 
-  const articleUrl =
-    `${SITE_URL}/${category}/${post.slug}`;
+  const articleUrl = `${SITE_URL}/${category}/${post.slug}`;
 
-  const categoryPath =
-    CATEGORY_PATHS[category as keyof typeof CATEGORY_PATHS] ||
-    `/${category}`;
+const categoryPath =
+  CATEGORY_PATHS[category as keyof typeof CATEGORY_PATHS] ||
+  `/${category}`;
 
-  const articleSchema = createArticleSchema({
-  url: articleUrl,
-  title: post.title || "",
-  description: post.meta?.description || post.excerpt,
-  image: articleImage,
-  publishedAt: post.publishedAt,
-  modifiedAt: post.updatedAt || post.publishedAt,
-  category: categoryLabel,
-  authorName: post.author?.name,
-});
+const faqs = collectFaqs(post.content);
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      articleSchema,
-      createBreadcrumbSchema([
-        { name: "Home", url: SITE_URL },
-        { name: categoryLabel, url: `${SITE_URL}${categoryPath}` },
-        { name: post.title || "", url: articleUrl },
-      ]),
-    ],
-  };
+const breadcrumb = createBreadcrumbSchema(
+  [
+    { name: "Home", url: SITE_URL },
+    { name: categoryLabel, url: `${SITE_URL}${categoryPath}` },
+    { name: post.title || "", url: articleUrl },
+  ],
+  articleUrl,
+);
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    createWebPageSchema({
+      url: articleUrl,
+      name: post.title || "",
+      description: post.meta?.description || post.excerpt,
+      image: articleImage,
+      publishedAt: post.publishedAt,
+      modifiedAt: post.updatedAt || post.publishedAt,
+      hasBreadcrumb: Boolean(breadcrumb),
+    }),
+    createArticleSchema({
+      url: articleUrl,
+      title: post.title || "",
+      description: post.meta?.description || post.excerpt,
+      image: articleImage,
+      publishedAt: post.publishedAt,
+      modifiedAt: post.updatedAt || post.publishedAt,
+      category: categoryLabel,
+      authorName: post.author?.name,
+    }),
+    breadcrumb,
+    faqs.length ? createFAQSchema(faqs, articleUrl) : null,
+  ].filter(Boolean),
+};
 
   // ==========================================================
   // RENDER

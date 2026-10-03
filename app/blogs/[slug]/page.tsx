@@ -14,10 +14,11 @@ import { buildArticleMetadata } from "@/lib/seo/metadata";
 import {
   createArticleSchema,
   createBreadcrumbSchema,
+  createFAQSchema,
+  createWebPageSchema,
 } from "@/lib/seo/schema";
 import { SITE_URL } from "@/lib/seo/constants";
-import FaqAccordion from "@/components/blogs/FaqAccordion";
-import { extractFaqs } from "@/lib/faq-from-html";
+import { collectFaqs } from "@/lib/faq-from-content";
 
 // ============================================================
 // BREADCRUMB CONSTANTS
@@ -606,10 +607,7 @@ export default async function BlogPostPage({
   const articleImage =
     imageUrl(post.featuredImage);
 
-  const faqs =
-  typeof post.content === "string"
-    ? extractFaqs(post.content)
-    : [];
+  const faqs = collectFaqs(post.content);
 
   // ==========================================================
   // JSON-LD
@@ -617,9 +615,27 @@ export default async function BlogPostPage({
 
   const articleUrl = `${SITE_URL}/blogs/${post.slug}`;
 
+  const breadcrumb = createBreadcrumbSchema(
+    [
+      { name: "Home", url: SITE_URL },
+      { name: categoryName, url: `${SITE_URL}/${categorySlugValue}` },
+      { name: post.title || "", url: articleUrl },
+    ],
+    articleUrl,
+  );
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
+      createWebPageSchema({
+        url: articleUrl,
+        name: post.title || "",
+        description: post.meta?.description || post.excerpt,
+        image: articleImage,
+        publishedAt: post.publishedAt,
+        modifiedAt: post.updatedAt || post.publishedAt,
+        hasBreadcrumb: Boolean(breadcrumb),
+      }),
       createArticleSchema({
         url: articleUrl,
         title: post.title || "",
@@ -630,35 +646,8 @@ export default async function BlogPostPage({
         category: categoryName,
         authorName: post.author?.name,
       }),
-
-      createBreadcrumbSchema([
-        { name: "Home", url: SITE_URL },
-        {
-          name: categoryName,
-          url: `${SITE_URL}/${categorySlugValue}`,
-        },
-        {
-          name: post.title || "",
-          url: articleUrl,
-        },
-      ]),
-
-      ...(faqs.length > 0
-        ? [
-          {
-            "@type": "FAQPage",
-            "@id": `${articleUrl}#faq`,
-            mainEntity: faqs.map((faq) => ({
-              "@type": "Question",
-              name: faq.q,
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: faq.a,
-              },
-            })),
-          },
-        ]
-        : []),
+      breadcrumb,
+      faqs.length ? createFAQSchema(faqs, articleUrl) : null,
     ].filter(Boolean),
   };
 

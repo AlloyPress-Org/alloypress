@@ -1,5 +1,10 @@
 const PAYLOAD_API_URL =
-  process.env.PAYLOAD_API_URL || "http://localhost:3001/api";
+  process.env.PAYLOAD_API_URL ||
+  (process.env.NODE_ENV === "production"
+    ? (() => {
+      throw new Error("PAYLOAD_API_URL is not set");
+    })()
+    : "http://localhost:3001/api");
 
 type NextOpts = { revalidate?: number | false; tags?: string[] };
 
@@ -30,7 +35,8 @@ export async function payloadFetch<T>(
   path: string,
   options: PayloadFetchOptions = {},
 ): Promise<T | null> {
-  const { next, cache, strict = false, ...requestOptions } = options;
+  // default-a strict = true
+  const { next, cache, strict = true, ...requestOptions } = options;
 
   const fetchOptions: RequestInit & { next?: NextOpts } = {
     ...requestOptions,

@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useId } from "react";
 import {
   Check,
   Copy,
@@ -34,15 +34,24 @@ type Props = {
   categoryLabel?: string;
 };
 
-import { useId } from "react"; // existing react import-la add pannu
+/* -------------------------------------------------------------------------- */
+/* Interactive HTML handling                                                  */
+/* -------------------------------------------------------------------------- */
 
 const INTERACTIVE_RE = /<script\b|\son[a-z]+\s*=/i;
 
-// Un existing 100+ widgets (site CSS + delegated listener use pannum) ippadiye work aagum
+// Existing widgets that are driven by the delegated listener in ArticleRenderer
 const LEGACY_WIDGET_RE =
   /apx-bike-widget|apx-prompt-challenge|apx-reference-gallery|class=["'][^"']*prompt-box/i;
 
+const FAQ_RE = /ai-faq-question|ai-faq-answer/i;
+
+function isLegacyWidget(code: string): boolean {
+  return LEGACY_WIDGET_RE.test(code);
+}
+
 function isInteractiveHtml(code: string): boolean {
+  if (FAQ_RE.test(code)) return false;
   return INTERACTIVE_RE.test(code) && !LEGACY_WIDGET_RE.test(code);
 }
 
@@ -358,10 +367,6 @@ function paragraphContainsBlockNode(children: any[]): boolean {
   return children.some((child) => isBlockNode(child));
 }
 
-/*
- * Returns true when the node contains no visible text and is therefore
- * probably an empty migration/editor artefact.
- */
 function buildHeadingIndex(
   nodes: any[] = []
 ): {
@@ -509,10 +514,6 @@ async function copyText(text: string): Promise<boolean> {
   const value = text.trim();
   if (!value) return false;
 
-  /*
-   * Primary path: Clipboard API.
-   * Works on HTTPS and localhost.
-   */
   if (navigator.clipboard && window.isSecureContext) {
     try {
       await navigator.clipboard.writeText(value);
@@ -522,11 +523,6 @@ async function copyText(text: string): Promise<boolean> {
     }
   }
 
-  /*
-   * Fallback: textarea + execCommand.
-   * Required for browsers/contexts where Clipboard API is unavailable
-   * or permission is denied.
-   */
   const ta = document.createElement("textarea");
   ta.value = value;
   ta.setAttribute("readonly", "");
@@ -643,11 +639,6 @@ function isArticleHtml(code: string): boolean {
 
   if (!html) return false;
 
-  /*
-   * HTML that represents actual article content.
-   * Tables are the strongest signal because migrated
-   * WordPress articles commonly store comparison tables as HTML.
-   */
   const articleTags = [
     /<table\b/i,
     /<h[1-6]\b/i,
@@ -678,6 +669,56 @@ function cleanArticleHtml(code: string): string {
     .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
     .replace(/javascript\s*:/gi, "")
     .replace(/<img\b(?![^>]*\sloading\s*=)/gi, '<img loading="lazy" decoding="async"');
+}
+
+/*
+ * Single decision point for ALL html coming from Payload
+ * (Lexical code node, Code block, htmlContent block).
+ */
+function HtmlBlock({
+  code,
+  title = "HTML preview",
+}: {
+  code: string;
+  title?: string;
+}) {
+  if (!code.trim()) return null;
+
+  // 1. Real FAQ markup -> native accordion
+  if (FAQ_RE.test(code)) {
+    const faqs = extractFaqs(code);
+    if (faqs.length > 0) {
+      return <FaqAccordion faqs={faqs} />;
+    }
+  }
+
+  // 2. Legacy widgets -> inline (site CSS + delegated listener handle them)
+  if (isLegacyWidget(code)) {
+    return (
+      <div
+        className="post-html-content"
+        dangerouslySetInnerHTML={{ __html: cleanArticleHtml(code) }}
+      />
+    );
+  }
+
+  // 3. Script / inline handlers -> isolated sandboxed iframe
+  if (isInteractiveHtml(code)) {
+    return <SandboxedHtml html={code} title="Interactive widget" />;
+  }
+
+  // 4. Normal article HTML (tables, paragraphs...) -> inline for SEO
+  if (isArticleHtml(code)) {
+    return (
+      <div
+        className="post-html-content"
+        dangerouslySetInnerHTML={{ __html: cleanArticleHtml(code) }}
+      />
+    );
+  }
+
+  // 5. Everything else (HTML demos) -> sandboxed iframe
+  return <SandboxedHtml html={code} title={title} />;
 }
 
 function isInlineArticleTocList(node: any): boolean {
@@ -736,9 +777,6 @@ function RenderNode({
 
     const text = textFromNodes(children).trim();
 
-    /*
-     * Empty paragraphs and migration artefacts.
-     */
     if (!text && !children.some(isBlockNode)) {
       return null;
     }
@@ -813,10 +851,6 @@ function RenderNode({
         ? node.tag
         : "h2";
 
-    /*
-     * The article title is already the page H1.
-     * Migrated content H1s become H2s.
-     */
     const Tag = tag === "h1" ? "h2" : tag;
 
     return (
@@ -1007,36 +1041,11 @@ function RenderNode({
                 ? "ts"
                 : language;
 
-    if (isInteractiveHtml(code)) {
-      return <SandboxedHtml html={code} title="Interactive widget" />;
-    }
-    /*
-     * Migrated article HTML must render as normal article content,
-     * not inside an iframe/code-preview container.
-     */
     if (normalizedLanguage === "html") {
-      if (/ai-faq-question|ai-faq-answer/i.test(code)) {
-        const faqs = extractFaqs(code);
-
-        if (faqs.length > 0) {
-          return <FaqAccordion faqs={faqs} />;
-        }
-      }
-
-      if (isArticleHtml(code)) {
-        return (
-          <div
-            className="post-html-content"
-            dangerouslySetInnerHTML={{
-              __html: cleanArticleHtml(code),
-            }}
-          />
-        );
-      }
+      return <HtmlBlock code={code} />;
     }
 
     const isExecutable =
-      normalizedLanguage === "html" ||
       normalizedLanguage === "css" ||
       normalizedLanguage === "js";
 
@@ -1051,10 +1060,6 @@ function RenderNode({
     }
 
     let srcDoc = "";
-
-    if (normalizedLanguage === "html") {
-      srcDoc = code;
-    }
 
     if (normalizedLanguage === "css") {
       srcDoc = `
@@ -1229,14 +1234,7 @@ html, body {
         return null;
       }
 
-      return (
-        <div
-          className="post-html-content"
-          dangerouslySetInnerHTML={{
-            __html: cleanArticleHtml(html),
-          }}
-        />
-      );
+      return <HtmlBlock code={html} title="HTML content" />;
     }
 
     /* Styled box */
@@ -1280,9 +1278,8 @@ html, body {
       return <FaqAccordion faqs={faqs} />;
     }
 
-    /* Raw code / HTML / CSS / JS block (FIXED: now a sibling check, not
-       nested and unreachable inside styledBox; Payload's built-in
-       CodeBlock saves blockType as "Code" with capital C) */
+    /* Raw code / HTML / CSS / JS block
+       (Payload's built-in CodeBlock saves blockType as "Code") */
     if (String(blockType).toLowerCase() === "code") {
       const code =
         typeof fields.code === "string"
@@ -1306,51 +1303,16 @@ html, body {
         return null;
       }
 
-      /*
-       * HTML
-       */
+      /* HTML */
       if (
         language === "html" ||
         language === "html5" ||
         language === "htmlmixed"
       ) {
-        if (/ai-faq-question|ai-faq-answer/i.test(code)) {
-          const faqs = extractFaqs(code);
-
-          if (faqs.length > 0) {
-            return <FaqAccordion faqs={faqs} />;
-          }
-        }
-
-        if (isArticleHtml(code)) {
-          return (
-            <div
-              className="post-html-content"
-              dangerouslySetInnerHTML={{
-                __html: cleanArticleHtml(code),
-              }}
-            />
-          );
-        }
-        /*
-         * Genuine HTML examples can still use the existing
-         * live-preview behaviour.
-         */
-        return (
-          <div className="post-live-code">
-            <iframe
-              title="HTML preview"
-              className="post-live-code-frame"
-              sandbox="allow-scripts"
-              srcDoc={code}
-            />
-          </div>
-        );
+        return <HtmlBlock code={code} />;
       }
 
-      /*
-       * CSS
-       */
+      /* CSS */
       if (language === "css") {
         return (
           <div className="post-live-code">
@@ -1380,9 +1342,7 @@ ${code}
         );
       }
 
-      /*
-       * JavaScript
-       */
+      /* JavaScript */
       if (
         language === "js" ||
         language === "javascript" ||
@@ -1435,9 +1395,7 @@ body {
         );
       }
 
-      /*
-       * Other languages → normal code display
-       */
+      /* Other languages -> normal code display */
       return (
         <div className="post-code">
           <pre>
@@ -1472,16 +1430,26 @@ body {
           <a
             href={href}
             className="article-cta"
-            target={
-              external
-                ? "_blank"
-                : undefined
-            }
-            rel={
-              external
-                ? "noopener noreferrer"
-                : undefined
-            }
+            target={fields.openInNewTab || external ? "_blank" : undefined}
+            rel={fields.openInNewTab || external ? "noopener noreferrer" : undefined}
+            style={{
+              background: fields.backgroundColor,
+              color: fields.textColor,
+              borderColor: fields.borderColor,
+              borderWidth: fields.borderWidth,
+              borderStyle: fields.borderStyle,
+              borderRadius: fields.borderRadius,
+              fontSize: fields.fontSize,
+              fontWeight: fields.fontWeight,
+              fontStyle: fields.italic ? "italic" : undefined,
+              textDecoration: fields.underline ? "underline" : undefined,
+              textTransform: fields.textTransform,
+              letterSpacing: fields.letterSpacing,
+              padding: fields.padding,
+              minWidth: fields.minWidth,
+              ["--cta-hover-bg" as any]: fields.hoverBackgroundColor,
+              ["--cta-hover-color" as any]: fields.hoverTextColor,
+            }}
           >
             {fields.label || "Try this tool →"}
           </a>
@@ -1489,7 +1457,6 @@ body {
       );
     }
 
-    /* YouTube / video embed */
     /* YouTube / video embed */
     if (blockType === "videoEmbed") {
       const url =
@@ -1522,15 +1489,10 @@ body {
     }
 
     /* Uploaded video */
-    if (
-      blockType === "videoFile"
-    ) {
-      const media = getMedia(
-        fields.video
-      );
+    if (blockType === "videoFile") {
+      const media = getMedia(fields.video);
 
-      const url =
-        mediaUrl(media);
+      const url = mediaUrl(media);
 
       if (!url) return null;
 
@@ -1559,12 +1521,9 @@ body {
 
     /* Audio */
     if (blockType === "audio") {
-      const media = getMedia(
-        fields.audio
-      );
+      const media = getMedia(fields.audio);
 
-      const url =
-        mediaUrl(media);
+      const url = mediaUrl(media);
 
       if (!url) return null;
 
@@ -1743,8 +1702,8 @@ function ArticleRenderer({
       if (!target) return;
 
       /* ============================================================
- * Prompt Challenge widget
- * ============================================================ */
+       * Prompt Challenge widget
+       * ============================================================ */
       const promptChallenge = target.closest<HTMLElement>(
         ".apx-prompt-challenge"
       );
@@ -1811,17 +1770,8 @@ function ArticleRenderer({
       }
       /*
        * ============================================================
-       * 1. Generic HTML article widgets
+       * 1. Generic HTML article widgets (legacy, class-based)
        * ============================================================
-       *
-       * IMPORTANT:
-       * Article HTML is rendered with dangerouslySetInnerHTML. React does
-       * not execute the inline <script> or onclick handlers stored inside
-       * the migrated HTML. Those handlers are also deliberately removed by
-       * cleanArticleHtml() for security.
-       *
-       * Therefore the widget must be controlled from this single delegated
-       * listener. This keeps all 100+ existing HTML blocks unchanged.
        */
       const bikeWidget = target.closest<HTMLElement>(".apx-bike-widget");
 
@@ -2143,10 +2093,6 @@ export default function BlogPostView({
       const endTop =
         end.getBoundingClientRect().top;
 
-      /*
-       * Show only after hero has completely ended,
-       * and while article content is still active.
-       */
       const heroFinished = startTop <= 0;
       const articleFinished = endTop <= 0;
 
@@ -2889,32 +2835,6 @@ export default function BlogPostView({
         }
 
         {/* ---------------------------------------------------------------- */}
-        {/* Desktop AI launcher                                               */}
-        {/* ---------------------------------------------------------------- */}
-
-        {/* {isDesktop ? (
-          <button
-            type="button"
-            className="desktop-ai-fab"
-            aria-label={
-              aiOpen
-                ? "Close Alloy AI assistant"
-                : "Open Alloy AI assistant"
-            }
-            aria-haspopup="dialog"
-            aria-expanded={aiOpen}
-            aria-controls="alloy-ai-panel"
-            onClick={() => setAiOpen((open) => !open)}
-          >
-            <Sparkles aria-hidden="true" />
-            <span className="desktop-ai-fab-label">
-              Ask AI
-            </span>
-          </button> 
-        ) : null} 
-         */}
-
-        {/* ---------------------------------------------------------------- */}
         {/* Share dialog                                                     */}
         {/* ---------------------------------------------------------------- */}
 
@@ -2953,7 +2873,6 @@ export default function BlogPostView({
 
                 <div className="share-modal-options">
 
-                  {/* WhatsApp */}
                   <button
                     type="button"
                     className="share-option share-option-primary"
@@ -2963,7 +2882,6 @@ export default function BlogPostView({
                     <span>WhatsApp</span>
                   </button>
 
-                  {/* LinkedIn */}
                   <button
                     type="button"
                     className="share-option"
@@ -2973,7 +2891,6 @@ export default function BlogPostView({
                     <span>LinkedIn</span>
                   </button>
 
-                  {/* X */}
                   <button
                     type="button"
                     className="share-option"
@@ -2983,7 +2900,6 @@ export default function BlogPostView({
                     <span>Share on X</span>
                   </button>
 
-                  {/* Reddit */}
                   <button
                     type="button"
                     className="share-option"
@@ -2993,7 +2909,6 @@ export default function BlogPostView({
                     <span>Reddit</span>
                   </button>
 
-                  {/* Pinterest */}
                   <button
                     type="button"
                     className="share-option"
@@ -3003,7 +2918,6 @@ export default function BlogPostView({
                     <span>Pinterest</span>
                   </button>
 
-                  {/* Copy link */}
                   <button
                     type="button"
                     className="share-option"
@@ -3042,7 +2956,6 @@ export default function BlogPostView({
               aria-modal="false"
               aria-labelledby="alloy-ai-title"
             >
-              {/* Header */}
               <div className="ai-panel-header">
                 <div className="ai-panel-heading">
                   <div className="ai-panel-icon" aria-hidden="true">
@@ -3065,7 +2978,6 @@ export default function BlogPostView({
                 </button>
               </div>
 
-              {/* Intro */}
               <div className="ai-intro">
                 <p>
                   Ask questions about this article and get quick,
@@ -3073,7 +2985,6 @@ export default function BlogPostView({
                 </p>
               </div>
 
-              {/* Quick take */}
               <div className="ai-answer">
                 <div className="ai-answer-label">
                   <Sparkles aria-hidden="true" />
@@ -3083,7 +2994,6 @@ export default function BlogPostView({
                 <p>{summary}</p>
               </div>
 
-              {/* Suggested questions */}
               <div className="ai-suggestions">
                 <div className="ai-section-label">
                   Try asking
@@ -3106,7 +3016,6 @@ export default function BlogPostView({
                 </button>
               </div>
 
-              {/* Question input */}
               <div className="ai-input-wrap">
                 <input
                   type="text"
@@ -3126,7 +3035,6 @@ export default function BlogPostView({
                 </button>
               </div>
 
-              {/* Temporary status until API is connected */}
               <div className="ai-powered-note">
                 <span className="ai-status-dot" />
                 AI answers will be connected here.
