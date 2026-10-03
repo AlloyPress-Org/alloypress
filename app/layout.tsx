@@ -30,13 +30,6 @@ import BackToTop from "@/components/BackToTop";
 // ------------------------------------------------------------
 import { SITE_URL } from "@/lib/seo/constants";
 import { createOrganizationSchema } from "@/lib/seo/schema";
-import { Manrope } from "next/font/google";
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-manrope",
-  display: "swap",
-});
 
 const inter = Inter({
   variable: "--font-inter",
@@ -91,12 +84,12 @@ export default function RootLayout({
       <head>
         <link
           rel="preconnect"
-          href="https://pub-c555bbd45f8b41b3bd6910202b4ee75d.r2.dev"
+          href="https://media.alloypress.com"
         />
 
         <Script
-          async
           src="https://news.google.com/swg/js/v1/publisher.js"
+          strategy="lazyOnload"
         />
       </head>
       <body>

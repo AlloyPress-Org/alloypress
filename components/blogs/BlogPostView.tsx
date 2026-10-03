@@ -118,7 +118,7 @@ ${html}
 
 /* next.config.ts remotePatterns la irukkura hostnames mattum */
 const OPTIMIZABLE_HOSTS = [
-  "pub-c555bbd45f8b41b3bd6910202b4ee75d.r2.dev",
+  "media.alloypress.com",
   // production la R2 custom domain use pannina, adhaiyum inga add pannu
 ];
 
