@@ -1,17 +1,30 @@
-import type { CollectionConfig } from 'payload'
+import type { Access, CollectionConfig } from 'payload'
+
+const isAdmin: Access = ({ req }) => {
+  return req.user?.role === 'admin'
+}
+
+const isEditorOrAdmin: Access = ({ req }) => {
+  return req.user?.role === 'admin' || req.user?.role === 'editor'
+}
+
+const isAuthenticated: Access = ({ req }) => {
+  return Boolean(req.user)
+}
 
 export const Media: CollectionConfig = {
   slug: 'media',
 
   access: {
     read: () => true,
-    create: ({ req }) => !!req.user,
-    update: ({ req }) => !!req.user,
-    delete: ({ req }) => !!req.user,
+    create: isEditorOrAdmin,
+    update: isEditorOrAdmin,
+    delete: isAdmin,
   },
 
   admin: {
     useAsTitle: 'filename',
+
     defaultColumns: [
       'filename',
       'mimeType',
@@ -47,8 +60,7 @@ export const Media: CollectionConfig = {
       }
 
       const thumbnailFilename =
-        media.sizes?.thumbnail?.filename ||
-        media.filename
+        media.sizes?.thumbnail?.filename || media.filename
 
       if (!thumbnailFilename) {
         return ''
@@ -72,14 +84,11 @@ export const Media: CollectionConfig = {
   },
 
   fields: [
-    // ==========================================================
-    // WORDPRESS MIGRATION REFERENCE
-    // ==========================================================
-
     {
       name: 'wordpressId',
       type: 'number',
       unique: true,
+
       admin: {
         description:
           'Original WordPress media ID used for migration mapping.',
@@ -89,44 +98,35 @@ export const Media: CollectionConfig = {
     {
       name: 'originalUrl',
       type: 'text',
+
       admin: {
         description:
           'Original WordPress media URL used during migration.',
       },
     },
 
-    // ==========================================================
-    // ACCESSIBILITY
-    // ==========================================================
-
     {
       name: 'alt',
       type: 'text',
       required: true,
       label: 'Alt Text',
+
       admin: {
         description:
           'Alternative text for accessibility and image SEO. For audio files, use a short descriptive text.',
       },
     },
 
-    // ==========================================================
-    // MEDIA TITLE
-    // ==========================================================
-
     {
       name: 'title',
       type: 'text',
       label: 'Media Title',
+
       admin: {
         description:
           'Title used for identifying and managing the media.',
       },
     },
-
-    // ==========================================================
-    // CAPTION
-    // ==========================================================
 
     {
       name: 'caption',
@@ -136,6 +136,7 @@ export const Media: CollectionConfig = {
       admin: {
         description:
           'Optional caption displayed with the media. Supports bold, italic, underline, links, and left/center/right alignment.',
+
         components: {
           Field:
             '/components/admin/MediaCaptionField#MediaCaptionField',
@@ -143,14 +144,11 @@ export const Media: CollectionConfig = {
       },
     },
 
-    // ==========================================================
-    // DESCRIPTION
-    // ==========================================================
-
     {
       name: 'description',
       type: 'textarea',
       label: 'Description',
+
       admin: {
         description:
           'Optional description containing additional information about the media.',

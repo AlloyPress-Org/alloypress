@@ -74,6 +74,7 @@ export interface Config {
     posts: Post;
     pages: Page;
     'not-found-logs': NotFoundLog;
+    'homepage-settings': HomepageSetting;
     redirects: Redirect;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -90,6 +91,7 @@ export interface Config {
     posts: PostsSelect<false> | PostsSelect<true>;
     pages: PagesSelect<false> | PagesSelect<true>;
     'not-found-logs': NotFoundLogsSelect<false> | NotFoundLogsSelect<true>;
+    'homepage-settings': HomepageSettingsSelect<false> | HomepageSettingsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -326,6 +328,28 @@ export interface Tag {
  */
 export interface Post {
   id: number;
+  featuredImage?: (number | null) | Media;
+  imagePosition?: ('left' | 'right' | 'full') | null;
+  category: number | Category;
+  tags?: (number | Tag)[] | null;
+  author: number | User;
+  publishedAt?: string | null;
+  /**
+   * Editorial workflow: Draft → Review → Published.
+   */
+  workflowStatus?: ('draft' | 'review' | 'published') | null;
+  /**
+   * Marks this article as important pillar content for internal linking priority.
+   */
+  cornerstone?: boolean | null;
+  /**
+   * Controls whether this published post should appear in the sitemap.
+   */
+  includeInSitemap?: boolean | null;
+  /**
+   * Optional previous URL/slug that should redirect to this post after a URL change.
+   */
+  redirectFrom?: string | null;
   /**
    * The main title of the blog post.
    */
@@ -356,38 +380,6 @@ export interface Post {
    * Short summary used in blog listings and RSS-style outputs.
    */
   excerpt?: string | null;
-  featuredImage?: (number | null) | Media;
-  imagePosition?: ('left' | 'right' | 'full') | null;
-  category: number | Category;
-  tags?: (number | Tag)[] | null;
-  author: number | User;
-  publishedAt?: string | null;
-  /**
-   * Editorial workflow: Draft → Review → Published.
-   */
-  workflowStatus?: ('draft' | 'review' | 'published') | null;
-  /**
-   * Marks this article as important pillar content for internal linking priority.
-   */
-  cornerstone?: boolean | null;
-  /**
-   * Controls whether this published post should appear in the sitemap.
-   */
-  includeInSitemap?: boolean | null;
-  /**
-   * Optional previous URL/slug that should redirect to this post after a URL change.
-   */
-  redirectFrom?: string | null;
-  /**
-   * Original WordPress information used only during migration.
-   */
-  legacy?: {
-    wordpressId?: number | null;
-    /**
-     * Historical WordPress "modified" date, preserved from migration. Empty for posts created directly in Payload.
-     */
-    wordpressModifiedAt?: string | null;
-  };
   meta: {
     title?: string | null;
     description: string;
@@ -423,6 +415,13 @@ export interface Post {
       description?: string | null;
       image?: (number | null) | Media;
     };
+  };
+  legacy?: {
+    wordpressId?: number | null;
+    /**
+     * Historical WordPress "modified" date, preserved from migration. Empty for posts created directly in Payload.
+     */
+    wordpressModifiedAt?: string | null;
   };
   updatedAt: string;
   createdAt: string;
@@ -497,6 +496,20 @@ export interface NotFoundLog {
   ip?: string | null;
   count?: number | null;
   lastSeenAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage-settings".
+ */
+export interface HomepageSetting {
+  id: number;
+  title: string;
+  /**
+   * Select exactly 3 posts to display in the Featured section. Order determines the display order.
+   */
+  featuredPosts: (number | Post)[];
   updatedAt: string;
   createdAt: string;
 }
@@ -669,6 +682,10 @@ export interface PayloadLockedDocument {
         value: number | NotFoundLog;
       } | null)
     | ({
+        relationTo: 'homepage-settings';
+        value: number | HomepageSetting;
+      } | null)
+    | ({
         relationTo: 'redirects';
         value: number | Redirect;
       } | null);
@@ -826,10 +843,6 @@ export interface TagsSelect<T extends boolean = true> {
  * via the `definition` "posts_select".
  */
 export interface PostsSelect<T extends boolean = true> {
-  title?: T;
-  slug?: T;
-  content?: T;
-  excerpt?: T;
   featuredImage?: T;
   imagePosition?: T;
   category?: T;
@@ -840,12 +853,10 @@ export interface PostsSelect<T extends boolean = true> {
   cornerstone?: T;
   includeInSitemap?: T;
   redirectFrom?: T;
-  legacy?:
-    | T
-    | {
-        wordpressId?: T;
-        wordpressModifiedAt?: T;
-      };
+  title?: T;
+  slug?: T;
+  content?: T;
+  excerpt?: T;
   meta?:
     | T
     | {
@@ -885,6 +896,12 @@ export interface PostsSelect<T extends boolean = true> {
               description?: T;
               image?: T;
             };
+      };
+  legacy?:
+    | T
+    | {
+        wordpressId?: T;
+        wordpressModifiedAt?: T;
       };
   updatedAt?: T;
   createdAt?: T;
@@ -930,6 +947,16 @@ export interface NotFoundLogsSelect<T extends boolean = true> {
   ip?: T;
   count?: T;
   lastSeenAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage-settings_select".
+ */
+export interface HomepageSettingsSelect<T extends boolean = true> {
+  title?: T;
+  featuredPosts?: T;
   updatedAt?: T;
   createdAt?: T;
 }

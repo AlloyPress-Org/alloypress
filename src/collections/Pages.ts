@@ -8,8 +8,17 @@ const isAdmin: Access = ({ req }) => {
   return req.user?.role === 'admin'
 }
 
+const isEditorOrAdmin: Access = ({ req }) => {
+  return (
+    req.user?.role === 'admin' ||
+    req.user?.role === 'editor'
+  )
+}
+
 const canRead: Access = ({ req }) => {
   const role = req.user?.role
+
+
 
   // Logged-in admin/editor/viewer users can see everything,
   // including drafts (e.g. for the admin UI / live preview).
@@ -41,18 +50,11 @@ export const Pages: CollectionConfig = {
   },
 
   access: {
-    // Admin + Editor + Viewer can view pages
-    read: canRead,
-
-    // Only Admin can create pages
-    create: isAdmin,
-
-    // Only Admin can edit pages
-    update: isAdmin,
-
-    // Only Admin can delete pages
-    delete: isAdmin,
-  },
+  read: canRead,
+  create: isEditorOrAdmin,
+  update: isEditorOrAdmin,
+  delete: isAdmin,
+},
 
   fields: [
     // ========================================================

@@ -46,7 +46,7 @@ export const CTAColorField: React.FC<Props> = ({
     : "#16a34a";
 
   return (
-    <div style={{ marginBottom: 18 }}>
+    <div style={{ marginBottom: 18, flex: 1, minWidth: 0 }}>
       <label
         style={{
           display: "block",

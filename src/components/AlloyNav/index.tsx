@@ -67,6 +67,11 @@ const contentItems: NavItem[] = [
 
 const advancedItems: NavItem[] = [
   {
+    label: 'Homepage Settings',
+    href: '/admin/collections/homepage-settings',
+    icon: Settings,
+  },
+  {
     label: 'Users',
     href: '/admin/collections/users',
     icon: Users,

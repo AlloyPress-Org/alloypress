@@ -1,4 +1,8 @@
-import type { CollectionConfig } from 'payload'
+import type { Access, CollectionConfig } from 'payload'
+
+const isAdmin: Access = ({ req }) => {
+  return req.user?.role === 'admin'
+}
 
 export const NotFoundLogs: CollectionConfig = {
   slug: 'not-found-logs',
@@ -11,6 +15,13 @@ export const NotFoundLogs: CollectionConfig = {
       'referrer',
       'createdAt',
     ],
+  },
+
+  access: {
+    read: isAdmin,
+    create: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
   },
 
   fields: [
@@ -38,6 +49,7 @@ export const NotFoundLogs: CollectionConfig = {
       name: 'ip',
       type: 'text',
       label: 'IP Address',
+
       admin: {
         description:
           'Optional. Only store this if required by the project privacy policy.',

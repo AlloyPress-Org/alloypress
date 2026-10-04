@@ -5,6 +5,7 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 
 import { buildConfig } from 'payload'
+import type { Field, Plugin } from 'payload'
 
 import { fileURLToPath } from 'url'
 
@@ -30,9 +31,68 @@ import { NotFoundLogs } from './collections/NotFoundLogs'
 
 import { Pages } from './collections/Pages'
 
+import { HomepageSettings } from './collections/HomepageSettings'
+
 const filename = fileURLToPath(import.meta.url)
 
 const dirname = path.dirname(filename)
+
+
+// =========================================================
+// Move the SEO group into a collapsed sidebar panel (WordPress-style).
+// Runs right after seoPlugin (tabbedUI: false -> plugin appends a `meta` group).
+// Sidebar order: Publishing -> SEO -> Migration / Internal.
+// The group keeps its name `meta`, so database columns stay the same.
+// =========================================================
+const moveSeoToSidebar: Plugin = (incomingConfig) => ({
+  ...incomingConfig,
+  collections: (incomingConfig.collections || []).map((collection) => {
+    if (collection.slug !== 'posts') {
+      return collection
+    }
+
+    const seoPanels: Field[] = []
+    const otherFields: Field[] = []
+
+    for (const field of collection.fields) {
+      if (field.type === 'group' && 'name' in field && field.name === 'meta') {
+        seoPanels.push({
+          type: 'collapsible',
+          label: 'SEO',
+          admin: {
+            position: 'sidebar',
+            initCollapsed: true,
+          },
+          fields: [{ ...field, label: false }],
+        })
+      } else {
+        otherFields.push(field)
+      }
+    }
+
+    if (seoPanels.length === 0) {
+      return collection
+    }
+
+    // insert the SEO panel just above the Migration / Internal panel
+    const migrationIndex = otherFields.findIndex(
+      (field) =>
+        field.type === 'collapsible' &&
+        typeof field.label === 'string' &&
+        field.label === 'Migration / Internal',
+    )
+    const insertAt = migrationIndex === -1 ? otherFields.length : migrationIndex
+
+    return {
+      ...collection,
+      fields: [
+        ...otherFields.slice(0, insertAt),
+        ...seoPanels,
+        ...otherFields.slice(insertAt),
+      ],
+    }
+  }),
+})
 
 export default buildConfig({
 
@@ -77,10 +137,11 @@ export default buildConfig({
   },
 
   cors: [
-  "https://web.sakthiparthibans.workers.dev",
-  "https://alloypress-web.vercel.app",
-  "http://localhost:3000",
-],
+    "https://web.sakthiparthibans.workers.dev",
+    "https://alloypress.abhub-net.workers.dev",
+    "https://alloypress-web.vercel.app",
+    "http://localhost:3000",
+  ],
 
 
   // =========================================================
@@ -113,6 +174,8 @@ export default buildConfig({
     Pages,
 
     NotFoundLogs,
+
+    HomepageSettings,
 
   ],
 
@@ -147,14 +210,17 @@ export default buildConfig({
   // =========================================================
 
   db: postgresAdapter({
-
     pool: {
-
       connectionString: process.env.DATABASE_URL || '',
-
+      max: 5,                       // serverless la connection explosion thavirkka
+      idleTimeoutMillis: 10_000,
+      connectionTimeoutMillis: 10_000,
     },
-
   }),
+
+  jobs: {
+    autoRun: [{ cron: '*/10 * * * *', limit: 10 }], // '* * * * *' = nodhikkum DB hit
+  },
 
 
   // =========================================================
@@ -162,27 +228,6 @@ export default buildConfig({
   // =========================================================
 
   sharp,
-
-
-  // =========================================================
-  // JOBS
-  // =========================================================
-
-  jobs: {
-
-    autoRun: [
-
-      {
-
-        cron: '* * * * *',
-
-        limit: 10,
-
-      },
-
-    ],
-
-  },
 
 
   // =========================================================
@@ -201,19 +246,19 @@ export default buildConfig({
 
       uploadsCollection: 'media',
 
-      tabbedUI: true,
+      tabbedUI: false, // SEO panel is placed in the sidebar by moveSeoToSidebar below
 
       fields: ({ defaultFields }) => [
-    ...defaultFields.map((field) => {
-      if ('name' in field && field.name === 'description') {
-        return {
-          ...field,
-          required: true,
-        }
-      }
+        ...defaultFields.map((field) => {
+          if ('name' in field && field.name === 'description') {
+            return {
+              ...field,
+              required: true,
+            }
+          }
 
-      return field
-    }),
+          return field
+        }),
 
 
         // ----------------------------------------------------
@@ -535,6 +580,8 @@ export default buildConfig({
 
     }),
 
+
+    moveSeoToSidebar,
 
     // =======================================================
     // 301 REDIRECTS

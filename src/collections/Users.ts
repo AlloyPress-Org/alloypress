@@ -1,55 +1,21 @@
 import type {
-  Access,
   CollectionConfig,
   FieldAccess,
+  PayloadRequest,
 } from 'payload'
 
-// ============================================================
-// ACCESS HELPERS
-// ============================================================
-
-// ------------------------------------------------------------
-// ADMIN ONLY
-// ------------------------------------------------------------
-
-const isAdmin: Access = ({ req }) => {
+const isAdmin = ({ req }: { req: PayloadRequest }): boolean => {
   return req.user?.role === 'admin'
 }
-
-// ------------------------------------------------------------
-// AUTHENTICATED USERS
-// Admin + Editor + Viewer
-// ------------------------------------------------------------
-
-const isAuthenticated = ({ req }: { req: any }) => {
-  return Boolean(req.user)
-}
-
-// ------------------------------------------------------------
-// ADMIN FIELD ACCESS
-// Used for fields that only Admin can change
-// ------------------------------------------------------------
 
 const isAdminField: FieldAccess = ({ req }) => {
   return req.user?.role === 'admin'
 }
 
-// ============================================================
-// USERS COLLECTION
-// ============================================================
-
 export const Users: CollectionConfig = {
   slug: 'users',
 
-  // ==========================================================
-  // AUTH
-  // ==========================================================
-
   auth: true,
-
-  // ==========================================================
-  // ADMIN UI
-  // ==========================================================
 
   admin: {
     useAsTitle: 'displayName',
@@ -66,57 +32,21 @@ export const Users: CollectionConfig = {
       'Manage AlloyPress users and access roles.',
   },
 
-  // ==========================================================
-  // COLLECTION ACCESS
-  // ==========================================================
-
   access: {
-    // --------------------------------------------------------
-    // ADMIN PANEL
-    // Admin + Editor + Viewer
-    // --------------------------------------------------------
+    admin: isAdmin,
 
-    admin: isAuthenticated,
-
-    // --------------------------------------------------------
-    // READ USERS
-    // Admin + Editor + Viewer
-    // --------------------------------------------------------
-
-    read: isAuthenticated,
-
-    // --------------------------------------------------------
-    // CREATE USER
-    // Admin only
-    // --------------------------------------------------------
+    read: isAdmin,
 
     create: isAdmin,
 
-    // --------------------------------------------------------
-    // UPDATE USER
-    // Admin only
-    // --------------------------------------------------------
-
     update: isAdmin,
 
-    // --------------------------------------------------------
-    // DELETE USER
-    // Admin only
-    // --------------------------------------------------------
-
     delete: isAdmin,
+
+    unlock: isAdmin,
   },
 
-  // ==========================================================
-  // FIELDS
-  // ==========================================================
-
   fields: [
-
-    // ========================================================
-    // DISPLAY NAME
-    // ========================================================
-
     {
       name: 'displayName',
       type: 'text',
@@ -127,10 +57,6 @@ export const Users: CollectionConfig = {
           'Display name shown across the AlloyPress system.',
       },
     },
-
-    // ========================================================
-    // USERNAME
-    // ========================================================
 
     {
       name: 'username',
@@ -145,10 +71,6 @@ export const Users: CollectionConfig = {
       },
     },
 
-    // ========================================================
-    // WEBSITE
-    // ========================================================
-
     {
       name: 'website',
       type: 'text',
@@ -160,10 +82,6 @@ export const Users: CollectionConfig = {
       },
     },
 
-    // ========================================================
-    // BIO
-    // ========================================================
-
     {
       name: 'bio',
       type: 'textarea',
@@ -174,10 +92,6 @@ export const Users: CollectionConfig = {
           'Short description or biography of the user.',
       },
     },
-
-    // ========================================================
-    // ROLE
-    // ========================================================
 
     {
       name: 'role',
@@ -201,11 +115,6 @@ export const Users: CollectionConfig = {
         },
       ],
 
-      // ------------------------------------------------------
-      // ROLE ACCESS
-      // Only Admin can create/change roles
-      // ------------------------------------------------------
-
       access: {
         create: isAdminField,
         update: isAdminField,
@@ -219,10 +128,6 @@ export const Users: CollectionConfig = {
       },
     },
 
-    // ========================================================
-    // MIGRATION / INTERNAL
-    // ========================================================
-
     {
       name: 'legacy',
       type: 'group',
@@ -235,11 +140,6 @@ export const Users: CollectionConfig = {
       },
 
       fields: [
-
-        // ----------------------------------------------------
-        // WORDPRESS USER ID
-        // ----------------------------------------------------
-
         {
           name: 'wordpressId',
           type: 'number',
@@ -248,19 +148,11 @@ export const Users: CollectionConfig = {
           label: 'WordPress User ID',
         },
 
-        // ----------------------------------------------------
-        // WORDPRESS USERNAME
-        // ----------------------------------------------------
-
         {
           name: 'wordpressUsername',
           type: 'text',
           label: 'WordPress Username',
         },
-
-        // ----------------------------------------------------
-        // WORDPRESS ROLE
-        // ----------------------------------------------------
 
         {
           name: 'wordpressRole',

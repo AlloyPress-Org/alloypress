@@ -5,7 +5,14 @@ const isAdmin: Access = ({ req }) => {
   return req.user?.role === 'admin'
 }
 
-const canRead: Access = () => true 
+const isEditorOrAdmin: Access = ({ req }) => {
+  return (
+    req.user?.role === 'admin' ||
+    req.user?.role === 'editor'
+  )
+}
+
+const canRead: Access = () => true
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
@@ -35,8 +42,8 @@ export const Categories: CollectionConfig = {
     read: canRead,
 
     // Only admins can manage categories
-    create: isAdmin,
-    update: isAdmin,
+    create: isEditorOrAdmin,
+    update: isEditorOrAdmin,
     delete: isAdmin,
   },
 

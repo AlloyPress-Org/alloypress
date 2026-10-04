@@ -1,5 +1,6 @@
 import dotenv from 'dotenv'
 import fs from 'fs'
+import path from 'path'
 import { getPayload } from 'payload'
 
 // ============================================================
@@ -24,40 +25,46 @@ const config = await configPromise
 // TYPES
 // ============================================================
 
+// Actual Rank Math 404 export format:
+//
+// {
+//   "url": "ingest",
+//   "hits": 1,
+//   "lastAccessed": "2026-09-25 20:21:12"
+// }
+
 type RankMath404Log = {
-  id: number
-  uri: string
-  accessed: string | null
-  times_accessed: number
-  referer: string
-  user_agent: string
+  url: string
+  hits: number
+  lastAccessed: string | null
 }
 
 // ============================================================
 // CONFIG
 // ============================================================
 
-const LOGS_FILE =
+const LOGS_FILE = path.resolve(
   process.env.NOT_FOUND_LOGS_FILE ||
-  './rankmath-404-logs.json'
+    './rankmath-404-logs.json',
+)
 
 // ============================================================
 // NORMALIZE PATH
 // ============================================================
 
 function normalizePath(value: string): string {
-  let path = value.trim()
+  let pathValue = value.trim()
 
-  if (!path) {
+  if (!pathValue) {
     return ''
   }
 
   // If Rank Math somehow contains a full URL,
   // keep only pathname + query string.
   try {
-    const url = new URL(path)
+    const url = new URL(pathValue)
 
-    path =
+    pathValue =
       url.pathname +
       url.search
   } catch {
@@ -65,11 +72,11 @@ function normalizePath(value: string): string {
   }
 
   // Rank Math stores paths without leading slash.
-  if (!path.startsWith('/')) {
-    path = `/${path}`
+  if (!pathValue.startsWith('/')) {
+    pathValue = `/${pathValue}`
   }
 
-  return path
+  return pathValue
 }
 
 // ============================================================
@@ -83,11 +90,10 @@ function loadLogs(): RankMath404Log[] {
     )
   }
 
-  const raw =
-    fs.readFileSync(
-      LOGS_FILE,
-      'utf8',
-    )
+  const raw = fs.readFileSync(
+    LOGS_FILE,
+    'utf8',
+  )
 
   let parsed: unknown
 
@@ -142,7 +148,7 @@ function loadLogs(): RankMath404Log[] {
 
 async function findExistingLog(
   payload: any,
-  path: string,
+  pathValue: string,
 ) {
   const result =
     await payload.find({
@@ -150,7 +156,7 @@ async function findExistingLog(
 
       where: {
         path: {
-          equals: path,
+          equals: pathValue,
         },
       },
 
@@ -182,13 +188,25 @@ async function migrate404Logs() {
 
   console.log('')
 
+  // ----------------------------------------------------------
+  // LOAD PAYLOAD
+  // ----------------------------------------------------------
+
   const payload =
     await getPayload({
       config,
     })
 
+  // ----------------------------------------------------------
+  // LOAD RANK MATH LOGS
+  // ----------------------------------------------------------
+
   const logs =
     loadLogs()
+
+  console.log(
+    `404 logs file: ${LOGS_FILE}`,
+  )
 
   console.log(
     `Found ${logs.length} Rank Math 404 logs`,
@@ -214,7 +232,7 @@ async function migrate404Logs() {
       logs[index]
 
     console.log(
-      `[${index + 1}/${logs.length}] WP 404 Log ID: ${log.id}`,
+      `[${index + 1}/${logs.length}] Rank Math URL: ${log.url}`,
     )
 
     try {
@@ -222,18 +240,9 @@ async function migrate404Logs() {
       // VALIDATION
       // ------------------------------------------------------
 
-      if (!log.id) {
+      if (!log.url) {
         console.warn(
-          '  ⚠ Missing Rank Math ID. Skipping.',
-        )
-
-        skipped++
-        continue
-      }
-
-      if (!log.uri) {
-        console.warn(
-          '  ⚠ Missing URI. Skipping.',
+          '  ⚠ Missing URL. Skipping.',
         )
 
         skipped++
@@ -244,12 +253,12 @@ async function migrate404Logs() {
       // NORMALIZE PATH
       // ------------------------------------------------------
 
-      const path =
+      const pathValue =
         normalizePath(
-          log.uri,
+          log.url,
         )
 
-      if (!path) {
+      if (!pathValue) {
         console.warn(
           '  ⚠ Empty path after normalization. Skipping.',
         )
@@ -264,13 +273,9 @@ async function migrate404Logs() {
 
       const count =
         Number.isFinite(
-          Number(
-            log.times_accessed,
-          ),
+          Number(log.hits),
         )
-          ? Number(
-              log.times_accessed,
-            )
+          ? Number(log.hits)
           : 1
 
       // ------------------------------------------------------
@@ -281,10 +286,10 @@ async function migrate404Logs() {
         | string
         | null = null
 
-      if (log.accessed) {
+      if (log.lastAccessed) {
         const date =
           new Date(
-            log.accessed.replace(
+            log.lastAccessed.replace(
               ' ',
               'T',
             ),
@@ -305,13 +310,13 @@ async function migrate404Logs() {
       // ------------------------------------------------------
 
       const data = {
-        path,
+        path: pathValue,
 
-        referrer:
-          log.referer || '',
+        // Rank Math export does not provide
+        // referrer/user-agent in the current format.
+        referrer: '',
 
-        userAgent:
-          log.user_agent || '',
+        userAgent: '',
 
         // Rank Math 404 table does not contain IP.
         ip: '',
@@ -322,7 +327,7 @@ async function migrate404Logs() {
       }
 
       console.log(
-        `  ↳ Path: ${path}`,
+        `  ↳ Path: ${pathValue}`,
       )
 
       console.log(
@@ -342,7 +347,7 @@ async function migrate404Logs() {
       const existing =
         await findExistingLog(
           payload,
-          path,
+          pathValue,
         )
 
       // ------------------------------------------------------
@@ -389,24 +394,25 @@ async function migrate404Logs() {
       }
 
       console.log('')
-
     } catch (error) {
       failed++
 
       console.error(
-        `  ✗ Failed WP 404 Log ID: ${log.id}`,
+        `  ✗ Failed URL: ${log.url}`,
       )
 
       if (
         error instanceof Error
       ) {
         console.error(
-          error.message,
+          `  ${error.message}`,
         )
 
-        console.error(
-          error.stack,
-        )
+        if (error.stack) {
+          console.error(
+            error.stack,
+          )
+        }
       } else {
         console.dir(
           error,
