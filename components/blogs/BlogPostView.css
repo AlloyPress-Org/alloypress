@@ -6317,3 +6317,14 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
 .single-post .post-table .post-p {
   margin: 0;
 }
+
+.single-post .post-table td:has(img),
+.single-post .post-table th:has(img) {
+  text-align: center;
+  padding: 4px 8px;
+}
+
+.single-post .post-table .post-figure {
+  display: flex;
+  justify-content: center;
+}
