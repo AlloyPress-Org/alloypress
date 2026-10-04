@@ -30,7 +30,8 @@
 	},
 	"vars": {
 		"NEXT_PUBLIC_PAYLOAD_URL": "https://api.alloypress.com/api",
-		"PAYLOAD_API_URL": "https://api.alloypress.com/api"
+		"PAYLOAD_API_URL": "https://api.alloypress.com/api",
+		"PREVIEW_SECRET": "alloy2026secret"
 	},
 	"kv_namespaces": [
 		{

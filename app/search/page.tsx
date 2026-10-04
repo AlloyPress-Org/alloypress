@@ -6,13 +6,15 @@ import "./search.css";
 // Search results are infinite ?q= variations of thin/duplicate
 // content — keep this out of Google's index, but still let it
 // be followed/linked so the crawler can reach real pages.
-export const metadata: Metadata = {
-  title: "Search | AlloyPress",
-  robots: {
-    index: false,
-    follow: true,
-  },
-};
+import { buildPageMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Search",
+  description:
+    "Search AlloyPress for AI tool reviews, comparisons, alternatives, news and guides.",
+  canonicalPath: "/search",
+  robots: { index: false, follow: true },
+});
 
 
 type SearchParams = Promise<{

@@ -2640,3 +2640,9 @@
 }
 
 
+/* Floating cards: desktop only */
+@media (max-width: 1023px) {
+  .hero-floating-card {
+    display: none !important;
+  }
+}
