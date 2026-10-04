@@ -6276,3 +6276,44 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
   background: var(--cta-hover-bg, #15803d) !important;
   color: var(--cta-hover-color, #fff) !important;
 }
+
+/* ==========================================================================
+   TABLE CELL — IMAGE SIZE + PADDING FIX
+   ========================================================================== */
+
+/* Cell padding kammi (image irukkura cell-ku mattum) */
+.single-post .post-table td:has(img),
+.single-post .post-table th:has(img) {
+  padding: 6px 8px;
+}
+
+/* Figure wrapper-oda extra margin remove */
+.single-post .post-table .post-figure {
+  width: auto;
+  margin: 0;
+}
+
+.single-post .post-table .post-image-frame {
+  display: inline-flex;
+  width: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Image size control */
+.single-post .post-table .post-figure img,
+.single-post .post-table td img,
+.single-post .post-table th img {
+  width: auto;
+  height: auto;
+  max-width: 48px;
+  max-height: 48px;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+/* Cell-kulla paragraph spacing */
+.single-post .post-table .post-p {
+  margin: 0;
+}
