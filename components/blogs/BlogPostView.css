@@ -6328,3 +6328,12 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
   display: flex;
   justify-content: center;
 }
+
+.single-post .post-table {
+  table-layout: fixed;
+}
+
+.single-post .post-table th:first-child,
+.single-post .post-table td:first-child {
+  width: 180px;
+}
