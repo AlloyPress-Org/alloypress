@@ -70,7 +70,7 @@ export default function ToolSubmissionCTA() {
             </p>
 
             <Link
-              href="/review-tool"
+              href="/get-reviewed"
               className="tool-cta-secondary"
             >
               See How Reviews Work

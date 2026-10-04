@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description:
     "Request an AlloyPress AI tool review. We test real workflows, verify claims, explain limitations, and publish practical, reader-first reviews.",
   alternates: {
-    canonical: "/review-tool",
+    canonical: "/get-reviewed",
   },
 };
 
@@ -22,7 +22,7 @@ const breadcrumbSchema = {
       },
       {
         name: "Review Tool",
-        url: "/review-tool",
+        url: "/get-reviewed",
       },
     ]),
   ],

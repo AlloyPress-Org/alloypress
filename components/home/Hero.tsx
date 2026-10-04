@@ -35,13 +35,9 @@ const getLatestPostByCategory = cache(
           String(categoryId)
         )}&sort=-publishedAt&limit=1&depth=0&select[id]=true&select[title]=true&select[slug]=true&select[publishedAt]=true`,
         {
-          cache: "force-cache",
           next: {
             revalidate: 300,
-            tags: [
-              `hero:category:${categoryId}`,
-              "posts",
-            ],
+            tags: [`hero:category:${categoryId}`, "posts"],
           },
         }
       );

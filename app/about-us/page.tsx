@@ -152,7 +152,7 @@ const workPaths = [
     label: "Dedicated review",
     title: "Get a full standalone review",
     text: "A full in-depth article covering every feature, real use cases, pricing, and our honest verdict. Ranks independently in search and gets cited in AI platforms like ChatGPT and Perplexity over time.",
-    href: "/review-tool",
+    href: "/get-reviewed",
     cta: "See how reviews work",
     primary: false,
   },

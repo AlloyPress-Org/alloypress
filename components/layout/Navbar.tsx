@@ -237,7 +237,7 @@ export default function Navbar() {
 
           {/* CTA */}
           <Link
-            href="/review-tool"
+            href="/get-reviewed"
             className="header-cta"
           >
             Get Reviewed
@@ -322,7 +322,7 @@ export default function Navbar() {
           <div className="mobile-nav-divider" />
 
           <Link
-            href="/review-tool"
+            href="/get-reviewed"
             className="mobile-nav-cta"
             onClick={closeMobileMenu}
           >

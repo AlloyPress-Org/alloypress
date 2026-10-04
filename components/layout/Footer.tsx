@@ -317,7 +317,7 @@ export default function Footer() {
                 companyLinks[2],
                 {
                   label: "Get Reviewed",
-                  href: "/review-tool",
+                  href: "/get-reviewed",
                 },
                 companyLinks[3],
               ]}
