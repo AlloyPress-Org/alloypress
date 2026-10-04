@@ -119,11 +119,14 @@ ${html}
 /* next.config.ts remotePatterns la irukkura hostnames mattum */
 const OPTIMIZABLE_HOSTS = [
   "media.alloypress.com",
-  // production la R2 custom domain use pannina, adhaiyum inga add pannu
+  "pub-c555bbd45f8b41b3bd6910202b4ee75d.r2.dev",
 ];
 
 function isOptimizable(url: string): boolean {
-  if (url.startsWith("/") && !url.startsWith("//")) return true;
+  if (url.startsWith("/") && !url.startsWith("//")) {
+    return true;
+  }
+
   try {
     return OPTIMIZABLE_HOSTS.includes(new URL(url).hostname);
   } catch {
@@ -141,7 +144,15 @@ type SmartImageProps = {
   preload?: boolean;
 };
 
-function SmartImage({ src, alt, width, height, sizes, className, preload }: SmartImageProps) {
+function SmartImage({
+  src,
+  alt,
+  width,
+  height,
+  sizes,
+  className,
+  preload = false,
+}: SmartImageProps) {
   if (isOptimizable(src)) {
     return (
       <Image
@@ -152,11 +163,13 @@ function SmartImage({ src, alt, width, height, sizes, className, preload }: Smar
         sizes={sizes}
         className={className}
         preload={preload}
+        fetchPriority={preload ? "high" : undefined}
       />
     );
   }
 
-  // allowed host illaadha images (old WP URLs) crash aagaama fallback
+  // Only use native img for genuinely unsupported legacy URLs.
+  // Do not use this path for the current R2 production images.
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img

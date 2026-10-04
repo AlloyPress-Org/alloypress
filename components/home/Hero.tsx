@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { cache } from "react";
+import { Suspense, cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
 
@@ -21,7 +21,7 @@ type HeroCard = {
 
 /* =========================================================
    PAYLOAD
-========================================================= */
+   ========================================================= */
 
 const getLatestPostByCategory = cache(
   async (
@@ -35,6 +35,7 @@ const getLatestPostByCategory = cache(
           String(categoryId)
         )}&sort=-publishedAt&limit=1&depth=0&select[id]=true&select[title]=true&select[slug]=true&select[publishedAt]=true`,
         {
+          cache: "force-cache",
           next: {
             revalidate: 300,
             tags: [
@@ -59,8 +60,7 @@ const getLatestPostByCategory = cache(
         id: post.id,
         title: post.title,
         slug: post.slug,
-        publishedAt:
-          post.publishedAt ?? null,
+        publishedAt: post.publishedAt ?? null,
       };
     } catch (error) {
       console.error(
@@ -73,10 +73,9 @@ const getLatestPostByCategory = cache(
   }
 );
 
-
 /* =========================================================
    HERO DATA
-========================================================= */
+   ========================================================= */
 
 const getHeroCards = cache(
   async (): Promise<HeroCard[]> => {
@@ -116,32 +115,77 @@ const getHeroCards = cache(
         post: comparisonPost,
       },
     ];
-  },
+  }
 );
 
+/* =========================================================
+   DYNAMIC HERO CARDS
+   ========================================================= */
+
+async function HeroDynamicCards() {
+  const heroCards = await getHeroCards();
+
+  return (
+    <>
+      {heroCards.map(
+        (card) =>
+          card.post && (
+            <Link
+              key={card.post.id}
+              href={`/${card.categorySlug}/${card.post.slug}`}
+              className={`hero-floating-card ${card.className}`}
+              aria-label={`Read ${card.label.toLowerCase()}: ${card.post.title}`}
+            >
+              <div
+                className="hero-floating-icon"
+                aria-hidden="true"
+              >
+                {card.icon}
+              </div>
+
+              <div className="hero-floating-content">
+                <span className="hero-floating-label">
+                  {card.label}
+                </span>
+
+                <h2>{card.post.title}</h2>
+
+                <span className="hero-floating-meta">
+                  {card.meta}
+                </span>
+              </div>
+
+              <span
+                className="hero-floating-arrow"
+                aria-hidden="true"
+              >
+                ↗
+              </span>
+            </Link>
+          )
+      )}
+    </>
+  );
+}
 
 /* =========================================================
    HERO
-========================================================= */
+   ========================================================= */
 
-export default async function Hero() {
-  const heroCards = await getHeroCards();
-
+export default function Hero() {
   return (
     <section
       className="home-hero"
       aria-labelledby="hero-title"
     >
       <div className="container">
-
         <div className="hero-grid">
 
-          {/* =====================================================
+          {/* =================================================
               LEFT CONTENT
-          ===================================================== */}
+          ================================================= */}
 
           <div className="hero-content">
-
             <div className="hero-eyebrow">
               <span
                 className="hero-eyebrow-dot"
@@ -151,13 +195,16 @@ export default async function Hero() {
               <span>Independent AI Editorial</span>
             </div>
 
-
-            <h1 id="hero-title" className="hero-title">
+            <h1
+              id="hero-title"
+              className="hero-title"
+            >
               Every AI tool{" "}
-              <span className="hero-highlight">tested,</span>{" "}
+              <span className="hero-highlight">
+                tested,
+              </span>{" "}
               before we write about it.
             </h1>
-
 
             <p className="hero-description">
               Honest AI tool reviews, real comparisons,
@@ -165,9 +212,7 @@ export default async function Hero() {
               based on hands-on testing.
             </p>
 
-
             <div className="hero-actions">
-
               <Link
                 href="/blogs"
                 className="hero-primary-button"
@@ -179,7 +224,6 @@ export default async function Hero() {
                 </span>
               </Link>
 
-
               <Link
                 href="/reviews"
                 className="hero-secondary-button"
@@ -190,63 +234,39 @@ export default async function Hero() {
                   ↗
                 </span>
               </Link>
-
             </div>
-
           </div>
 
-
-          {/* =====================================================
-              RIGHT — DYNAMIC AI ORBIT
-          ===================================================== */}
+          {/* =================================================
+              RIGHT — AI ORBIT
+          ================================================= */}
 
           <div className="hero-visual">
-
-            {/* Background grid */}
 
             <div
               className="hero-visual-grid"
               aria-hidden="true"
             />
 
-
-            {/* Ambient glow */}
-
             <div
               className="hero-visual-glow"
               aria-hidden="true"
             />
 
-
-            {/* =================================================
-                ORBIT STAGE
-            ================================================= */}
-
             <div
               className="hero-orbit-stage"
               aria-hidden="true"
             >
-
-              {/* Large soft glow */}
-
               <div className="orbit-ambient-glow" />
-
-
-              {/* =================================================
-                  SVG ORBIT SYSTEM
-              ================================================= */}
 
               <svg
                 className="hero-orbit-svg"
                 viewBox="0 0 760 760"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
               >
-
                 <defs>
-
-                  {/* Core glow */}
-
                   <radialGradient
                     id="heroCoreGlow"
                     cx="0"
@@ -260,22 +280,17 @@ export default async function Hero() {
                       stopColor="#18d978"
                       stopOpacity=".42"
                     />
-
                     <stop
                       offset=".35"
                       stopColor="#18d978"
                       stopOpacity=".18"
                     />
-
                     <stop
                       offset="1"
                       stopColor="#18d978"
                       stopOpacity="0"
                     />
                   </radialGradient>
-
-
-                  {/* Core */}
 
                   <radialGradient
                     id="heroCore"
@@ -289,32 +304,25 @@ export default async function Hero() {
                       offset="0"
                       stopColor="#ffffff"
                     />
-
                     <stop
                       offset=".15"
                       stopColor="#e7fff3"
                     />
-
                     <stop
                       offset=".35"
                       stopColor="#2be483"
                     />
-
                     <stop
                       offset=".7"
                       stopColor="#12c76d"
                       stopOpacity=".8"
                     />
-
                     <stop
                       offset="1"
                       stopColor="#12c76d"
                       stopOpacity="0"
                     />
                   </radialGradient>
-
-
-                  {/* Orbit line */}
 
                   <linearGradient
                     id="orbitLine"
@@ -328,34 +336,27 @@ export default async function Hero() {
                       stopColor="#18c974"
                       stopOpacity=".03"
                     />
-
                     <stop
                       offset=".3"
                       stopColor="#18c974"
                       stopOpacity=".35"
                     />
-
                     <stop
                       offset=".5"
                       stopColor="#18e984"
                       stopOpacity=".9"
                     />
-
                     <stop
                       offset=".7"
                       stopColor="#18c974"
                       stopOpacity=".35"
                     />
-
                     <stop
                       offset="1"
                       stopColor="#18c974"
                       stopOpacity=".03"
                     />
                   </linearGradient>
-
-
-                  {/* Blur */}
 
                   <filter
                     id="orbitBlur"
@@ -364,13 +365,8 @@ export default async function Hero() {
                     width="400%"
                     height="400%"
                   >
-                    <feGaussianBlur
-                      stdDeviation="8"
-                    />
+                    <feGaussianBlur stdDeviation="8" />
                   </filter>
-
-
-                  {/* Node glow */}
 
                   <filter
                     id="nodeGlow"
@@ -388,15 +384,8 @@ export default async function Hero() {
                       <feMergeNode in="blur" />
                       <feMergeNode in="SourceGraphic" />
                     </feMerge>
-
                   </filter>
-
                 </defs>
-
-
-                {/* =================================================
-                    CENTRAL AMBIENT GLOW
-                ================================================= */}
 
                 <circle
                   cx="380"
@@ -404,11 +393,6 @@ export default async function Hero() {
                   r="210"
                   fill="url(#heroCoreGlow)"
                 />
-
-
-                {/* =================================================
-                    CIRCULAR ORBITS
-                ================================================= */}
 
                 <circle
                   cx="380"
@@ -421,7 +405,6 @@ export default async function Hero() {
                   className="orbit-spin-slow"
                 />
 
-
                 <circle
                   cx="380"
                   cy="380"
@@ -433,7 +416,6 @@ export default async function Hero() {
                   className="orbit-spin-reverse"
                 />
 
-
                 <circle
                   cx="380"
                   cy="380"
@@ -442,7 +424,6 @@ export default async function Hero() {
                   strokeWidth="1"
                   opacity=".16"
                 />
-
 
                 <circle
                   cx="380"
@@ -453,7 +434,6 @@ export default async function Hero() {
                   opacity=".22"
                 />
 
-
                 <circle
                   cx="380"
                   cy="380"
@@ -462,7 +442,6 @@ export default async function Hero() {
                   strokeWidth="1"
                   opacity=".20"
                 />
-
 
                 <circle
                   cx="380"
@@ -473,13 +452,7 @@ export default async function Hero() {
                   opacity=".18"
                 />
 
-
-                {/* =================================================
-                    ELLIPTICAL ORBITS
-                ================================================= */}
-
                 <g className="orbit-ellipse orbit-ellipse-one">
-
                   <ellipse
                     cx="380"
                     cy="380"
@@ -489,12 +462,9 @@ export default async function Hero() {
                     strokeWidth="1.2"
                     opacity=".55"
                   />
-
                 </g>
 
-
                 <g className="orbit-ellipse orbit-ellipse-two">
-
                   <ellipse
                     cx="380"
                     cy="380"
@@ -504,12 +474,9 @@ export default async function Hero() {
                     strokeWidth="1"
                     opacity=".32"
                   />
-
                 </g>
 
-
                 <g className="orbit-ellipse orbit-ellipse-three">
-
                   <ellipse
                     cx="380"
                     cy="380"
@@ -519,12 +486,9 @@ export default async function Hero() {
                     strokeWidth="1"
                     opacity=".36"
                   />
-
                 </g>
 
-
                 <g className="orbit-ellipse orbit-ellipse-four">
-
                   <ellipse
                     cx="380"
                     cy="380"
@@ -534,13 +498,7 @@ export default async function Hero() {
                     strokeWidth="1"
                     opacity=".26"
                   />
-
                 </g>
-
-
-                {/* =================================================
-                    TECH LINES
-                ================================================= */}
 
                 <line
                   x1="380"
@@ -582,13 +540,7 @@ export default async function Hero() {
                   opacity=".08"
                 />
 
-
-                {/* =================================================
-                    MOVING ORBIT NODES
-                ================================================= */}
-
                 <g className="orbit-moving-node orbit-node-a">
-
                   <circle
                     cx="380"
                     cy="68"
@@ -596,12 +548,9 @@ export default async function Hero() {
                     fill="#19d978"
                     filter="url(#nodeGlow)"
                   />
-
                 </g>
 
-
                 <g className="orbit-moving-node orbit-node-b">
-
                   <circle
                     cx="684"
                     cy="380"
@@ -609,12 +558,9 @@ export default async function Hero() {
                     fill="#19e984"
                     filter="url(#nodeGlow)"
                   />
-
                 </g>
 
-
                 <g className="orbit-moving-node orbit-node-c">
-
                   <circle
                     cx="380"
                     cy="692"
@@ -622,12 +568,9 @@ export default async function Hero() {
                     fill="#19d978"
                     filter="url(#nodeGlow)"
                   />
-
                 </g>
 
-
                 <g className="orbit-moving-node orbit-node-d">
-
                   <circle
                     cx="76"
                     cy="380"
@@ -635,13 +578,7 @@ export default async function Hero() {
                     fill="#19d978"
                     filter="url(#nodeGlow)"
                   />
-
                 </g>
-
-
-                {/* =================================================
-                    FIXED NODES
-                ================================================= */}
 
                 <circle
                   cx="165"
@@ -650,14 +587,12 @@ export default async function Hero() {
                   fill="#72a8ff"
                 />
 
-
                 <circle
                   cx="585"
                   cy="190"
                   r="5"
                   fill="#ffffff"
                 />
-
 
                 <circle
                   cx="610"
@@ -666,7 +601,6 @@ export default async function Hero() {
                   fill="#19dc7d"
                 />
 
-
                 <circle
                   cx="155"
                   cy="575"
@@ -674,18 +608,12 @@ export default async function Hero() {
                   fill="#19dc7d"
                 />
 
-
-                {/* =================================================
-                    CENTRAL AI CORE
-                ================================================= */}
-
                 <circle
                   cx="380"
                   cy="380"
                   r="105"
                   fill="url(#heroCoreGlow)"
                 />
-
 
                 <circle
                   cx="380"
@@ -697,7 +625,6 @@ export default async function Hero() {
                   opacity=".38"
                 />
 
-
                 <circle
                   cx="380"
                   cy="380"
@@ -708,7 +635,6 @@ export default async function Hero() {
                   opacity=".45"
                 />
 
-
                 <circle
                   cx="380"
                   cy="380"
@@ -718,14 +644,12 @@ export default async function Hero() {
                   filter="url(#orbitBlur)"
                 />
 
-
                 <circle
                   cx="380"
                   cy="380"
                   r="32"
                   fill="url(#heroCore)"
                 />
-
 
                 <circle
                   cx="380"
@@ -735,107 +659,47 @@ export default async function Hero() {
                   filter="url(#nodeGlow)"
                 />
 
-
                 <circle
                   cx="380"
                   cy="380"
                   r="8"
                   fill="#ffffff"
                 />
-
               </svg>
-
-
-              {/* =================================================
-                  EXTRA ORBIT MARKERS
-              ================================================= */}
 
               <span className="orbit-marker orbit-marker-one">
                 <span />
               </span>
 
-
               <span className="orbit-marker orbit-marker-two">
                 <span />
               </span>
 
-
               <span className="orbit-marker orbit-marker-three">
                 <span />
               </span>
-
             </div>
 
+            {/* =================================================
+                NON-CRITICAL DYNAMIC CONTENT
+                ================================================= */}
 
-            {/* =====================================================
-                DYNAMIC PAYLOAD CARDS
-            ===================================================== */}
-
-            {heroCards.map(
-              (card) =>
-                card.post && (
-                  <Link
-                    key={card.post.id}
-                    href={`/${card.categorySlug}/${card.post.slug}`}
-                    className={`hero-floating-card ${card.className}`}
-                    aria-label={`Read ${card.label.toLowerCase()}: ${card.post.title}`}
-                  >
-
-                    <div
-                      className="hero-floating-icon"
-                      aria-hidden="true"
-                    >
-                      {card.icon}
-                    </div>
-
-
-                    <div className="hero-floating-content">
-
-                      <span className="hero-floating-label">
-                        {card.label}
-                      </span>
-
-
-                      <h2>
-                        {card.post.title}
-                      </h2>
-
-
-                      <span className="hero-floating-meta">
-                        {card.meta}
-                      </span>
-
-                    </div>
-
-
-                    <span
-                      className="hero-floating-arrow"
-                      aria-hidden="true"
-                    >
-                      ↗
-                    </span>
-
-                  </Link>
-                )
-            )}
-
+            <Suspense fallback={null}>
+              <HeroDynamicCards />
+            </Suspense>
           </div>
-
         </div>
 
-
         {/* =====================================================
-    STATS
-===================================================== */}
+            STATS
+            ===================================================== */}
 
         <div className="hero-stats-section">
-
           <div className="hero-stats-heading">
             <span>Why Trust AlloyPress?</span>
           </div>
 
           <div className="hero-stats">
-
             <div className="hero-stat">
               <div
                 className="hero-stat-icon"
@@ -888,16 +752,14 @@ export default async function Hero() {
 
               <div>
                 <strong>4+ LLMs</strong>
+
                 <span>
                   Cited by GPT, Gemini, Claude, Perplexity and more
                 </span>
               </div>
             </div>
-
           </div>
-
         </div>
-
       </div>
     </section>
   );
