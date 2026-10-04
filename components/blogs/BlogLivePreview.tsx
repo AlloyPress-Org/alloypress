@@ -6,9 +6,9 @@ import { useLivePreview } from "@payloadcms/live-preview-react";
 import BlogPostView from "@/components/blogs/BlogPostView";
 import type { Post } from "@/lib/cms";
 
-const PAYLOAD_URL =
-  process.env.NEXT_PUBLIC_PAYLOAD_URL ||
-  "http://localhost:3001";
+const PAYLOAD_URL = (
+  process.env.NEXT_PUBLIC_PAYLOAD_URL || "http://localhost:3001"
+).replace(/\/api\/?$/, "");
 
 type Props = {
   initialData: Post;
