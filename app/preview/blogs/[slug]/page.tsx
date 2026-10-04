@@ -19,9 +19,9 @@ type SearchParams = Promise<{
   secret?: string;
 }>;
 
-const PAYLOAD_URL =
-  process.env.NEXT_PUBLIC_PAYLOAD_URL ||
-  "http://localhost:3001";
+const PAYLOAD_URL = (
+  process.env.PAYLOAD_API_URL || "http://localhost:3001/api"
+).replace(/\/api\/?$/, "");
 
 export default async function BlogPreviewPage({
   params,
