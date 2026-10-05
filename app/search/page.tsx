@@ -8,15 +8,6 @@ import "./search.css";
 // be followed/linked so the crawler can reach real pages.
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
-/*
- * FIX: Search must never be cached.
- * Every ?q= is a unique, user-driven request. Caching it (revalidate: 300)
- * on Cloudflare Workers stores empty/failed responses in the incremental
- * cache (KV) and keeps serving "0 results". force-dynamic also makes every
- * fetch() in this route default to no-store.
- */
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = buildPageMetadata({
   title: "Search",
   description:
@@ -58,11 +49,6 @@ type Post = {
 
 type PayloadResponse<T> = {
   docs?: T[];
-};
-
-type SearchOutcome = {
-  posts: Post[];
-  failed: boolean;
 };
 
 const ALLOWED_CATEGORIES = new Set([
@@ -135,7 +121,7 @@ function cleanText(value?: string | null) {
 }
 
 /*
- * Same cleaning logic used by BlogPostView (cleanEditorialText),
+ * NEW: Same cleaning logic used by BlogPostView (cleanEditorialText),
  * so the search excerpt matches the excerpt shown on the article page.
  */
 function cleanEditorialText(value: unknown): string {
@@ -179,7 +165,7 @@ function cleanEditorialText(value: unknown): string {
 }
 
 /*
- * Clean, short excerpt for cards.
+ * NEW: Clean, short excerpt for cards.
  *
  * Priority:
  *   1. meta.description  (same as the blog post hero excerpt)
@@ -240,12 +226,6 @@ function isValidPost(post: Post) {
 
 const MAX_SEARCH_RESULTS = 8;
 const MAX_QUERY_LENGTH = 100;
-const RETRY_DELAY_MS = 300;
-
-function sleep(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
-
 async function attachMetaDescriptions(posts: Post[]): Promise<Post[]> {
   if (!posts.length) return posts;
 
@@ -259,7 +239,12 @@ async function attachMetaDescriptions(posts: Post[]): Promise<Post[]> {
       "&depth=0" +
       "&select[id]=true" +
       "&select[meta][description]=true",
-      { cache: "no-store" },
+      {
+        next: {
+          revalidate: 300,
+          tags: ["search", "posts"],
+        },
+      },
     );
 
     const byId = new Map(
@@ -281,71 +266,41 @@ async function attachMetaDescriptions(posts: Post[]): Promise<Post[]> {
   }
 }
 
-async function fetchSearchDocs(query: string): Promise<Post[]> {
-  const params = new URLSearchParams();
-
-  params.set("q", query);
-  params.set("limit", String(MAX_SEARCH_RESULTS));
-
-  const data = await payloadFetch<PayloadResponse<Post>>(
-    `/posts/search?${params.toString()}`,
-    { cache: "no-store" },
-  );
-
-  return (data?.docs || []).filter(isValidPost);
-}
-
-/*
- * FIX: separate "failed" from "really no results".
- * - one automatic retry (covers cold start / transient backend errors)
- * - if both attempts throw -> failed = true (UI shows "temporarily
- *   unavailable" instead of a fake "No results found")
- */
-async function searchPosts(query: string): Promise<SearchOutcome> {
+async function searchPosts(query: string): Promise<Post[]> {
   const normalizedQuery = query.trim().slice(
     0,
     MAX_QUERY_LENGTH,
   );
 
   if (!normalizedQuery) {
-    return { posts: [], failed: false };
+    return [];
   }
 
-  let lastError: unknown = null;
+  try {
+    const params = new URLSearchParams();
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const docs = await fetchSearchDocs(normalizedQuery);
+    params.set("q", normalizedQuery);
+    params.set("limit", String(MAX_SEARCH_RESULTS));
 
-      // Got results, or an empty result on the retry -> accept it
-      if (docs.length > 0 || attempt === 1) {
-        return {
-          posts: await attachMetaDescriptions(docs),
-          failed: false,
-        };
-      }
+    const data = await payloadFetch<PayloadResponse<Post>>(
+      `/posts/search?${params.toString()}`,
+      {
+        next: {
+          revalidate: 300,
+          tags: ["search", "posts"],
+        },
+      },
+    );
 
-      // Empty on first try -> retry once before trusting it
-      await sleep(RETRY_DELAY_MS);
-    } catch (error) {
-      lastError = error;
-      console.error(
-        `[AlloyPress Search] Attempt ${attempt + 1} failed:`,
-        { q: normalizedQuery, error: String(error) },
-      );
+    return attachMetaDescriptions((data?.docs || []).filter(isValidPost));
+  } catch (error) {
+    console.error(
+      "[AlloyPress Search] Search request failed:",
+      error,
+    );
 
-      if (attempt === 0) {
-        await sleep(RETRY_DELAY_MS);
-      }
-    }
+    return [];
   }
-
-  console.error("[AlloyPress Search] Search failed after retry:", {
-    q: normalizedQuery,
-    error: String(lastError),
-  });
-
-  return { posts: [], failed: true };
 }
 
 const getSuggestedPosts = cache(
@@ -362,11 +317,16 @@ const getSuggestedPosts = cache(
           "&select[title]=true" +
           "&select[slug]=true" +
           "&select[excerpt]=true" +
-          "&select[meta][description]=true" +
+          "&select[meta][description]=true" + // NEW
           "&select[publishedAt]=true" +
           "&select[category]=true" +
           "&select[featuredImage]=true",
-          { cache: "no-store" },
+          {
+            next: {
+              revalidate: 300,
+              tags: ["posts"],
+            },
+          },
         );
 
       return (data?.docs || [])
@@ -431,26 +391,26 @@ export default async function SearchPage({
     .slice(0, MAX_QUERY_LENGTH);
 
   /*
+   * Important network optimisation:
+   *
    * Search mode:
    *   -> fetch search results only
    *
    * Empty mode:
    *   -> fetch latest content only
+   *
+   * We no longer run both requests on every page visit.
    */
-  const emptyOutcome: SearchOutcome = { posts: [], failed: false };
 
-  const [outcome, suggestedPosts] =
+  const [results, suggestedPosts] =
     await Promise.all([
       query
         ? searchPosts(query)
-        : Promise.resolve(emptyOutcome),
+        : Promise.resolve([]),
       query
-        ? Promise.resolve([] as Post[])
+        ? Promise.resolve([])
         : getSuggestedPosts(),
     ]);
-
-  const results = outcome.posts;
-  const searchFailed = outcome.failed;
 
   return (
     <main className="search-page">
@@ -597,24 +557,22 @@ export default async function SearchPage({
           </section>
         ) : (
           <section className="search-results">
-            {!searchFailed && (
-              <div className="search-results-heading">
-                <span>
-                  {results.length} result
-                  {results.length === 1
-                    ? ""
-                    : "s"}
-                </span>
+            <div className="search-results-heading">
+              <span>
+                {results.length} result
+                {results.length === 1
+                  ? ""
+                  : "s"}
+              </span>
 
-                <strong>
-                  for “{query}”
-                </strong>
-              </div>
-            )}
+              <strong>
+                for “{query}”
+              </strong>
+            </div>
 
             {results.length > 0 ? (
               <div className="search-results-list">
-                {results.map((post, index) => {
+                {results.map((post) => {
                   const category =
                     getCategory(post);
 
@@ -626,7 +584,6 @@ export default async function SearchPage({
                   }
 
                   const excerpt = getPostExcerpt(post, 180);
-                  const imageUrl = getImageUrl(post.featuredImage);
 
                   return (
                     <Link
@@ -634,10 +591,10 @@ export default async function SearchPage({
                       href={`/${category.slug}/${post.slug}`}
                       className="search-result-card"
                     >
-                      {imageUrl ? (
+                      {getImageUrl(post.featuredImage) ? (
                         <div className="search-result-image">
                           <img
-                            src={imageUrl}
+                            src={getImageUrl(post.featuredImage)!}
                             alt={
                               post.featuredImage &&
                                 typeof post.featuredImage === "object" &&
@@ -651,7 +608,7 @@ export default async function SearchPage({
                       ) : null}
 
                       <span className="search-result-number" aria-hidden="true">
-                        {String(index + 1).padStart(2, "0")}
+                        {String(results.indexOf(post) + 1).padStart(2, "0")}
                       </span>
 
                       <div className="search-result-content">
@@ -674,39 +631,6 @@ export default async function SearchPage({
                     </Link>
                   );
                 })}
-              </div>
-            ) : searchFailed ? (
-              <div className="search-no-results">
-                <div className="search-no-results-icon">
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  >
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 7v5" />
-                    <path d="M12 16h.01" />
-                  </svg>
-                </div>
-
-                <h2>Search is temporarily unavailable</h2>
-
-                <p>
-                  Something went wrong while searching. Please
-                  try again in a moment.
-                </p>
-
-                <p>
-                  <Link
-                    href={`/search?q=${encodeURIComponent(query)}`}
-                    className="search-suggestion"
-                  >
-                    <span>Try again</span>
-                    <span aria-hidden="true">→</span>
-                  </Link>
-                </p>
               </div>
             ) : (
               <div className="search-no-results">
