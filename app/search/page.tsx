@@ -3,10 +3,25 @@ import Link from "next/link";
 import { cache } from "react";
 import { payloadFetch } from "@/lib/payload";
 import "./search.css";
-// Search results are infinite ?q= variations of thin/duplicate
-// content — keep this out of Google's index, but still let it
-// be followed/linked so the crawler can reach real pages.
 import { buildPageMetadata } from "@/lib/seo/metadata";
+
+/*
+ * PRODUCTION FIX
+ * ----------------------------------------------------------------
+ * Problem: a transient empty/failed API response got cached
+ * (fetch revalidate: 300) and a silent `catch -> []` made it look
+ * like a normal "0 results" page for ~5 minutes.
+ *
+ * Fix:
+ *  1. Search is NEVER cached (cache: "no-store") + page is dynamic.
+ *  2. Requests have a timeout and one retry.
+ *  3. An empty 200 response is retried once before trusting it.
+ *  4. Errors are separated from "no results" (own UI state),
+ *     and logged with context for `wrangler tail`.
+ *  5. Suggested posts never cache an empty result.
+ */
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Search",
@@ -15,7 +30,6 @@ export const metadata: Metadata = buildPageMetadata({
   canonicalPath: "/search",
   robots: { index: false, follow: true },
 });
-
 
 type SearchParams = Promise<{
   q?: string;
@@ -38,7 +52,6 @@ type Post = {
   title?: string | null;
   slug?: string | null;
   excerpt?: string | null;
-  // NEW: same source the blog post page uses for its hero excerpt
   meta?: {
     description?: string | null;
   } | null;
@@ -49,6 +62,11 @@ type Post = {
 
 type PayloadResponse<T> = {
   docs?: T[];
+};
+
+type SearchOutcome = {
+  posts: Post[];
+  failed: boolean;
 };
 
 const ALLOWED_CATEGORIES = new Set([
@@ -70,37 +88,80 @@ const SUGGESTED_SEARCHES = [
   "Google AI Mode",
 ];
 
+const MAX_SEARCH_RESULTS = 8;
+const MAX_QUERY_LENGTH = 100;
+const REQUEST_TIMEOUT_MS = 10000;
+// payloadFetch already retries 3x internally, so keep this at 1
+const MAX_ATTEMPTS = 1;
+
+/* ------------------------------------------------------------------ */
+/* Resilient fetch helpers                                             */
+/* ------------------------------------------------------------------ */
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function describeError(error: unknown) {
+  return error instanceof Error
+    ? { name: error.name, message: error.message }
+    : { message: String(error) };
+}
+
+/**
+ * Calls payloadFetch with a timeout. payloadFetch returns null on 404;
+ * we NEVER treat that as "empty results" - it becomes an error.
+ */
+async function fetchWithRetry<T>(
+  path: string,
+  init: Record<string, unknown>,
+  attempts = MAX_ATTEMPTS,
+): Promise<T> {
+  let lastError: unknown;
+
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const data = await payloadFetch<T>(path, {
+        ...init,
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      } as never);
+
+      if (data === null) throw new Error(`Payload 404 for ${path}`);
+
+      return data;
+    } catch (error) {
+      lastError = error;
+      if (i < attempts - 1) await sleep(300 * (i + 1));
+    }
+  }
+
+  throw lastError;
+}
+
+/* ------------------------------------------------------------------ */
+/* Text cleaning                                                       */
+/* ------------------------------------------------------------------ */
+
 function cleanText(value?: string | null) {
   if (!value) return "";
 
   return value
-    // Remove WordPress/editor headings completely
     .replace(/<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/gi, " ")
-
-    // Remove common WordPress/editor blocks
     .replace(
       /<div[^>]*class=["'][^"']*(?:table[-\s]?of[-\s]?contents|toc)[^"']*["'][^>]*>[\s\S]*?<\/div>/gi,
       " ",
     )
-
-    // Remove remaining HTML tags
     .replace(/<[^>]*>/g, " ")
-
-    // Remove leaked editor labels
     .replace(
       /\b(?:Table of Contents|Quick Blog Summary|Independent Review)\b\s*:?\s*/gi,
       " ",
     )
-
-    // Remove WordPress/editor leftovers
     .replace(/TL;DR\s*:/gi, "")
     .replace(
       /📋?\s*Copied!\s*Press\s*Ctrl\+V\s*\(or\s*Cmd\+V on Mac\)\s*in the box that just opened\.?/gi,
       "",
     )
     .replace(/Copy again\s*[×x]?/gi, "")
-
-    // Decode common HTML entities
     .replace(/&#038;|&#x26;|&amp;/gi, "&")
     .replace(/&#8230;|&#x2026;|&hellip;/gi, "…")
     .replace(/&#39;|&#x27;|&apos;/gi, "'")
@@ -108,22 +169,13 @@ function cleanText(value?: string | null) {
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
     .replace(/&nbsp;/gi, " ")
-
-    // Remove remaining raw entity patterns
     .replace(/&#x?[0-9a-f]+;/gi, " ")
-    // Remove leaked TOC markers and heading separators
     .replace(/[≡☰]/g, " ")
     .replace(/\^/g, " ")
-
-    // Clean whitespace
     .replace(/\s+/g, " ")
     .trim();
 }
 
-/*
- * NEW: Same cleaning logic used by BlogPostView (cleanEditorialText),
- * so the search excerpt matches the excerpt shown on the article page.
- */
 function cleanEditorialText(value: unknown): string {
   if (typeof value !== "string") return "";
 
@@ -164,26 +216,14 @@ function cleanEditorialText(value: unknown): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-/*
- * NEW: Clean, short excerpt for cards.
- *
- * Priority:
- *   1. meta.description  (same as the blog post hero excerpt)
- *   2. excerpt           (fallback, cleaned of TOC / editor junk)
- *
- * Truncates at a word boundary so it never cuts mid-word.
- */
 function getPostExcerpt(post: Post, maxLength: number) {
   const hasMeta = Boolean(post.meta?.description?.trim());
   const source = post.meta?.description || post.excerpt || "";
 
   let text = cleanEditorialText(cleanText(source));
 
-  // Strip any leading symbol/junk char (any Unicode symbol, not just ^)
   text = text.replace(/^[^\p{L}\p{N}]+/u, "").trim();
 
-  // No meta description + excerpt looks like leaked TOC → hide it
-  // (a blank excerpt is better than junk text on the card)
   if (!hasMeta) {
     const questionMarks = (text.slice(0, 200).match(/\?/g) || []).length;
     const looksLikeToc =
@@ -206,6 +246,10 @@ function getPostExcerpt(post: Post, maxLength: number) {
   return `${safe.replace(/[\s,.;:–—-]+$/, "")}…`;
 }
 
+/* ------------------------------------------------------------------ */
+/* Post helpers                                                        */
+/* ------------------------------------------------------------------ */
+
 function getCategory(post: Post): Category | null {
   return typeof post.category === "object" && post.category
     ? post.category
@@ -217,135 +261,14 @@ function isValidPost(post: Post) {
 
   return Boolean(
     post.id &&
-    post.slug &&
-    post.title &&
-    category?.slug &&
-    ALLOWED_CATEGORIES.has(category.slug),
+      post.slug &&
+      post.title &&
+      category?.slug &&
+      ALLOWED_CATEGORIES.has(category.slug),
   );
 }
 
-const MAX_SEARCH_RESULTS = 8;
-const MAX_QUERY_LENGTH = 100;
-async function attachMetaDescriptions(posts: Post[]): Promise<Post[]> {
-  if (!posts.length) return posts;
-
-  try {
-    const ids = posts.map((p) => p.id).join(",");
-
-    const data = await payloadFetch<PayloadResponse<Post>>(
-      "/posts" +
-      `?where[id][in]=${encodeURIComponent(ids)}` +
-      `&limit=${posts.length}` +
-      "&depth=0" +
-      "&select[id]=true" +
-      "&select[meta][description]=true",
-      {
-        next: {
-          revalidate: 300,
-          tags: ["search", "posts"],
-        },
-      },
-    );
-
-    const byId = new Map(
-      (data?.docs || []).map((d) => [
-        String(d.id),
-        d.meta?.description ?? null,
-      ]),
-    );
-
-    return posts.map((p) => ({
-      ...p,
-      meta: {
-        description: byId.get(String(p.id)) ?? p.meta?.description ?? null,
-      },
-    }));
-  } catch (error) {
-    console.error("[AlloyPress Search] Meta fetch failed:", error);
-    return posts;
-  }
-}
-
-async function searchPosts(query: string): Promise<Post[]> {
-  const normalizedQuery = query.trim().slice(
-    0,
-    MAX_QUERY_LENGTH,
-  );
-
-  if (!normalizedQuery) {
-    return [];
-  }
-
-  try {
-    const params = new URLSearchParams();
-
-    params.set("q", normalizedQuery);
-    params.set("limit", String(MAX_SEARCH_RESULTS));
-
-    const data = await payloadFetch<PayloadResponse<Post>>(
-      `/posts/search?${params.toString()}`,
-      {
-        next: {
-          revalidate: 300,
-          tags: ["search", "posts"],
-        },
-      },
-    );
-
-    return attachMetaDescriptions((data?.docs || []).filter(isValidPost));
-  } catch (error) {
-    console.error(
-      "[AlloyPress Search] Search request failed:",
-      error,
-    );
-
-    return [];
-  }
-}
-
-const getSuggestedPosts = cache(
-  async (): Promise<Post[]> => {
-    try {
-      const data =
-        await payloadFetch<PayloadResponse<Post>>(
-          "/posts" +
-          "?where[workflowStatus][equals]=published" +
-          "&limit=4" +
-          "&depth=1" +
-          "&sort=-publishedAt" +
-          "&select[id]=true" +
-          "&select[title]=true" +
-          "&select[slug]=true" +
-          "&select[excerpt]=true" +
-          "&select[meta][description]=true" + // NEW
-          "&select[publishedAt]=true" +
-          "&select[category]=true" +
-          "&select[featuredImage]=true",
-          {
-            next: {
-              revalidate: 300,
-              tags: ["posts"],
-            },
-          },
-        );
-
-      return (data?.docs || [])
-        .filter(isValidPost)
-        .slice(0, 4);
-    } catch (error) {
-      console.error(
-        "[AlloyPress Search] Suggested posts failed:",
-        error,
-      );
-
-      return [];
-    }
-  },
-);
-
-function getImageUrl(
-  featuredImage: Post["featuredImage"],
-): string | null {
+function getImageUrl(featuredImage: Post["featuredImage"]): string | null {
   if (
     typeof featuredImage === "object" &&
     featuredImage !== null &&
@@ -354,12 +277,21 @@ function getImageUrl(
   ) {
     return featuredImage.url.startsWith("http")
       ? featuredImage.url
-      : `${process.env.PAYLOAD_API_URL?.replace(/\/api$/, "") ||
-      "http://localhost:3001"
-      }${featuredImage.url}`;
+      : `${
+          process.env.PAYLOAD_API_URL?.replace(/\/api$/, "") ||
+          "http://localhost:3001"
+        }${featuredImage.url}`;
   }
 
   return null;
+}
+
+function getImageAlt(post: Post) {
+  return post.featuredImage &&
+    typeof post.featuredImage === "object" &&
+    post.featuredImage.alt
+    ? post.featuredImage.alt
+    : post.title || "AlloyPress article";
 }
 
 function formatDate(value?: string | null) {
@@ -379,6 +311,141 @@ function formatDate(value?: string | null) {
   }).format(date);
 }
 
+/* ------------------------------------------------------------------ */
+/* Data fetching                                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Meta descriptions are a nice-to-have. Fail soft (keep the posts),
+ * never cache.
+ */
+async function attachMetaDescriptions(posts: Post[]): Promise<Post[]> {
+  if (!posts.length) return posts;
+
+  try {
+    const ids = posts.map((p) => p.id).join(",");
+
+    const data = await fetchWithRetry<PayloadResponse<Post>>(
+      "/posts" +
+        `?where[id][in]=${encodeURIComponent(ids)}` +
+        `&limit=${posts.length}` +
+        "&depth=0" +
+        "&select[id]=true" +
+        "&select[meta][description]=true",
+      { cache: "no-store" },
+    );
+
+    const byId = new Map(
+      (data?.docs || []).map((d) => [
+        String(d.id),
+        d.meta?.description ?? null,
+      ]),
+    );
+
+    return posts.map((p) => ({
+      ...p,
+      meta: {
+        description: byId.get(String(p.id)) ?? p.meta?.description ?? null,
+      },
+    }));
+  } catch (error) {
+    console.error("[AlloyPress Search] Meta fetch failed:", describeError(error));
+    return posts;
+  }
+}
+
+async function searchPosts(query: string): Promise<SearchOutcome> {
+  const normalizedQuery = query.trim().slice(0, MAX_QUERY_LENGTH);
+
+  if (!normalizedQuery) {
+    return { posts: [], failed: false };
+  }
+
+  const params = new URLSearchParams();
+  params.set("q", normalizedQuery);
+  params.set("limit", String(MAX_SEARCH_RESULTS));
+
+  const path = `/posts/search?${params.toString()}`;
+
+  try {
+    let data = await fetchWithRetry<PayloadResponse<Post>>(path, {
+      cache: "no-store",
+    });
+
+    // A 200 with zero docs can be a transient backend hiccup
+    // (cold start / DB warming). Double-check once before trusting it.
+    if (!data?.docs?.length) {
+      await sleep(400);
+      data = await fetchWithRetry<PayloadResponse<Post>>(
+        path,
+        { cache: "no-store" },
+        1,
+      );
+    }
+
+    const valid = (data?.docs || []).filter(isValidPost);
+    const posts = await attachMetaDescriptions(valid);
+
+    return { posts, failed: false };
+  } catch (error) {
+    console.error("[AlloyPress Search] Search request failed:", {
+      query: normalizedQuery,
+      apiUrl: process.env.PAYLOAD_API_URL,
+      ...describeError(error),
+    });
+
+    return { posts: [], failed: true };
+  }
+}
+
+const SUGGESTED_PATH =
+  "/posts" +
+  "?where[workflowStatus][equals]=published" +
+  "&limit=4" +
+  "&depth=1" +
+  "&sort=-publishedAt" +
+  "&select[id]=true" +
+  "&select[title]=true" +
+  "&select[slug]=true" +
+  "&select[excerpt]=true" +
+  "&select[meta][description]=true" +
+  "&select[publishedAt]=true" +
+  "&select[category]=true" +
+  "&select[featuredImage]=true";
+
+const getSuggestedPosts = cache(async (): Promise<Post[]> => {
+  try {
+    // Short cache is fine here, but an EMPTY result must never stick.
+    let data = await fetchWithRetry<PayloadResponse<Post>>(SUGGESTED_PATH, {
+      next: { revalidate: 300, tags: ["posts"] },
+    });
+
+    let posts = (data?.docs || []).filter(isValidPost).slice(0, 4);
+
+    if (!posts.length) {
+      data = await fetchWithRetry<PayloadResponse<Post>>(
+        SUGGESTED_PATH,
+        { cache: "no-store" },
+        1,
+      );
+      posts = (data?.docs || []).filter(isValidPost).slice(0, 4);
+    }
+
+    return posts;
+  } catch (error) {
+    console.error(
+      "[AlloyPress Search] Suggested posts failed:",
+      describeError(error),
+    );
+
+    return [];
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/* Page                                                                */
+/* ------------------------------------------------------------------ */
+
 export default async function SearchPage({
   searchParams,
 }: {
@@ -386,53 +453,30 @@ export default async function SearchPage({
 }) {
   const { q = "" } = await searchParams;
 
-  const query = q
-    .trim()
-    .slice(0, MAX_QUERY_LENGTH);
+  const query = q.trim().slice(0, MAX_QUERY_LENGTH);
 
-  /*
-   * Important network optimisation:
-   *
-   * Search mode:
-   *   -> fetch search results only
-   *
-   * Empty mode:
-   *   -> fetch latest content only
-   *
-   * We no longer run both requests on every page visit.
-   */
+  const [outcome, suggestedPosts] = await Promise.all([
+    query
+      ? searchPosts(query)
+      : Promise.resolve<SearchOutcome>({ posts: [], failed: false }),
+    query ? Promise.resolve<Post[]>([]) : getSuggestedPosts(),
+  ]);
 
-  const [results, suggestedPosts] =
-    await Promise.all([
-      query
-        ? searchPosts(query)
-        : Promise.resolve([]),
-      query
-        ? Promise.resolve([])
-        : getSuggestedPosts(),
-    ]);
+  const results = outcome.posts;
+  const searchFailed = outcome.failed;
 
   return (
     <main className="search-page">
       <section className="search-page-inner">
         <header className="search-page-header">
-          <span className="search-page-eyebrow">
-            ALLOYPRESS SEARCH
-          </span>
+          <span className="search-page-eyebrow">ALLOYPRESS SEARCH</span>
 
           <h1>Search AlloyPress</h1>
 
-          <p>
-            Find articles, reviews, news, alternatives, and
-            comparisons.
-          </p>
+          <p>Find articles, reviews, news, alternatives, and comparisons.</p>
         </header>
 
-        <form
-          className="search-page-form"
-          method="GET"
-          action="/search"
-        >
+        <form className="search-page-form" method="GET" action="/search">
           <div className="search-page-input-wrap">
             <svg
               aria-hidden="true"
@@ -456,24 +500,19 @@ export default async function SearchPage({
               spellCheck={false}
             />
 
-            <button type="submit">
-              Search
-            </button>
+            <button type="submit">Search</button>
           </div>
         </form>
 
         {!query ? (
           <section className="search-discovery">
             <div className="search-discovery-header">
-              <span className="search-section-label">
-                EXPLORE ALLOYPRESS
-              </span>
+              <span className="search-section-label">EXPLORE ALLOYPRESS</span>
 
               <h2>What are you looking for?</h2>
 
               <p>
-                Start with a popular topic or explore our latest
-                AI content.
+                Start with a popular topic or explore our latest AI content.
               </p>
             </div>
 
@@ -503,10 +542,7 @@ export default async function SearchPage({
                       return null;
                     }
 
-                    const imageUrl = getImageUrl(
-                      post.featuredImage,
-                    );
-
+                    const imageUrl = getImageUrl(post.featuredImage);
                     const excerpt = getPostExcerpt(post, 120);
 
                     return (
@@ -519,13 +555,7 @@ export default async function SearchPage({
                           <div className="search-suggested-image">
                             <img
                               src={imageUrl}
-                              alt={
-                                post.featuredImage &&
-                                  typeof post.featuredImage === "object" &&
-                                  post.featuredImage.alt
-                                  ? post.featuredImage.alt
-                                  : post.title || "AlloyPress article"
-                              }
+                              alt={getImageAlt(post)}
                               loading="lazy"
                             />
                           </div>
@@ -533,14 +563,10 @@ export default async function SearchPage({
 
                         <div className="search-suggested-content">
                           <div className="search-suggested-meta">
-                            <span>
-                              {category.name || category.slug}
-                            </span>
+                            <span>{category.name || category.slug}</span>
 
                             {post.publishedAt && (
-                              <span>
-                                {formatDate(post.publishedAt)}
-                              </span>
+                              <span>{formatDate(post.publishedAt)}</span>
                             )}
                           </div>
 
@@ -557,32 +583,59 @@ export default async function SearchPage({
           </section>
         ) : (
           <section className="search-results">
-            <div className="search-results-heading">
-              <span>
-                {results.length} result
-                {results.length === 1
-                  ? ""
-                  : "s"}
-              </span>
+            {!searchFailed && (
+              <div className="search-results-heading">
+                <span>
+                  {results.length} result
+                  {results.length === 1 ? "" : "s"}
+                </span>
 
-              <strong>
-                for “{query}”
-              </strong>
-            </div>
+                <strong>for “{query}”</strong>
+              </div>
+            )}
 
-            {results.length > 0 ? (
+            {searchFailed ? (
+              <div className="search-no-results" role="alert">
+                <div className="search-no-results-icon">
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8v5" />
+                    <path d="M12 16.5h.01" />
+                  </svg>
+                </div>
+
+                <h2>Search is temporarily unavailable</h2>
+
+                <p>
+                  Something went wrong while searching. Please try again in a
+                  moment.
+                </p>
+
+                <p>
+                  <Link
+                    href={`/search?q=${encodeURIComponent(query)}`}
+                    className="search-suggestion"
+                  >
+                    Try again
+                  </Link>
+                </p>
+              </div>
+            ) : results.length > 0 ? (
               <div className="search-results-list">
-                {results.map((post) => {
-                  const category =
-                    getCategory(post);
+                {results.map((post, index) => {
+                  const category = getCategory(post);
 
-                  if (
-                    !category?.slug ||
-                    !post.slug
-                  ) {
+                  if (!category?.slug || !post.slug) {
                     return null;
                   }
 
+                  const imageUrl = getImageUrl(post.featuredImage);
                   const excerpt = getPostExcerpt(post, 180);
 
                   return (
@@ -591,36 +644,29 @@ export default async function SearchPage({
                       href={`/${category.slug}/${post.slug}`}
                       className="search-result-card"
                     >
-                      {getImageUrl(post.featuredImage) ? (
+                      {imageUrl ? (
                         <div className="search-result-image">
                           <img
-                            src={getImageUrl(post.featuredImage)!}
-                            alt={
-                              post.featuredImage &&
-                                typeof post.featuredImage === "object" &&
-                                post.featuredImage.alt
-                                ? post.featuredImage.alt
-                                : post.title || "AlloyPress article"
-                            }
+                            src={imageUrl}
+                            alt={getImageAlt(post)}
                             loading="lazy"
                           />
                         </div>
                       ) : null}
 
-                      <span className="search-result-number" aria-hidden="true">
-                        {String(results.indexOf(post) + 1).padStart(2, "0")}
+                      <span
+                        className="search-result-number"
+                        aria-hidden="true"
+                      >
+                        {String(index + 1).padStart(2, "0")}
                       </span>
 
                       <div className="search-result-content">
                         <div className="search-result-meta">
-                          <span>
-                            {category.name || category.slug}
-                          </span>
+                          <span>{category.name || category.slug}</span>
 
                           {post.publishedAt && (
-                            <span>
-                              {formatDate(post.publishedAt)}
-                            </span>
+                            <span>{formatDate(post.publishedAt)}</span>
                           )}
                         </div>
 
@@ -642,55 +688,38 @@ export default async function SearchPage({
                     stroke="currentColor"
                     strokeWidth="1.8"
                   >
-                    <circle
-                      cx="11"
-                      cy="11"
-                      r="7"
-                    />
+                    <circle cx="11" cy="11" r="7" />
                     <path d="m20 20-4-4" />
                   </svg>
                 </div>
 
-                <h2>
-                  No results found for “{query}”
-                </h2>
+                <h2>No results found for “{query}”</h2>
 
                 <p>
-                  We couldn't find a direct match.
-                  Try another keyword or explore
-                  one of the topics below.
+                  We couldn&apos;t find a direct match. Try another keyword or
+                  explore one of the topics below.
                 </p>
               </div>
             )}
 
             <section className="search-more">
               <div className="search-more-header">
-                <span className="search-section-label">
-                  TRY THESE
-                </span>
+                <span className="search-section-label">TRY THESE</span>
 
-                <h2>
-                  Explore related topics
-                </h2>
+                <h2>Explore related topics</h2>
               </div>
 
               <div className="search-suggestions">
-                {SUGGESTED_SEARCHES.map(
-                  (suggestion) => (
-                    <Link
-                      key={suggestion}
-                      href={`/search?q=${encodeURIComponent(
-                        suggestion,
-                      )}`}
-                      className="search-suggestion"
-                    >
-                      <span>{suggestion}</span>
-                      <span aria-hidden="true">
-                        →
-                      </span>
-                    </Link>
-                  ),
-                )}
+                {SUGGESTED_SEARCHES.map((suggestion) => (
+                  <Link
+                    key={suggestion}
+                    href={`/search?q=${encodeURIComponent(suggestion)}`}
+                    className="search-suggestion"
+                  >
+                    <span>{suggestion}</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                ))}
               </div>
             </section>
           </section>
