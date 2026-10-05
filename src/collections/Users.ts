@@ -1,13 +1,28 @@
 import type {
+  Access,
   CollectionConfig,
   FieldAccess,
   PayloadRequest,
 } from 'payload'
 
+// Admin only
 const isAdmin = ({ req }: { req: PayloadRequest }): boolean => {
   return req.user?.role === 'admin'
 }
 
+// Admin panel-ku varra roles (viewer venaam na idhula serkaadha)
+const canAccessAdmin = ({ req }: { req: PayloadRequest }): boolean => {
+  return ['admin', 'editor'].includes(req.user?.role as string)
+}
+
+// Admin: ellaa users. Matha roles: tan own record mattum
+const selfOrAdmin: Access = ({ req }) => {
+  if (!req.user) return false
+  if (req.user.role === 'admin') return true
+  return { id: { equals: req.user.id } }
+}
+
+// Role field: admin mattum maatha mudiyum
 const isAdminField: FieldAccess = ({ req }) => {
   return req.user?.role === 'admin'
 }
@@ -20,29 +35,20 @@ export const Users: CollectionConfig = {
   admin: {
     useAsTitle: 'displayName',
 
-    defaultColumns: [
-      'email',
-      'displayName',
-      'role',
-      'createdAt',
-      'updatedAt',
-    ],
+    defaultColumns: ['email', 'displayName', 'role', 'createdAt', 'updatedAt'],
 
-    description:
-      'Manage AlloyPress users and access roles.',
+    description: 'Manage AlloyPress users and access roles.',
+
+    // Editor-ku Users menu theriya vendaam
+    hidden: ({ user }) => user?.role !== 'admin',
   },
 
   access: {
-    admin: isAdmin,
-
-    read: isAdmin,
-
+    admin: canAccessAdmin,                          // admin + editor panel ulla varalam
+    read: ({ req }) => Boolean(req.user),           // Author dropdown ku venum
     create: isAdmin,
-
-    update: isAdmin,
-
+    update: selfOrAdmin,                            // editor tan profile mattum
     delete: isAdmin,
-
     unlock: isAdmin,
   },
 
@@ -51,10 +57,8 @@ export const Users: CollectionConfig = {
       name: 'displayName',
       type: 'text',
       label: 'Display Name',
-
       admin: {
-        description:
-          'Display name shown across the AlloyPress system.',
+        description: 'Display name shown across the AlloyPress system.',
       },
     },
 
@@ -64,10 +68,8 @@ export const Users: CollectionConfig = {
       unique: true,
       index: true,
       label: 'Username',
-
       admin: {
-        description:
-          'Unique username for the user.',
+        description: 'Unique username for the user.',
       },
     },
 
@@ -75,10 +77,8 @@ export const Users: CollectionConfig = {
       name: 'website',
       type: 'text',
       label: 'Website',
-
       admin: {
-        description:
-          'Optional website URL associated with the user.',
+        description: 'Optional website URL associated with the user.',
       },
     },
 
@@ -86,10 +86,8 @@ export const Users: CollectionConfig = {
       name: 'bio',
       type: 'textarea',
       label: 'Bio / Description',
-
       admin: {
-        description:
-          'Short description or biography of the user.',
+        description: 'Short description or biography of the user.',
       },
     },
 
@@ -97,32 +95,18 @@ export const Users: CollectionConfig = {
       name: 'role',
       type: 'select',
       required: true,
-
       defaultValue: 'viewer',
-
       options: [
-        {
-          label: 'Admin',
-          value: 'admin',
-        },
-        {
-          label: 'Editor',
-          value: 'editor',
-        },
-        {
-          label: 'Viewer',
-          value: 'viewer',
-        },
+        { label: 'Admin', value: 'admin' },
+        { label: 'Editor', value: 'editor' },
+        { label: 'Viewer', value: 'viewer' },
       ],
-
       access: {
         create: isAdminField,
         update: isAdminField,
       },
-
       admin: {
         position: 'sidebar',
-
         description:
           'Admin: full access. Editor: content management. Viewer: read-only access.',
       },
@@ -131,14 +115,10 @@ export const Users: CollectionConfig = {
     {
       name: 'legacy',
       type: 'group',
-
       label: 'Migration / Internal',
-
       admin: {
-        description:
-          'Original WordPress information preserved for migration.',
+        description: 'Original WordPress information preserved for migration.',
       },
-
       fields: [
         {
           name: 'wordpressId',
@@ -147,13 +127,11 @@ export const Users: CollectionConfig = {
           index: true,
           label: 'WordPress User ID',
         },
-
         {
           name: 'wordpressUsername',
           type: 'text',
           label: 'WordPress Username',
         },
-
         {
           name: 'wordpressRole',
           type: 'text',

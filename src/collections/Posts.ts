@@ -1242,7 +1242,7 @@ export const Posts: CollectionConfig = {
         // or your live Cloudflare/Vercel URL) so you are not tied to one host.
         const baseUrl = (
           process.env.LIVE_PREVIEW_BASE_URL ||
-          'https://alloypress.abhub-net.workers.dev'
+          'https://alloypress.com'
         ).replace(/\/$/, '')
 
         const slug =
@@ -1278,7 +1278,7 @@ export const Posts: CollectionConfig = {
 
     drafts: {
       autosave: {
-        interval: 1500,
+        interval: 2500,
         showSaveDraftButton: true,
       },
       schedulePublish: true,
