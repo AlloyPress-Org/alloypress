@@ -388,8 +388,8 @@ const getCategoryPosts = cache(
               String(category.id),
             )}` +
             `&sort=-publishedAt` +
-            `&limit=100` +
-            `&depth=1` +
+            `&limit=35` +
+            `&depth=0` +
             `&select[id]=true` +
             `&select[title]=true` +
             `&select[slug]=true` +
