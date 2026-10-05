@@ -7,9 +7,16 @@ import { imagesOptimizer } from "@vinext/cloudflare/images/images-optimizer";
 export default defineConfig({
   plugins: [
     vinext({
-      cache: { data: kvDataAdapter() },
-      images: { optimizer: imagesOptimizer() },
+      cache: {
+        data: kvDataAdapter({
+          binding: "VINEXT_KV_CACHE",
+        }),
+      },
+      images: {
+        optimizer: imagesOptimizer(),
+      },
     }),
+
     cloudflare({
       viteEnvironment: {
         name: "rsc",
