@@ -98,6 +98,8 @@ export async function payloadFetch<T>(
 
       lastError = new Error(`Payload ${res.status} ${res.statusText}`);
       if (!RETRYABLE.has(res.status)) break;
+      // Rate limited: hammering again only makes it worse. One retry max.
+      if (res.status === 429 && attempt >= 1) break;
     } catch (e) {
       lastError = e;
       // Same signal is already aborted; retrying is pointless

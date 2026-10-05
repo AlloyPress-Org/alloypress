@@ -13,7 +13,10 @@ import { buildPageMetadata } from "@/lib/seo/metadata";
  * like a normal "0 results" page for ~5 minutes.
  *
  * Fix:
- *  1. Search is NEVER cached (cache: "no-store") + page is dynamic.
+ *  0. REAL CAUSE: API returned 429 (rate limit). Suggestion <Link>s
+ *     auto-prefetched /search?q=... and flooded the API. Fixed with
+ *     prefetch={false} + short cache for successful results.
+ *  1. Failed responses are never cached (payloadFetch throws on non-2xx).
  *  2. Requests have a timeout and one retry.
  *  3. An empty 200 response is retried once before trusting it.
  *  4. Errors are separated from "no results" (own UI state),
@@ -332,7 +335,7 @@ async function attachMetaDescriptions(posts: Post[]): Promise<Post[]> {
         "&depth=0" +
         "&select[id]=true" +
         "&select[meta][description]=true",
-      { cache: "no-store" },
+      { next: { revalidate: 300, tags: ["search", "posts"] } },
     );
 
     const byId = new Map(
@@ -369,7 +372,7 @@ async function searchPosts(query: string): Promise<SearchOutcome> {
 
   try {
     let data = await fetchWithRetry<PayloadResponse<Post>>(path, {
-      cache: "no-store",
+      next: { revalidate: 120, tags: ["search", "posts"] },
     });
 
     // A 200 with zero docs can be a transient backend hiccup
@@ -521,6 +524,7 @@ export default async function SearchPage({
                 <Link
                   key={suggestion}
                   href={`/search?q=${encodeURIComponent(suggestion)}`}
+                  prefetch={false}
                   className="search-suggestion"
                 >
                   {suggestion}
@@ -620,7 +624,8 @@ export default async function SearchPage({
                 <p>
                   <Link
                     href={`/search?q=${encodeURIComponent(query)}`}
-                    className="search-suggestion"
+                    prefetch={false}
+                  className="search-suggestion"
                   >
                     Try again
                   </Link>
@@ -714,7 +719,8 @@ export default async function SearchPage({
                   <Link
                     key={suggestion}
                     href={`/search?q=${encodeURIComponent(suggestion)}`}
-                    className="search-suggestion"
+                    prefetch={false}
+                  className="search-suggestion"
                   >
                     <span>{suggestion}</span>
                     <span aria-hidden="true">→</span>
