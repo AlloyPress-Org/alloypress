@@ -96,6 +96,8 @@ const moveSeoToSidebar: Plugin = (incomingConfig) => ({
 
 export default buildConfig({
 
+  serverURL: process.env.NEXT_PUBLIC_SERVER_URL || 'https://api.alloypress.com',
+
   // =========================================================
   // PAYLOAD ADMIN
   // =========================================================
@@ -137,6 +139,18 @@ export default buildConfig({
   },
 
   cors: [
+    "https://api.alloypress.com",
+    "https://alloypress.com",
+    "https://www.alloypress.com",
+    "https://web.sakthiparthibans.workers.dev",
+    "https://alloypress.abhub-net.workers.dev",
+    "https://alloypress-web.vercel.app",
+    "http://localhost:3000",
+  ],
+  csrf: [
+    "https://api.alloypress.com",
+    "https://alloypress.com",
+    "https://www.alloypress.com",
     "https://web.sakthiparthibans.workers.dev",
     "https://alloypress.abhub-net.workers.dev",
     "https://alloypress-web.vercel.app",
