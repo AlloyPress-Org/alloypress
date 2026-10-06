@@ -7,11 +7,11 @@ import "./AuthorPage.css";
 
 const PAYLOAD_URL =
   process.env.PAYLOAD_API_URL?.replace(/\/$/, "") ||
-  "http://localhost:3001/api";
+  "https://api.alloypress.com/api";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-  "http://localhost:3000";
+  "https://alloypress.com";
 
 const AUTHOR = {
   name: "AlloyPress Team",
