@@ -40,11 +40,34 @@ type Props = {
 
 const INTERACTIVE_RE = /<script\b|\son[a-z]+\s*=/i;
 
+/*
+ * Real legacy widgets. These are driven by the delegated click listener in
+ * ArticleRenderer, so they stay inline (scripts stripped) exactly as before.
+ */
+const LEGACY_STRICT_RE =
+  /apx-bike-widget|apx-prompt-challenge|apx-reference-gallery/i;
+
+/*
+ * The old `.prompt-box` widget. Matches ONLY the exact class token
+ * "prompt-box" (start of class list or after whitespace), so new class names
+ * like "ap-prompt-box" are NOT treated as legacy and can use their own
+ * script / onclick inside the sandboxed iframe.
+ */
+const LEGACY_PROMPTBOX_RE = /class=["'](?:[^"']*\s)?prompt-box(?=[\s"'])/i;
+
 // Existing widgets that are driven by the delegated listener in ArticleRenderer
-const LEGACY_WIDGET_RE =
-  /apx-bike-widget|apx-prompt-challenge|apx-reference-gallery|class=["'][^"']*prompt-box/i;
+const LEGACY_WIDGET_RE = new RegExp(
+  `${LEGACY_STRICT_RE.source}|${LEGACY_PROMPTBOX_RE.source}`,
+  "i"
+);
 
 const FAQ_RE = /ai-faq-question|ai-faq-answer/i;
+
+/*
+ * Script-free widgets that use data attributes (data-copy, data-toggle...).
+ * They render inline (SEO friendly) and are handled by ArticleRenderer.
+ */
+const DATA_ACTION_RE = /\sdata-(copy|copy-target|copy-scope|toggle)\b/i;
 
 function isLegacyWidget(code: string): boolean {
   return LEGACY_WIDGET_RE.test(code);
@@ -67,6 +90,35 @@ function SandboxedHtml({ html, title }: { html: string; title: string }) {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <base target="_blank" />
+<script>
+(function () {
+  var SID = ${JSON.stringify(id)};
+  function legacyCopy(t) {
+    var ta = document.createElement("textarea");
+    ta.value = t;
+    ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;opacity:0";
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    ta.remove();
+    return ok;
+  }
+  var shim = {
+    writeText: function (t) {
+      t = String(t);
+      if (!legacyCopy(t)) {
+        parent.postMessage({ type: "apx-copy", id: SID, text: t.slice(0, 200000) }, "*");
+      }
+      return Promise.resolve();
+    }
+  };
+  try {
+    Object.defineProperty(navigator, "clipboard", { value: shim, configurable: true });
+  } catch (e) {}
+})();
+</script>
 <style>
   html, body { margin: 0; padding: 0; font-family: system-ui, sans-serif; color: #111; background: transparent; }
   *, *::before, *::after { box-sizing: border-box; }
@@ -92,8 +144,16 @@ ${html}
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.source !== ref.current?.contentWindow) return;
-      if (e.data?.type === "apx-height" && e.data.id === id) {
+      if (e.data?.id !== id) return;
+
+      if (e.data.type === "apx-height") {
         setHeight(Math.max(120, Math.ceil(e.data.height)));
+        return;
+      }
+
+      // Clipboard fallback: iframe could not copy itself, parent does it.
+      if (e.data.type === "apx-copy" && typeof e.data.text === "string") {
+        void copyText(e.data.text);
       }
     };
     window.addEventListener("message", onMessage);
@@ -707,6 +767,17 @@ function HtmlBlock({
 
   // 2. Legacy widgets -> inline (site CSS + delegated listener handle them)
   if (isLegacyWidget(code)) {
+    return (
+      <div
+        className="post-html-content"
+        dangerouslySetInnerHTML={{ __html: cleanArticleHtml(code) }}
+      />
+    );
+  }
+
+  // 2b. Script-free data-copy / data-toggle widgets -> inline
+  //     (handled by the delegated listener in ArticleRenderer)
+  if (DATA_ACTION_RE.test(code) && !INTERACTIVE_RE.test(code)) {
     return (
       <div
         className="post-html-content"
@@ -1715,6 +1786,100 @@ function ArticleRenderer({
       if (!target) return;
 
       /* ============================================================
+       * Generic script-free copy button: data-copy / data-copy-target
+       *
+       *   <div data-copy-scope>
+       *     <pre class="x">text...</pre>
+       *     <button data-copy-target=".x">Copy</button>
+       *   </div>
+       *
+       *   <button data-copy="literal text">Copy</button>
+       *
+       * The old reference gallery keeps its own handler below.
+       * ============================================================ */
+      const dataCopyTrigger = target.closest<HTMLElement>(
+        "[data-copy], [data-copy-target]"
+      );
+
+      if (
+        dataCopyTrigger &&
+        root.contains(dataCopyTrigger) &&
+        !dataCopyTrigger.closest(".apx-reference-gallery")
+      ) {
+        let text = dataCopyTrigger.dataset.copy ?? "";
+        const selector = dataCopyTrigger.dataset.copyTarget;
+
+        if (!text && selector) {
+          try {
+            const scope =
+              dataCopyTrigger.closest<HTMLElement>("[data-copy-scope]") ||
+              root;
+
+            const el = scope.querySelector<HTMLElement>(selector);
+
+            text =
+              el instanceof HTMLTextAreaElement
+                ? el.value
+                : el?.textContent || "";
+          } catch {
+            text = "";
+          }
+        }
+
+        text = text.trim();
+
+        if (!text) return;
+
+        const ok = await copyText(text);
+
+        const original =
+          dataCopyTrigger.dataset.label ??
+          dataCopyTrigger.textContent ??
+          "Copy";
+
+        dataCopyTrigger.dataset.label = original;
+        dataCopyTrigger.textContent = ok ? "Copied!" : "Copy failed";
+
+        window.setTimeout(() => {
+          dataCopyTrigger.textContent = original;
+        }, 1600);
+
+        return;
+      }
+
+      /* ============================================================
+       * Generic script-free toggle: data-toggle="<css selector>"
+       *
+       *   <button data-toggle="#more">Show more</button>
+       *   <div id="more" hidden>...</div>
+       * ============================================================ */
+      const dataToggleTrigger = target.closest<HTMLElement>("[data-toggle]");
+
+      if (dataToggleTrigger && root.contains(dataToggleTrigger)) {
+        try {
+          const scope =
+            dataToggleTrigger.closest<HTMLElement>("[data-copy-scope]") ||
+            root;
+
+          const el = scope.querySelector<HTMLElement>(
+            dataToggleTrigger.dataset.toggle || ""
+          );
+
+          if (el) {
+            el.hidden = !el.hidden;
+            dataToggleTrigger.setAttribute(
+              "aria-expanded",
+              String(!el.hidden)
+            );
+          }
+        } catch {
+          // Invalid selector from editor content: ignore.
+        }
+
+        return;
+      }
+
+      /* ============================================================
        * Prompt Challenge widget
        * ============================================================ */
       const promptChallenge = target.closest<HTMLElement>(
@@ -2275,30 +2440,21 @@ export default function BlogPostView({
       ? post.title.trim()
       : "This tool";
 
-  const badgeEmbedCode = `<a href="${badgeArticleUrl}"
-  target="_blank"
-  rel="noopener noreferrer"
-  aria-label="Featured on AlloyPress — ${badgeToolName}">
- <Image
-  src="/badges/featured.png"
-  alt="Featured on AlloyPress"
-  width={320}
-  height={117}
-  sizes="(max-width: 820px) 200px, 170px"
-  className="alloypress-badge-image"
-/>
+  // Plain HTML snippet that works on ANY publisher website
+  // (the previous version copied JSX, which does not work outside React).
+  const badgeEmbedCode = `<a href="${badgeArticleUrl}" target="_blank" rel="noopener noreferrer" aria-label="Featured on AlloyPress — ${badgeToolName}">
+  <img src="https://alloypress.com/badges/featured.png" alt="Featured on AlloyPress" width="320" height="117" style="max-width:100%;height:auto;" />
 </a>`
 
   async function copyBadgeEmbedCode() {
-    try {
-      await navigator.clipboard.writeText(badgeEmbedCode);
-      setBadgeCopied(true);
+    const ok = await copyText(badgeEmbedCode);
 
+    setBadgeCopied(ok);
+
+    if (ok) {
       window.setTimeout(() => {
         setBadgeCopied(false);
       }, 1800);
-    } catch {
-      setBadgeCopied(false);
     }
   }
 
