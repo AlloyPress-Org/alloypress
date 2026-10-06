@@ -995,7 +995,7 @@ export const Posts: CollectionConfig = {
             }
           }
 
-          const authorSlug = 'alloypress-team'
+          const authorSlug = 'alloypress'
 
           const response = await fetch(webUrl, {
             method: 'POST',
