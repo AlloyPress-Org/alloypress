@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { GoogleTagManager } from "@next/third-parties/google";
-import Script from "next/script";
 
 import "./globals.css";
 
@@ -67,6 +65,14 @@ const organizationJsonLd = {
   "@graph": [createOrganizationSchema()],
 };
 
+const GTM_ID = "GTM-P72SG3JX";
+
+const gtmScript = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${GTM_ID}');`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -78,16 +84,17 @@ export default function RootLayout({
       suppressHydrationWarning
       className={inter.variable}
     >
-      <GoogleTagManager gtmId="GTM-P72SG3JX" />
-
       <head>
         <link
           rel="preconnect"
           href="https://media.alloypress.com"
         />
 
-        <Script
-          id="google-adsense"
+        {/* Google Tag Manager */}
+        <script dangerouslySetInnerHTML={{ __html: gtmScript }} />
+
+        {/* Google AdSense */}
+        <script
           async
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
           crossOrigin="anonymous"
@@ -95,14 +102,16 @@ export default function RootLayout({
       </head>
 
       <body>
+        {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-P72SG3JX"
+            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
             height="0"
             width="0"
             style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
+
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger
