@@ -248,7 +248,16 @@ export default async function AuthorPage() {
 
             <aside className="author-profile-card">
               <div className="profile-card-pattern" aria-hidden="true" />
-              <div className="profile-mark">A</div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#00ff66] overflow-hidden">
+                <Image
+                  src="/ap-icon.png"
+                  alt="AlloyPress"
+                  width={44}
+                  height={44}
+                  className="h-full w-full object-contain"
+                  priority
+                />
+              </div>
 
               <div className="profile-card-kicker">AUTHOR PROFILE</div>
               <h2>{AUTHOR.name}</h2>
