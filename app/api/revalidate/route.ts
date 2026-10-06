@@ -1,4 +1,4 @@
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -39,12 +39,17 @@ export async function POST(request: NextRequest) {
       authorSlug ? `author:${authorSlug}` : null,
     ].filter((tag): tag is string => Boolean(tag));
 
+    // Invalidate the exact blog page.
+    revalidatePath(`/blogs/${slug}`);
+
+    // Invalidate related data caches.
     for (const tag of tags) {
       revalidateTag(tag, "max");
     }
 
     return NextResponse.json({
       success: true,
+      path: `/blogs/${slug}`,
       revalidated: tags,
     });
   } catch (error) {
