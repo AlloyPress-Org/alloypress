@@ -2580,7 +2580,7 @@ export default function BlogPostView({
                   <div className="post-meta-row">
 
                     <Link
-                      href="/author/alloypress-team"
+                      href="/author/alloypress"
                       className="post-author-link"
                     >
                       <span className="author-dot">
