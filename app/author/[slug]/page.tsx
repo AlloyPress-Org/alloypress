@@ -248,7 +248,7 @@ export default async function AuthorPage() {
 
             <aside className="author-profile-card">
               <div className="profile-card-pattern" aria-hidden="true" />
-              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#00ff66] overflow-hidden">
+              <div className="flex h-11 w-11 items-center justify-center overflow-hidden">
                 <Image
                   src="/ap-icon.png"
                   alt="AlloyPress"
