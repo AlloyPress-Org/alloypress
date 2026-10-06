@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { GoogleTagManager } from "@next/third-parties/google";
+import Script from "next/script";
 
 import "./globals.css";
 
@@ -76,14 +78,31 @@ export default function RootLayout({
       suppressHydrationWarning
       className={inter.variable}
     >
+      <GoogleTagManager gtmId="GTM-P72SG3JX" />
+
       <head>
         <link
           rel="preconnect"
           href="https://media.alloypress.com"
         />
+
+        <Script
+          id="google-adsense"
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
+          crossOrigin="anonymous"
+        />
       </head>
 
       <body>
+        <noscript>
+          <iframe
+            src="https://www.googletagmanager.com/ns.html?id=GTM-P72SG3JX"
+            height="0"
+            width="0"
+            style={{ display: "none", visibility: "hidden" }}
+          />
+        </noscript>
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger

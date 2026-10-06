@@ -109,7 +109,9 @@ function build(
   };
 
   return {
-    title,
+    title: {
+      absolute: title,
+    },
     ...(description ? { description } : {}),
     alternates: { canonical },
     robots: buildRobots(input.robots),
