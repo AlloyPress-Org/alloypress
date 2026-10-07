@@ -41,9 +41,8 @@
   "vars": {
     "NEXT_PUBLIC_PAYLOAD_URL": "https://api.alloypress.com/api",
     "PAYLOAD_API_URL": "https://api.alloypress.com/api",
-    "PREVIEW_SECRET": "alloy2026secret",
     "NEXT_PUBLIC_SITE_URL": "https://alloypress.com",
-    "WEB_REVALIDATION_URL=https":"https://alloypress.com/api/revalidate"
+    "WEB_REVALIDATION_URL":"https://alloypress.com/api/revalidate"
   },
 
   "kv_namespaces": [

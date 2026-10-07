@@ -21,14 +21,23 @@ type CategoryListingProps = {
   slug: string;
   title: string;
   description: string;
+  page?: number;
 };
+
+type PaginatedPayloadResponse<T> =
+  PayloadResponse<T> & {
+    totalPages?: number;
+    totalDocs?: number;
+    page?: number;
+    limit?: number;
+  };
 
 // ============================================================
 // LOCAL CMS TYPES
 // ============================================================
 
 type Media = {
-  id?: number | string;
+  id?: number;
   url?: string | null;
   alt?: string | null;
   width?: number;
@@ -37,6 +46,8 @@ type Media = {
 
 type ListingCategory = {
   id: number | string;
+  name: string;
+  slug: string;
 };
 
 type Post = {
@@ -47,12 +58,9 @@ type Post = {
   publishedAt?: string | null;
   featuredImage?: number | Media | null;
   category?: number | ListingCategory | null;
-  author?:
-  | {
+  author?: {
     name?: string | null;
-  }
-  | number
-  | null;
+  } | number | null;
   workflowStatus?: string | null;
 };
 
@@ -101,10 +109,7 @@ function getImageUrl(
   featuredImage: Post["featuredImage"],
   index = 0,
 ): string {
-  // ----------------------------------------------------------
   // Populated media object
-  // ----------------------------------------------------------
-
   if (
     typeof featuredImage === "object" &&
     featuredImage !== null &&
@@ -114,25 +119,16 @@ function getImageUrl(
     return featuredImage.url;
   }
 
-  // ----------------------------------------------------------
   // Numeric media ID
-  // ----------------------------------------------------------
-
   if (typeof featuredImage === "number") {
     const cmsUrl =
       PAYLOAD_API_URL ||
       "http://localhost:3000/api";
 
-    return `${cmsUrl.replace(
-      /\/api$/,
-      "",
-    )}/api/media/${featuredImage}`;
+    return `${cmsUrl.replace(/\/api$/, "")}/api/media/${featuredImage}`;
   }
 
-  // ----------------------------------------------------------
   // Fallback image
-  // ----------------------------------------------------------
-
   return FALLBACK_IMAGES[
     index % FALLBACK_IMAGES.length
   ];
@@ -161,9 +157,7 @@ function cleanTitle(
 // POST VALIDATION
 // ============================================================
 
-function isUsefulPost(
-  post: Post,
-): boolean {
+function isUsefulPost(post: Post): boolean {
   const title = cleanTitle(post.title);
 
   if (!title) {
@@ -204,78 +198,35 @@ function formatDate(
 
   const parsed = new Date(date);
 
-  if (
-    Number.isNaN(
-      parsed.getTime(),
-    )
-  ) {
+  if (Number.isNaN(parsed.getTime())) {
     return "Recently";
   }
 
-  return new Intl.DateTimeFormat(
-    "en-US",
-    {
-      month: "short",
-      year: "numeric",
-    },
-  ).format(parsed);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    year: "numeric",
+  }).format(parsed);
 }
 
 // ============================================================
 // EXCERPT
 // ============================================================
 
-function getExcerpt(value: unknown): string {
-  if (typeof value !== "string") return "";
+function getExcerpt(post: Post): string {
+  if (post.excerpt?.trim()) {
+    return post.excerpt.trim();
+  }
 
-  let text = value;
-
-  // Remove leaked HTML headings and their content
-  text = text.replace(/<h[1-6][^>]*>[\s\S]*?<\/h[1-6]>/gi, " ");
-
-  // Remove remaining HTML tags
-  text = text.replace(/<[^>]+>/g, " ");
-
-  // Decode common HTML entities
-  const entityMap: Record<string, string> = {
-    "&amp;": "&",
-    "&lt;": "<",
-    "&gt;": ">",
-    "&quot;": '"',
-    "&#039;": "'",
-    "&#39;": "'",
-    "&#038;": "&",
-    "&hellip;": "…",
-    "&#8230;": "…",
-    "&nbsp;": " ",
-  };
-
-  text = text.replace(
-    /&(?:amp|lt|gt|quot|#039|#39|#038|hellip|#8230|nbsp);/gi,
-    (entity) => entityMap[entity.toLowerCase()] ?? entity,
-  );
-
-  // Remove leaked WordPress/editor prefixes
-  text = text.replace(
-    /^\s*(?:quick\s+blog\s+summary|blog\s+summary)\s*:?\s*/i,
-    "",
-  );
-
-  // Remove extra whitespace
-  text = text.replace(/\s+/g, " ").trim();
-
-  return text;
+  return "Practical insights, testing, and analysis from AlloyPress.";
 }
+
 // ============================================================
 // AUTHOR
 // ============================================================
 
-function getAuthor(
-  post: Post,
-): string {
+function getAuthor(post: Post): string {
   if (
-    typeof post.author ===
-    "object" &&
+    typeof post.author === "object" &&
     post.author !== null &&
     post.author.name
   ) {
@@ -288,49 +239,15 @@ function getAuthor(
 // ============================================================
 // GET CATEGORY + POSTS
 // ============================================================
-//
-// PERFORMANCE / ISR STRATEGY
-//
-// 1. React cache()
-//    - Deduplicates identical requests during the same render.
-//    - Prevents duplicate category/post fetches when this function
-//      is called more than once in the same server render.
-//
-// 2. Payload/Next.js revalidate = 300
-//    - Allows ISR/data caching for 5 minutes.
-//    - Avoids repeatedly hitting Payload + Neon on every request.
-//
-// 3. depth=0 for category
-//    - We only need category.id.
-//    - No relationship population is required.
-//
-// 4. select on category
-//    - Only return the category ID.
-//
-// 5. depth=1 for posts
-//    - Required because the UI renders featuredImage and author.
-//
-// 6. select on posts
-//    - Prevents Payload from returning the entire Post document.
-//    - This is one of the most important network-transfer fixes.
-//
-// 7. limit=100
-//    - Kept intentionally for current UI behavior.
-//    - The category page currently displays all fetched articles.
-//    - Reducing this to 12/20 would silently hide articles.
-//
-// Long-term:
-//    Replace limit=100 with pagination/load-more once the UI supports
-//    it. That is the proper solution for very large categories.
-//
-// ============================================================
 
 const getCategoryPosts = cache(
   async (
     slug: string,
+    page: number,
   ): Promise<{
     category: ListingCategory | null;
     posts: Post[];
+    totalPages: number;
   }> => {
     try {
       // ========================================================
@@ -355,32 +272,23 @@ const getCategoryPosts = cache(
           },
         );
 
-      const category =
-        categoryData?.docs?.[0];
+      const category = categoryData?.docs?.[0];
 
       if (!category) {
         return {
           category: null,
           posts: [],
+          totalPages: 0,
         };
       }
 
       // ========================================================
-      // 2. GET PUBLISHED POSTS
-      // ========================================================
-      //
-      // IMPORTANT:
-      // Keep workflowStatus because this is the actual field used
-      // by the current AlloyPress Payload schema.
-      //
-      // Do NOT change this to `_status` unless the Payload schema
-      // is explicitly migrated to use that field.
-      //
+      // 2. GET PUBLISHED POSTS WITH REAL PAGINATION
       // ========================================================
 
       const postsData =
         await payloadFetch<
-          PayloadResponse<Post>
+          PaginatedPayloadResponse<Post>
         >(
           `/posts` +
           `?where[workflowStatus][equals]=published` +
@@ -388,7 +296,8 @@ const getCategoryPosts = cache(
             String(category.id),
           )}` +
           `&sort=-publishedAt` +
-          `&limit=100` +
+          `&limit=13` +
+          `&page=${page}` +
           `&depth=1` +
           `&select[id]=true` +
           `&select[title]=true` +
@@ -408,21 +317,20 @@ const getCategoryPosts = cache(
           },
         );
 
-      // ========================================================
-      // 3. FILTER POSTS
-      // ========================================================
-
       const posts =
-        (postsData?.docs ?? [])
-          .filter(isUsefulPost);
+        (postsData?.docs ?? []).filter(isUsefulPost);
 
       return {
         category,
         posts,
+        totalPages: Math.max(
+          1,
+          postsData?.totalPages ?? 1,
+        ),
       };
     } catch (error) {
       console.error(
-        `CategoryListing fetch error for "${slug}":`,
+        `CategoryListing fetch error for "${slug}" page ${page}:`,
         error,
       );
 
@@ -430,7 +338,6 @@ const getCategoryPosts = cache(
     }
   },
 );
-
 // ============================================================
 // CATEGORY LISTING
 // ============================================================
@@ -439,15 +346,27 @@ export default async function CategoryListing({
   slug,
   title,
   description,
+  page = 1,
 }: CategoryListingProps) {
-  const { posts } =
-    await getCategoryPosts(slug);
+  const currentPage = Math.max(1, page);
 
+  const { posts, totalPages } =
+    await getCategoryPosts(
+      slug,
+      currentPage,
+    );
+
+  // Page 1 keeps the existing featured layout.
+  // Pagination pages render every fetched article as a card.
   const featuredPost =
-    posts[0] || null;
+    currentPage === 1
+      ? posts[0] || null
+      : null;
 
   const remainingPosts =
-    posts.slice(1);
+    currentPage === 1
+      ? posts.slice(1)
+      : posts;
 
   // ==========================================================
   // SECTION NUMBER
@@ -455,15 +374,12 @@ export default async function CategoryListing({
 
   const sectionIndex =
     NAV_CATEGORIES.findIndex(
-      (item) =>
-        item.slug === slug,
+      (item) => item.slug === slug,
     ) + 1;
 
   const sectionNumber =
     String(
-      sectionIndex > 0
-        ? sectionIndex
-        : 1,
+      sectionIndex > 0 ? sectionIndex : 1,
     ).padStart(2, "0");
 
   // ==========================================================
@@ -496,9 +412,7 @@ export default async function CategoryListing({
             </div>
 
             <div className="category-hero-index">
-              <span>
-                SECTION
-              </span>
+              <span>SECTION</span>
 
               <strong>
                 {sectionNumber}
@@ -527,12 +441,11 @@ export default async function CategoryListing({
                 >
                   {item.label}
 
-                  {item.slug ===
-                    slug && (
-                      <span>
-                        •
-                      </span>
-                    )}
+                  {item.slug === slug && (
+                    <span>
+                      •
+                    </span>
+                  )}
                 </Link>
               ),
             )}
@@ -546,11 +459,12 @@ export default async function CategoryListing({
 
       <section className="category-content">
         <div className="category-content-inner">
+
           {/* ==================================================
               FEATURED ARTICLE
           ================================================== */}
 
-          {featuredPost ? (
+          {featuredPost && (
             <>
               <div className="category-section-heading">
                 <div>
@@ -581,12 +495,8 @@ export default async function CategoryListing({
                         "object" &&
                         featuredPost.featuredImage !==
                         null &&
-                        featuredPost
-                          .featuredImage
-                          .alt
-                        ? featuredPost
-                          .featuredImage
-                          .alt
+                        featuredPost.featuredImage.alt
+                        ? featuredPost.featuredImage.alt
                         : cleanTitle(
                           featuredPost.title,
                         )
@@ -630,11 +540,6 @@ export default async function CategoryListing({
                     )}
                   </h3>
 
-                  <p>
-                    {getExcerpt(
-                      featuredPost,
-                    )}
-                  </p>
 
                   <div className="featured-footer">
                     <span>
@@ -651,11 +556,9 @@ export default async function CategoryListing({
                 </div>
               </Link>
             </>
-          ) : (
-            /* =================================================
-               EMPTY STATE
-            ================================================= */
+          )}
 
+          {!featuredPost && currentPage === 1 && (
             <div className="empty-state">
               <span>
                 NO ARTICLES YET
@@ -694,19 +597,14 @@ export default async function CategoryListing({
                   </div>
 
                   <span className="article-count">
-                    {
-                      remainingPosts.length
-                    }{" "}
+                    {remainingPosts.length}{" "}
                     ARTICLES
                   </span>
                 </div>
 
                 <ArticleGrid>
                   {remainingPosts.map(
-                    (
-                      post,
-                      index,
-                    ) => (
+                    (post, index) => (
                       <Link
                         key={post.id}
                         href={`/${slug}/${post.slug}`}
@@ -723,12 +621,8 @@ export default async function CategoryListing({
                                 "object" &&
                                 post.featuredImage !==
                                 null &&
-                                post
-                                  .featuredImage
-                                  .alt
-                                ? post
-                                  .featuredImage
-                                  .alt
+                                post.featuredImage.alt
+                                ? post.featuredImage.alt
                                 : cleanTitle(
                                   post.title,
                                 )
@@ -737,13 +631,19 @@ export default async function CategoryListing({
                             decoding="async"
                           />
 
+                          {/*
+                          FIX (Bug 2): was `index + 1`, which
+                          restarted numbering at 01 and collided
+                          with the Featured post's own "01" label.
+                          Featured post occupies slot 1, so the
+                          grid now continues from 2.
+                        */}
                           <span className="article-card-number">
                             {String(
-                              index + 2,
-                            ).padStart(
-                              2,
-                              "0",
-                            )}
+                              currentPage === 1
+                                ? index + 2
+                                : (currentPage - 1) * 13 + index + 1,
+                            ).padStart(2, "0")}
                           </span>
 
                           <span
@@ -775,11 +675,6 @@ export default async function CategoryListing({
                             )}
                           </h3>
 
-                          <p>
-                            {getExcerpt(
-                              post,
-                            )}
-                          </p>
 
                           <div className="article-card-footer">
                             <span>
@@ -797,6 +692,37 @@ export default async function CategoryListing({
                     ),
                   )}
                 </ArticleGrid>
+
+                {totalPages > 1 && (
+                  <nav
+                    className="category-pagination"
+                    aria-label={`${title} pagination`}
+                  >
+                    {currentPage > 1 && (
+                      <Link
+                        href={
+                          currentPage === 2
+                            ? `/${slug}`
+                            : `/${slug}/page/${currentPage - 1}`
+                        }
+                        className="category-pagination-arrow"
+                        aria-label="Previous page"
+                      >
+                        ←
+                      </Link>
+                    )}
+
+                    {currentPage < totalPages && (
+                      <Link
+                        href={`/${slug}/page/${currentPage + 1}`}
+                        className="category-pagination-arrow"
+                        aria-label="Next page"
+                      >
+                        →
+                      </Link>
+                    )}
+                  </nav>
+                )}
               </section>
             )}
 

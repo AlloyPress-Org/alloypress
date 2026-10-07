@@ -4,8 +4,6 @@ import { notFound } from "next/navigation";
 
 import { cache } from "react";
 
-import BlogLivePreview from "@/components/blogs/BlogLivePreview";
-
 import BlogPostView from "@/components/blogs/BlogPostView";
 
 import { payloadFetch } from "@/lib/payload";
@@ -63,10 +61,6 @@ const CATEGORY_LABELS: Record<
 type Params = Promise<{
   category: string;
   slug: string;
-}>;
-
-type SearchParams = Promise<{
-  preview?: string;
 }>;
 
 // ============================================================
@@ -995,58 +989,19 @@ export async function generateMetadata({
 // PAGE
 // ============================================================
 
+// NOTE: this page must NOT read `searchParams` (or cookies()/headers()).
+// Doing so opts the whole route into dynamic rendering, which makes the
+// server answer with `Cache-Control: no-store` and Cloudflare BYPASS.
+// Draft/live preview lives on /preview/blogs/[slug] instead.
 export default async function CategoryPostPage({
   params,
-  searchParams,
 }: {
   params: Params;
-  searchParams: SearchParams;
 }) {
   const {
     category,
     slug,
   } = await params;
-
-  const {
-    preview,
-  } = await searchParams;
-
-  // ----------------------------------------------------------
-  // LIVE PREVIEW
-  // ----------------------------------------------------------
-
-  if (preview === "1") {
-    const previewSeed = {
-      id: "preview",
-      title: "",
-      slug,
-      excerpt: "",
-      content: null,
-
-      category: {
-        id: "preview-category",
-        slug: category,
-        name:
-          CATEGORY_LABELS[category] ||
-          category,
-      },
-
-      featuredImage: null,
-      publishedAt: null,
-      updatedAt: null,
-      legacy: {},
-      tags: [],
-      author: null,
-    } as unknown as Post;
-
-    return (
-      <BlogLivePreview
-        initialData={previewSeed}
-        related={[]}
-        slug={slug}
-      />
-    );
-  }
 
   const post = await getPost(
     category,
