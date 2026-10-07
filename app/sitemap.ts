@@ -3,16 +3,8 @@ import type { MetadataRoute } from "next";
 import { payloadFetch } from "@/lib/payload";
 import { buildSiteUrl } from "@/lib/seo/constants";
 
-// ============================================================
-// Dynamic Sitemap Configuration
-// ============================================================
-
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-// ============================================================
-// Allowed Article Categories
-// ============================================================
+// 1 hour cache. Publish hook /api/revalidate call pannina udane refresh aagum.
+export const revalidate = 3600;
 
 const ALLOWED_CATEGORIES = new Set([
   "blogs",
@@ -21,10 +13,6 @@ const ALLOWED_CATEGORIES = new Set([
   "alternatives",
   "comparisons",
 ]);
-
-// ============================================================
-// Static Pages
-// ============================================================
 
 const STATIC_PAGES = [
   "/",
@@ -43,402 +31,180 @@ const STATIC_PAGES = [
   "/get-featured",
 ];
 
-// ============================================================
-// Types
-// ============================================================
-
 type Category = {
   id: number | string;
-  name?: string | null;
   slug?: string | null;
   updatedAt?: string | null;
 };
 
 type Post = {
   slug?: string | null;
-
   category?: Category | number | string | null;
-
   publishedAt?: string | null;
   updatedAt?: string | null;
-
   includeInSitemap?: boolean | null;
-
-  _status?: "draft" | "published" | null;
-
-  legacy?: {
-    wordpressId?: number | string | null;
-    wordpressModifiedAt?: string | null;
-  } | null;
+  legacy?: { wordpressModifiedAt?: string | null } | null;
 };
 
 type Page = {
   slug?: string | null;
-  status?: "draft" | "published" | null;
   updatedAt?: string | null;
 };
 
 type PayloadResponse<T> = {
   docs?: T[];
-
-  totalDocs?: number;
   totalPages?: number;
-  page?: number;
-  hasNextPage?: boolean;
 };
 
-// ============================================================
-// Last Modified
-// ============================================================
+// ------------------------------------------------------------
+// Fetch helpers. Fail aanaa THROW, empty return panna maatom.
+// ------------------------------------------------------------
+async function payloadGet<T>(path: string): Promise<T> {
+  const data = await payloadFetch<T>(path, {
+    next: { revalidate: 3600, tags: ["sitemap"] },
+  });
 
-function postLastModified(
-  post: Post,
-): string | undefined {
-  return (
-    post.updatedAt ||
-    post.publishedAt ||
-    post.legacy?.wordpressModifiedAt ||
-    undefined
+  // payloadFetch 404 na null return pannum. Sitemap-ku idhu error.
+  if (!data) throw new Error(`[Sitemap] Payload returned null for ${path}`);
+  return data;
+}
+
+async function fetchAll<T>(basePath: string, limit = 500): Promise<T[]> {
+  const sep = basePath.includes("?") ? "&" : "?";
+  const url = (page: number) => `${basePath}${sep}limit=${limit}&page=${page}`;
+
+  const first = await payloadGet<PayloadResponse<T>>(url(1));
+  const totalPages = first.totalPages ?? 1;
+
+  const rest = await Promise.all(
+    Array.from({ length: Math.max(totalPages - 1, 0) }, (_, i) =>
+      payloadGet<PayloadResponse<T>>(url(i + 2)),
+    ),
   );
+
+  return [first, ...rest].flatMap((d) => d.docs ?? []);
 }
 
-// ============================================================
-// Posts
-// ============================================================
+// ------------------------------------------------------------
+// Data loaders (light queries, needed fields mattum)
+// depth=0 so category ID-ah varum, adha categories list la resolve panrom.
+// ------------------------------------------------------------
+const getPosts = () =>
+  fetchAll<Post>(
+    "/posts?depth=0" +
+      "&where[_status][equals]=published" +
+      "&select[slug]=true" +
+      "&select[category]=true" +
+      "&select[includeInSitemap]=true" +
+      "&select[updatedAt]=true" +
+      "&select[publishedAt]=true" +
+      "&select[legacy]=true",
+  );
 
-async function getPosts(): Promise<Post[]> {
-  const allPosts: Post[] = [];
+const getPages = () =>
+  fetchAll<Page>(
+    "/pages?where[status][equals]=published" +
+      "&select[slug]=true&select[updatedAt]=true",
+    100,
+  );
 
-  let page = 1;
-  const limit = 100;
+const getCategories = () =>
+  fetchAll<Category>(
+    "/categories?select[slug]=true&select[updatedAt]=true",
+    100,
+  );
 
-  try {
-    while (true) {
-      const data = await payloadFetch<
-        PayloadResponse<Post>
-      >(
-        `/posts?limit=${limit}&page=${page}&depth=1`,
-        {
-          cache: "no-store",
-        },
-      );
-
-      const posts = data?.docs ?? [];
-
-      allPosts.push(...posts);
-
-      console.log(
-        `[Sitemap] Posts page ${page}: ${posts.length}`,
-      );
-
-      if (
-        !data?.hasNextPage ||
-        posts.length === 0
-      ) {
-        break;
-      }
-
-      page++;
-    }
-
-    console.log(
-      `[Sitemap] Payload returned ${allPosts.length} posts`,
-    );
-
-    const validPosts = allPosts.filter(
-      (post) => {
-        const categorySlug =
-          typeof post.category === "object" &&
-          post.category !== null
-            ? post.category.slug
-            : undefined;
-
-        return (
-          Boolean(post.slug) &&
-          post._status === "published" &&
-          post.includeInSitemap !== false &&
-          typeof categorySlug === "string" &&
-          ALLOWED_CATEGORIES.has(
-            categorySlug,
-          )
-        );
-      },
-    );
-
-    console.log(
-      `[Sitemap] ${validPosts.length} posts included in sitemap`,
-    );
-
-    return validPosts;
-  } catch (error) {
-    console.error(
-      "[Sitemap] Posts fetch failed:",
-      error,
-    );
-
-    return [];
-  }
-}
-
-// ============================================================
-// Pages
-// ============================================================
-
-async function getPages(): Promise<Page[]> {
-  try {
-    const data =
-      await payloadFetch<
-        PayloadResponse<Page>
-      >(
-        "/pages?where[status][equals]=published" +
-          "&limit=100" +
-          "&select[slug]=true" +
-          "&select[status]=true" +
-          "&select[updatedAt]=true",
-        {
-          cache: "no-store",
-        },
-      );
-
-    return (data?.docs ?? []).filter(
-      (page) =>
-        Boolean(page.slug) &&
-        page.status === "published",
-    );
-  } catch (error) {
-    console.error(
-      "[Sitemap] Pages fetch failed:",
-      error,
-    );
-
-    return [];
-  }
-}
-
-// ============================================================
-// Categories
-// ============================================================
-
-async function getCategories(): Promise<
-  Category[]
-> {
-  try {
-    const data =
-      await payloadFetch<
-        PayloadResponse<Category>
-      >(
-        "/categories?limit=100" +
-          "&select[id]=true" +
-          "&select[name]=true" +
-          "&select[slug]=true" +
-          "&select[updatedAt]=true",
-        {
-          cache: "no-store",
-        },
-      );
-
-    return (data?.docs ?? []).filter(
-      (category) =>
-        typeof category.slug === "string" &&
-        ALLOWED_CATEGORIES.has(
-          category.slug,
-        ),
-    );
-  } catch (error) {
-    console.error(
-      "[Sitemap] Categories fetch failed:",
-      error,
-    );
-
-    return [];
-  }
-}
-
-// ============================================================
-// Resolve Category Slug
-// ============================================================
-
+// ------------------------------------------------------------
+// Helpers
+// ------------------------------------------------------------
 function resolveCategorySlug(
   category: Post["category"],
   categories: Category[],
 ): string | undefined {
-  // Populated relationship
-  if (
-    typeof category === "object" &&
-    category !== null &&
-    typeof category.slug === "string"
-  ) {
-    return ALLOWED_CATEGORIES.has(
-      category.slug,
-    )
-      ? category.slug
-      : undefined;
+  let slug: string | null | undefined;
+
+  if (typeof category === "object" && category !== null) {
+    slug = category.slug;
+  } else if (typeof category === "number" || typeof category === "string") {
+    slug = categories.find((c) => String(c.id) === String(category))?.slug;
   }
 
-  // Relationship returned as ID
-  if (
-    typeof category === "number" ||
-    typeof category === "string"
-  ) {
-    const matchedCategory =
-      categories.find(
-        (item) =>
-          String(item.id) ===
-          String(category),
-      );
-
-    if (
-      matchedCategory?.slug &&
-      ALLOWED_CATEGORIES.has(
-        matchedCategory.slug,
-      )
-    ) {
-      return matchedCategory.slug;
-    }
-  }
-
-  return undefined;
+  return slug && ALLOWED_CATEGORIES.has(slug) ? slug : undefined;
 }
 
-// ============================================================
+// ------------------------------------------------------------
 // Sitemap
-// ============================================================
-
-export default async function sitemap(): Promise<
-  MetadataRoute.Sitemap
-> {
-  console.log(
-    "[Sitemap] Generating dynamic sitemap...",
-  );
-
-  const [
-    posts,
-    pages,
-    categories,
-  ] = await Promise.all([
+// ------------------------------------------------------------
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [posts, pages, categories] = await Promise.all([
     getPosts(),
     getPages(),
     getCategories(),
   ]);
 
-  const entries = new Map<
-    string,
-    MetadataRoute.Sitemap[number]
-  >();
+  const entries = new Map<string, MetadataRoute.Sitemap[number]>();
 
-  // ==========================================================
-  // Static Pages
-  // ==========================================================
-
+  // Static pages
   for (const path of STATIC_PAGES) {
-    entries.set(path, {
-      url: buildSiteUrl(path),
-    });
+    entries.set(path, { url: buildSiteUrl(path) });
   }
 
-  // ==========================================================
-  // CMS Pages
-  // ==========================================================
-
+  // CMS pages
   for (const page of pages) {
     if (!page.slug) continue;
 
     const path =
-      page.slug === "home" ||
-      page.slug === "/"
+      page.slug === "home" || page.slug === "/"
         ? "/"
-        : `/${page.slug.replace(
-            /^\/+/,
-            "",
-          )}`;
+        : `/${page.slug.replace(/^\/+/, "")}`;
 
     entries.set(path, {
       url: buildSiteUrl(path),
-
-      ...(page.updatedAt
-        ? {
-            lastModified:
-              page.updatedAt,
-          }
-        : {}),
+      ...(page.updatedAt ? { lastModified: page.updatedAt } : {}),
     });
   }
 
-  // ==========================================================
-  // Categories
-  // ==========================================================
-
+  // Category listing pages
   for (const category of categories) {
-    if (!category.slug) continue;
+    if (!category.slug || !ALLOWED_CATEGORIES.has(category.slug)) continue;
 
     const path = `/${category.slug}`;
-
     entries.set(path, {
       url: buildSiteUrl(path),
-
-      ...(category.updatedAt
-        ? {
-            lastModified:
-              category.updatedAt,
-          }
-        : {}),
+      ...(category.updatedAt ? { lastModified: category.updatedAt } : {}),
     });
   }
 
-  // ==========================================================
-  // Blog Posts
-  // ==========================================================
+  // Posts
+  let skipped = 0;
 
   for (const post of posts) {
-    if (!post.slug || !post.category) {
-      continue;
-    }
+    if (!post.slug || post.includeInSitemap === false) continue;
 
-    const categorySlug =
-      resolveCategorySlug(
-        post.category,
-        categories,
-      );
+    const categorySlug = resolveCategorySlug(post.category, categories);
 
     if (!categorySlug) {
-      console.warn(
-        `[Sitemap] Skipping post "${post.slug}" - category not resolved`,
-      );
-
+      skipped++;
+      console.warn(`[Sitemap] Skipping "${post.slug}" - category not resolved`);
       continue;
     }
 
-    const path =
-      `/${categorySlug}/${post.slug}`;
-
+    const path = `/${categorySlug}/${post.slug}`;
     const lastModified =
-      postLastModified(post);
+      post.updatedAt ||
+      post.publishedAt ||
+      post.legacy?.wordpressModifiedAt ||
+      undefined;
 
     entries.set(path, {
       url: buildSiteUrl(path),
-
-      ...(lastModified
-        ? {
-            lastModified,
-          }
-        : {}),
+      ...(lastModified ? { lastModified } : {}),
     });
   }
 
-  // ==========================================================
-  // Final Result
-  // ==========================================================
-
-  const sitemap =
-    Array.from(entries.values());
-
   console.log(
-    `[Sitemap] Generated ${sitemap.length} URLs`,
+    `[Sitemap] ${entries.size} URLs (${posts.length} posts fetched, ${skipped} skipped)`,
   );
 
-  console.log(
-    `[Sitemap] ${posts.length} posts processed`,
-  );
-
-  return sitemap;
+  return Array.from(entries.values());
 }

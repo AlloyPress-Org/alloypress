@@ -16,12 +16,12 @@ function getApiUrl(): string {
   if (process.env.NODE_ENV === "production") {
     throw new Error("PAYLOAD_API_URL is not set");
   }
-  return "http://localhost:3001/api";
+  return "https://api.alloypress.com/api";
 }
 
 /** Kept for files that still import it. Prefer getApiUrl(). */
 export const PAYLOAD_API_URL =
-  process.env.PAYLOAD_API_URL || "http://localhost:3001/api";
+  process.env.PAYLOAD_API_URL || "https://api.alloypress.com/api";
 export { getApiUrl };
 
 const DEFAULT_REVALIDATE = 300;
