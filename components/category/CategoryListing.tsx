@@ -48,11 +48,11 @@ type Post = {
   featuredImage?: number | Media | null;
   category?: number | ListingCategory | null;
   author?:
-    | {
-        name?: string | null;
-      }
-    | number
-    | null;
+  | {
+    name?: string | null;
+  }
+  | number
+  | null;
   workflowStatus?: string | null;
 };
 
@@ -275,7 +275,7 @@ function getAuthor(
 ): string {
   if (
     typeof post.author ===
-      "object" &&
+    "object" &&
     post.author !== null &&
     post.author.name
   ) {
@@ -383,20 +383,20 @@ const getCategoryPosts = cache(
           PayloadResponse<Post>
         >(
           `/posts` +
-            `?where[workflowStatus][equals]=published` +
-            `&where[category][equals]=${encodeURIComponent(
-              String(category.id),
-            )}` +
-            `&sort=-publishedAt` +
-            `&limit=100` +
-            `&depth=1` +
-            `&select[id]=true` +
-            `&select[title]=true` +
-            `&select[slug]=true` +
-            `&select[excerpt]=true` +
-            `&select[publishedAt]=true` +
-            `&select[featuredImage]=true` +
-            `&select[author]=true`,
+          `?where[workflowStatus][equals]=published` +
+          `&where[category][equals]=${encodeURIComponent(
+            String(category.id),
+          )}` +
+          `&sort=-publishedAt` +
+          `&limit=100` +
+          `&depth=1` +
+          `&select[id]=true` +
+          `&select[title]=true` +
+          `&select[slug]=true` +
+          `&select[excerpt]=true` +
+          `&select[publishedAt]=true` +
+          `&select[featuredImage]=true` +
+          `&select[author]=true`,
           {
             next: {
               revalidate: 300,
@@ -426,10 +426,7 @@ const getCategoryPosts = cache(
         error,
       );
 
-      return {
-        category: null,
-        posts: [],
-      };
+      throw error;
     }
   },
 );
@@ -532,10 +529,10 @@ export default async function CategoryListing({
 
                   {item.slug ===
                     slug && (
-                    <span>
-                      •
-                    </span>
-                  )}
+                      <span>
+                        •
+                      </span>
+                    )}
                 </Link>
               ),
             )}
@@ -582,17 +579,17 @@ export default async function CategoryListing({
                     alt={
                       typeof featuredPost.featuredImage ===
                         "object" &&
-                      featuredPost.featuredImage !==
+                        featuredPost.featuredImage !==
                         null &&
-                      featuredPost
-                        .featuredImage
-                        .alt
+                        featuredPost
+                          .featuredImage
+                          .alt
                         ? featuredPost
-                            .featuredImage
-                            .alt
+                          .featuredImage
+                          .alt
                         : cleanTitle(
-                            featuredPost.title,
-                          )
+                          featuredPost.title,
+                        )
                     }
                     loading="eager"
                     decoding="async"
@@ -684,124 +681,124 @@ export default async function CategoryListing({
 
           {remainingPosts.length >
             0 && (
-            <section className="latest-section">
-              <div className="category-section-heading">
-                <div>
-                  <span className="section-number">
-                    02
-                  </span>
+              <section className="latest-section">
+                <div className="category-section-heading">
+                  <div>
+                    <span className="section-number">
+                      02
+                    </span>
 
-                  <h2>
-                    Latest {title}
-                  </h2>
+                    <h2>
+                      Latest {title}
+                    </h2>
+                  </div>
+
+                  <span className="article-count">
+                    {
+                      remainingPosts.length
+                    }{" "}
+                    ARTICLES
+                  </span>
                 </div>
 
-                <span className="article-count">
-                  {
-                    remainingPosts.length
-                  }{" "}
-                  ARTICLES
-                </span>
-              </div>
-
-              <ArticleGrid>
-                {remainingPosts.map(
-                  (
-                    post,
-                    index,
-                  ) => (
-                    <Link
-                      key={post.id}
-                      href={`/${slug}/${post.slug}`}
-                      className="article-card"
-                    >
-                      <div className="article-card-image">
-                        <img
-                          src={getImageUrl(
-                            post.featuredImage,
-                            index + 1,
-                          )}
-                          alt={
-                            typeof post.featuredImage ===
-                              "object" &&
-                            post.featuredImage !==
-                              null &&
-                            post
-                              .featuredImage
-                              .alt
-                              ? post
+                <ArticleGrid>
+                  {remainingPosts.map(
+                    (
+                      post,
+                      index,
+                    ) => (
+                      <Link
+                        key={post.id}
+                        href={`/${slug}/${post.slug}`}
+                        className="article-card"
+                      >
+                        <div className="article-card-image">
+                          <img
+                            src={getImageUrl(
+                              post.featuredImage,
+                              index + 1,
+                            )}
+                            alt={
+                              typeof post.featuredImage ===
+                                "object" &&
+                                post.featuredImage !==
+                                null &&
+                                post
                                   .featuredImage
                                   .alt
-                              : cleanTitle(
+                                ? post
+                                  .featuredImage
+                                  .alt
+                                : cleanTitle(
                                   post.title,
                                 )
-                          }
-                          loading="lazy"
-                          decoding="async"
-                        />
+                            }
+                            loading="lazy"
+                            decoding="async"
+                          />
 
-                        <span className="article-card-number">
-                          {String(
-                            index + 2,
-                          ).padStart(
-                            2,
-                            "0",
-                          )}
-                        </span>
-
-                        <span
-                          className="article-card-arrow"
-                          aria-hidden="true"
-                        >
-                          ↗
-                        </span>
-                      </div>
-
-                      <div className="article-card-body">
-                        <div className="article-card-meta">
-                          <span>
-                            {title.toUpperCase()}
+                          <span className="article-card-number">
+                            {String(
+                              index + 2,
+                            ).padStart(
+                              2,
+                              "0",
+                            )}
                           </span>
 
-                          <i />
-
-                          <span>
-                            {formatDate(
-                              post.publishedAt,
-                            )}
+                          <span
+                            className="article-card-arrow"
+                            aria-hidden="true"
+                          >
+                            ↗
                           </span>
                         </div>
 
-                        <h3>
-                          {cleanTitle(
-                            post.title,
-                          )}
-                        </h3>
+                        <div className="article-card-body">
+                          <div className="article-card-meta">
+                            <span>
+                              {title.toUpperCase()}
+                            </span>
 
-                        <p>
-                          {getExcerpt(
-                            post,
-                          )}
-                        </p>
+                            <i />
 
-                        <div className="article-card-footer">
-                          <span>
-                            {getAuthor(
+                            <span>
+                              {formatDate(
+                                post.publishedAt,
+                              )}
+                            </span>
+                          </div>
+
+                          <h3>
+                            {cleanTitle(
+                              post.title,
+                            )}
+                          </h3>
+
+                          <p>
+                            {getExcerpt(
                               post,
                             )}
-                          </span>
+                          </p>
 
-                          <strong>
-                            Read →
-                          </strong>
+                          <div className="article-card-footer">
+                            <span>
+                              {getAuthor(
+                                post,
+                              )}
+                            </span>
+
+                            <strong>
+                              Read →
+                            </strong>
+                          </div>
                         </div>
-                      </div>
-                    </Link>
-                  ),
-                )}
-              </ArticleGrid>
-            </section>
-          )}
+                      </Link>
+                    ),
+                  )}
+                </ArticleGrid>
+              </section>
+            )}
 
           {/* ==================================================
               BOTTOM CTA

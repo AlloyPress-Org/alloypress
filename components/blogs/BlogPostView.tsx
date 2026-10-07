@@ -78,10 +78,79 @@ function isInteractiveHtml(code: string): boolean {
   return INTERACTIVE_RE.test(code) && !LEGACY_WIDGET_RE.test(code);
 }
 
+/* -------------------------------------------------------------------------- */
+/* Sandboxed iframe (auto-height + theme aware)                               */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Theme tokens the site can define on :root / [data-theme="dark"].
+ * Authors can use var(--apx-bg), var(--apx-text) ... inside iframe HTML.
+ * Tokens that the site does not define are skipped, so var() fallbacks work.
+ */
+const THEME_TOKENS = [
+  "--apx-bg",
+  "--apx-surface",
+  "--apx-text",
+  "--apx-muted",
+  "--apx-border",
+  "--apx-accent",
+];
+
+/*
+ * `height:100vh` / `min-height:100vh` inside an iframe is relative to the
+ * iframe itself, which creates a resize feedback loop and blank space.
+ * Neutralize them so the content decides its own height.
+ */
+function neutralizeViewportUnits(html: string): string {
+  return html.replace(
+    /(^|[;{\s"'])((?:min-)?height)\s*:\s*[\d.]+(?:d|s|l)?vh/gi,
+    (_m, pre: string, prop: string) =>
+      prop.toLowerCase() === "min-height"
+        ? `${pre}min-height:0`
+        : `${pre}height:auto`
+  );
+}
+
+function cssPreviewHtml(code: string): string {
+  const safe = code.replace(/<\/style/gi, "<\\/style");
+  return `<style>${safe}</style><div class="alloypress-css-preview">CSS Preview</div>`;
+}
+
+function jsPreviewHtml(code: string): string {
+  const safe = code.replace(/<\/script/gi, "<\\/script");
+  return `<div id="app"></div>
+<script>
+try {
+${safe}
+} catch (error) {
+  document.body.innerHTML = '<pre style="color:red;white-space:pre-wrap;">' + String((error && error.stack) || error) + '</pre>';
+}
+</script>`;
+}
+
+function detectColorScheme(): "light" | "dark" {
+  const root = document.documentElement;
+  const explicit = getComputedStyle(root).colorScheme || "";
+
+  if (/\bdark\b/.test(explicit) && !/\blight\b/.test(explicit)) return "dark";
+  if (/\blight\b/.test(explicit) && !/\bdark\b/.test(explicit)) return "light";
+
+  const attr = (root.getAttribute("data-theme") || "").toLowerCase();
+  if (attr === "dark") return "dark";
+  if (attr === "light") return "light";
+
+  if (root.classList.contains("dark")) return "dark";
+  if (root.classList.contains("light")) return "light";
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
 function SandboxedHtml({ html, title }: { html: string; title: string }) {
   const ref = useRef<HTMLIFrameElement>(null);
   const id = useId();
-  const [height, setHeight] = useState(320);
+  const [height, setHeight] = useState(60);
 
   const srcDoc = useMemo(
     () => `<!doctype html>
@@ -117,23 +186,79 @@ function SandboxedHtml({ html, title }: { html: string; title: string }) {
   try {
     Object.defineProperty(navigator, "clipboard", { value: shim, configurable: true });
   } catch (e) {}
+
+  window.addEventListener("message", function (e) {
+    if (e.data && e.data.type === "apx-theme" && e.data.id === SID) {
+      var el = document.getElementById("apx-theme");
+      if (el) el.textContent = e.data.css;
+    }
+  });
 })();
 </script>
 <style>
-  html, body { margin: 0; padding: 0; font-family: system-ui, sans-serif; color: #111; background: transparent; }
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden;
+  }
+  body { color: var(--apx-text, CanvasText); font-family: system-ui, sans-serif; }
+  #apx-root { position: absolute; top: 0; left: 0; right: 0; display: flow-root; }
   *, *::before, *::after { box-sizing: border-box; }
 </style>
+<style id="apx-theme"></style>
 </head>
 <body>
-${html}
+<div id="apx-root">${neutralizeViewportUnits(html)}</div>
 <script>
 (function () {
   var id = ${JSON.stringify(id)};
+  var root = document.getElementById("apx-root");
+  var last = -1;
+
   function send() {
-    parent.postMessage({ type: "apx-height", id: id, height: document.documentElement.scrollHeight }, "*");
+    var r = root.getBoundingClientRect();
+    var h = Math.ceil(Math.max(r.height, root.scrollHeight, root.offsetHeight));
+    if (h === last) return;
+    last = h;
+    parent.postMessage({ type: "apx-height", id: id, height: h }, "*");
   }
+
+  // Parent asks for the height (fixes the hydration race)
+  window.addEventListener("message", function (e) {
+    if (e.data && e.data.type === "apx-ping" && e.data.id === id) {
+      last = -1;
+      send();
+    }
+  });
+
   window.addEventListener("load", send);
-  if (window.ResizeObserver) new ResizeObserver(send).observe(document.body);
+  window.addEventListener("resize", send);
+  document.addEventListener("DOMContentLoaded", send);
+
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(send);
+  if (window.ResizeObserver) new ResizeObserver(send).observe(root);
+  new MutationObserver(send).observe(root, {
+    subtree: true, childList: true, attributes: true, characterData: true
+  });
+
+  Array.prototype.forEach.call(root.querySelectorAll("img"), function (img) {
+    if (!img.complete) {
+      img.addEventListener("load", send);
+      img.addEventListener("error", send);
+    }
+  });
+
+  // Safety net: re-measure for the first ~5 seconds
+  var n = 0;
+  var t = setInterval(function () {
+    send();
+    if (++n > 20) clearInterval(t);
+  }, 250);
+
+  send();
 })();
 </script>
 </body>
@@ -141,23 +266,95 @@ ${html}
     [html, id]
   );
 
+  /* Receive height + clipboard messages from the iframe */
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.source !== ref.current?.contentWindow) return;
       if (e.data?.id !== id) return;
 
       if (e.data.type === "apx-height") {
-        setHeight(Math.max(120, Math.ceil(e.data.height)));
+        setHeight(Math.max(0, Math.ceil(e.data.height)));
         return;
       }
 
-      // Clipboard fallback: iframe could not copy itself, parent does it.
       if (e.data.type === "apx-copy" && typeof e.data.text === "string") {
         void copyText(e.data.text);
       }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
+  }, [id]);
+
+  /*
+   * Hydration race fix: the iframe may send its first height before React
+   * attaches the listener above. Ask it to resend, several times.
+   */
+  useEffect(() => {
+    const iframe = ref.current;
+    if (!iframe) return;
+
+    const ping = () =>
+      iframe.contentWindow?.postMessage({ type: "apx-ping", id }, "*");
+
+    ping();
+    const timers = [50, 150, 400, 900, 1800, 3500].map((ms) =>
+      window.setTimeout(ping, ms)
+    );
+    iframe.addEventListener("load", ping);
+
+    return () => {
+      timers.forEach(window.clearTimeout);
+      iframe.removeEventListener("load", ping);
+    };
+  }, [id]);
+
+  /* Theme sync (tokens + color-scheme) without reloading the iframe */
+  useEffect(() => {
+    const iframe = ref.current;
+    if (!iframe) return;
+
+    const push = () => {
+      const cs = getComputedStyle(document.documentElement);
+      const scheme = detectColorScheme();
+
+      iframe.style.colorScheme = scheme;
+
+      const vars = THEME_TOKENS.map((t) => [t, cs.getPropertyValue(t).trim()])
+        .filter(([, v]) => v)
+        .map(([t, v]) => `${t}:${v}`)
+        .join(";");
+
+      iframe.contentWindow?.postMessage(
+        {
+          type: "apx-theme",
+          id,
+          css: `:root{${vars}${vars ? ";" : ""}color-scheme:${scheme}}`,
+        },
+        "*"
+      );
+    };
+
+    const mo = new MutationObserver(push);
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme", "style"],
+    });
+
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    mq.addEventListener("change", push);
+
+    iframe.addEventListener("load", push);
+    push();
+    const themeTimers = [150, 500, 1500].map((ms) =>
+      window.setTimeout(push, ms)
+    );
+
+    return () => {
+      themeTimers.forEach(window.clearTimeout);
+      mo.disconnect();
+      mq.removeEventListener("change", push);
+      iframe.removeEventListener("load", push);
+    };
   }, [id]);
 
   return (
@@ -170,7 +367,13 @@ ${html}
         sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
         allow="clipboard-write"
         className="post-live-code-frame"
-        style={{ width: "100%", height, border: 0 }}
+        style={{
+          width: "100%",
+          height,
+          border: 0,
+          display: "block",
+          background: "transparent",
+        }}
       />
     </div>
   );
@@ -1129,81 +1332,21 @@ function RenderNode({
       return <HtmlBlock code={code} />;
     }
 
-    const isExecutable =
-      normalizedLanguage === "css" ||
-      normalizedLanguage === "js";
-
-    if (!isExecutable) {
-      return (
-        <div className="post-code">
-          <pre>
-            <code>{code}</code>
-          </pre>
-        </div>
-      );
-    }
-
-    let srcDoc = "";
-
     if (normalizedLanguage === "css") {
-      srcDoc = `
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<style>
-${code}
-</style>
-</head>
-<body>
-  <div class="alloypress-css-preview">
-    CSS Preview
-  </div>
-</body>
-</html>
-`;
+      return <SandboxedHtml html={cssPreviewHtml(code)} title="CSS preview" />;
     }
 
     if (normalizedLanguage === "js") {
-      srcDoc = `
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<style>
-html, body {
-  margin: 0;
-  padding: 16px;
-  font-family: system-ui, sans-serif;
-}
-</style>
-</head>
-<body>
-  <div id="app"></div>
-
-  <script>
-  try {
-    ${code}
-  } catch (error) {
-    document.body.innerHTML =
-      '<pre style="color:red;white-space:pre-wrap;">' +
-      String(error?.stack || error) +
-      '</pre>';
-  }
-  </script>
-</body>
-</html>
-`;
+      return (
+        <SandboxedHtml html={jsPreviewHtml(code)} title="JavaScript preview" />
+      );
     }
 
     return (
-      <div className="post-live-code">
-        <iframe
-          title={`Live ${normalizedLanguage} preview`}
-          srcDoc={srcDoc}
-          sandbox="allow-scripts"
-          className="post-live-code-frame"
-        />
+      <div className="post-code">
+        <pre>
+          <code>{code}</code>
+        </pre>
       </div>
     );
   }
@@ -1399,30 +1542,7 @@ html, body {
       /* CSS */
       if (language === "css") {
         return (
-          <div className="post-live-code">
-            <iframe
-              title="CSS preview"
-              className="post-live-code-frame"
-              sandbox="allow-scripts"
-              srcDoc={`
-<!doctype html>
-<html>
-<head>
-<meta charset="UTF-8" />
-<style>
-${code}
-</style>
-</head>
-
-<body>
-  <div class="alloypress-css-preview">
-    CSS Preview
-  </div>
-</body>
-</html>
-          `}
-            />
-          </div>
+          <SandboxedHtml html={cssPreviewHtml(code)} title="CSS preview" />
         );
       }
 
@@ -1433,49 +1553,10 @@ ${code}
         language === "ecmascript"
       ) {
         return (
-          <div className="post-live-code">
-            <iframe
-              title="JavaScript preview"
-              className="post-live-code-frame"
-              sandbox="allow-scripts"
-              srcDoc={`
-<!doctype html>
-<html>
-<head>
-<meta charset="UTF-8" />
-<style>
-html,
-body {
-  margin: 0;
-  padding: 16px;
-  font-family: system-ui, sans-serif;
-}
-
-body {
-  background: #ffffff;
-  color: #111111;
-}
-</style>
-</head>
-
-<body>
-  <div id="app"></div>
-
-  <script>
-    try {
-      ${code}
-    } catch (error) {
-      document.body.innerHTML =
-        "<pre style='color:red;white-space:pre-wrap;'>" +
-        String(error?.stack || error) +
-        "</pre>";
-    }
-  </script>
-</body>
-</html>
-          `}
-            />
-          </div>
+          <SandboxedHtml
+            html={jsPreviewHtml(code)}
+            title="JavaScript preview"
+          />
         );
       }
 
