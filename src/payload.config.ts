@@ -144,8 +144,9 @@ export default buildConfig({
     "https://www.alloypress.com",
     "https://web.sakthiparthibans.workers.dev",
     "https://alloypress.abhub-net.workers.dev",
-    "https://alloypress-web.vercel.app",
-    "http://localhost:3000",
+    'http://localhost:3000',
+    'http://localhost:3001',
+
   ],
   csrf: [
     "https://api.alloypress.com",
@@ -153,8 +154,8 @@ export default buildConfig({
     "https://www.alloypress.com",
     "https://web.sakthiparthibans.workers.dev",
     "https://alloypress.abhub-net.workers.dev",
-    "https://alloypress-web.vercel.app",
-    "http://localhost:3000",
+    'http://localhost:3000',
+    'http://localhost:3001',
   ],
 
 
