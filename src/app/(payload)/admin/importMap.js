@@ -10,6 +10,7 @@ import { codeConverterClient as codeConverterClient_e70f5e05f09f93e00b997edb1ef0
 import { CodeBlockBlockComponent as CodeBlockBlockComponent_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { HTMLPreviewField as HTMLPreviewField_76e4d1f6a763d2de8d67f9c946e4304f } from '../../../components/admin/HTMLPreviewField'
 import { CTAColorField as CTAColorField_ba96717da1ba8c151c2b6f69316b9902 } from '../../../components/admin/CTAColorField'
+import { PasteImagesClientFeature as PasteImagesClientFeature_55ff64af5222ac2bb844091e27033269 } from '../../../features/pasteImages/feature.client'
 import { UploadFeatureClient as UploadFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { LinkFeatureClient as LinkFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { TextStateFeatureClient as TextStateFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
@@ -59,6 +60,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#CodeBlockBlockComponent": CodeBlockBlockComponent_e70f5e05f09f93e00b997edb1ef0c864,
   "/components/admin/HTMLPreviewField#HTMLPreviewField": HTMLPreviewField_76e4d1f6a763d2de8d67f9c946e4304f,
   "/components/admin/CTAColorField#CTAColorField": CTAColorField_ba96717da1ba8c151c2b6f69316b9902,
+  "/features/pasteImages/feature.client#PasteImagesClientFeature": PasteImagesClientFeature_55ff64af5222ac2bb844091e27033269,
   "@payloadcms/richtext-lexical/client#UploadFeatureClient": UploadFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#LinkFeatureClient": LinkFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#TextStateFeatureClient": TextStateFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,

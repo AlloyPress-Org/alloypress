@@ -41,7 +41,7 @@ const dirname = path.dirname(filename)
 // =========================================================
 // Move the SEO group into a collapsed sidebar panel (WordPress-style).
 // Runs right after seoPlugin (tabbedUI: false -> plugin appends a `meta` group).
-// Sidebar order: Publishing -> SEO -> Migration / Internal.
+// Sidebar order: Publishing -> SEO -> Excerpt -> Migration / Internal.
 // The group keeps its name `meta`, so database columns stay the same.
 // =========================================================
 const moveSeoToSidebar: Plugin = (incomingConfig) => ({
@@ -74,14 +74,15 @@ const moveSeoToSidebar: Plugin = (incomingConfig) => ({
       return collection
     }
 
-    // insert the SEO panel just above the Migration / Internal panel
-    const migrationIndex = otherFields.findIndex(
+    // insert the SEO panel just above the Excerpt panel
+    // (falls back to Migration / Internal, then to the end)
+    const insertBeforeIndex = otherFields.findIndex(
       (field) =>
         field.type === 'collapsible' &&
         typeof field.label === 'string' &&
-        field.label === 'Migration / Internal',
+        (field.label === 'Excerpt' || field.label === 'Migration / Internal'),
     )
-    const insertAt = migrationIndex === -1 ? otherFields.length : migrationIndex
+    const insertAt = insertBeforeIndex === -1 ? otherFields.length : insertBeforeIndex
 
     return {
       ...collection,

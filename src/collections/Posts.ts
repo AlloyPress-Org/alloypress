@@ -13,6 +13,7 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 import { textStateConfig } from '@/fields/textStateConfig'
+import { PasteImagesFeature } from '@/features/pasteImages/feature.server'
 
 const isEditorOrAdmin: Access = ({ req }) => {
   const role = req.user?.role
@@ -281,6 +282,12 @@ const contentField: Field = {
   label: 'Content',
 
   editor: lexicalEditor({
+    // Editor-level admin setting: hides the
+    // "Start typing, or press '/' for commands..." placeholder text.
+    admin: {
+      placeholder: ' ',
+    },
+
     features: ({ defaultFeatures }) => [
       ...defaultFeatures,
 
@@ -360,6 +367,8 @@ const contentField: Field = {
           },
         },
       }),
+
+      PasteImagesFeature(),
 
       BlocksFeature({
         blocks: [
@@ -917,10 +926,8 @@ const contentField: Field = {
     ],
   }),
 
-  admin: {
-    description:
-      'Main article content. Add formatted text, links, images, videos, audio, styled boxes, buttons, code and tables.',
-  },
+  // NOTE: the field-level `admin.description`
+  // ("Main article content. Add formatted text, ...") was removed on purpose.
 }
 
 export const Posts: CollectionConfig = {
@@ -1292,6 +1299,7 @@ export const Posts: CollectionConfig = {
     // (A `tabs` field cannot be used here: seoPlugin tabbedUI rebuilds it and
     //  drops admin.position.) Unnamed collapsible => database does not change.
     // The SEO panel is moved into the sidebar from payload.config.ts.
+    // Final sidebar order: Publishing -> SEO -> Excerpt -> Migration / Internal
     // =====================================================================
     {
       type: 'collapsible',
@@ -1301,141 +1309,142 @@ export const Posts: CollectionConfig = {
         initCollapsed: false,
       },
       fields: [
-      {
-        name: 'featuredImage',
-        type: 'upload',
-        relationTo: 'media',
-        label: 'Featured Image',
-      },
+        {
+          name: 'featuredImage',
+          type: 'upload',
+          relationTo: 'media',
+          label: 'Featured Image',
+        },
 
-      {
-        name: 'imagePosition',
-        type: 'select',
-        label: 'Image Position',
-        defaultValue: 'full',
+        {
+          name: 'imagePosition',
+          type: 'select',
+          label: 'Image Position',
+          defaultValue: 'full',
 
-        options: [
-          {
-            label: 'Left',
-            value: 'left',
-          },
-          {
-            label: 'Right',
-            value: 'right',
-          },
-          {
-            label: 'Full Width',
-            value: 'full',
-          },
-        ],
-      },
+          options: [
+            {
+              label: 'Left',
+              value: 'left',
+            },
+            {
+              label: 'Right',
+              value: 'right',
+            },
+            {
+              label: 'Full Width',
+              value: 'full',
+            },
+          ],
+        },
 
-      {
-        name: 'category',
-        type: 'relationship',
-        relationTo: 'categories',
-        required: true,
-        hasMany: false,
-        label: 'Category',
-      },
+        {
+          name: 'category',
+          type: 'relationship',
+          relationTo: 'categories',
+          required: true,
+          hasMany: false,
+          label: 'Category',
+        },
 
-      {
-        name: 'tags',
-        type: 'relationship',
-        relationTo: 'tags',
-        hasMany: true,
-        label: 'Tags',
-      },
+        {
+          name: 'tags',
+          type: 'relationship',
+          relationTo: 'tags',
+          hasMany: true,
+          label: 'Tags',
+        },
 
-      {
-        name: 'author',
-        type: 'relationship',
-        relationTo: 'users',
-        required: true,
-        hasMany: false,
-        label: 'Author',
-      },
+        {
+          name: 'author',
+          type: 'relationship',
+          relationTo: 'users',
+          required: true,
+          hasMany: false,
+          label: 'Author',
+        },
 
-      {
-        name: 'publishedAt',
-        type: 'date',
-        index: true,
-        label: 'Published Date',
+        {
+          name: 'publishedAt',
+          type: 'date',
+          index: true,
+          label: 'Published Date',
 
-        admin: {
-          date: {
-            pickerAppearance: 'dayAndTime',
+          admin: {
+            date: {
+              pickerAppearance: 'dayAndTime',
+            },
           },
         },
-      },
 
-      {
-        name: 'workflowStatus',
-        type: 'select',
-        index: true,
-        label: 'Workflow Status',
-        defaultValue: 'draft',
+        {
+          name: 'workflowStatus',
+          type: 'select',
+          index: true,
+          label: 'Workflow Status',
+          defaultValue: 'draft',
 
-        options: [
-          {
-            label: 'Draft',
-            value: 'draft',
+          options: [
+            {
+              label: 'Draft',
+              value: 'draft',
+            },
+            {
+              label: 'Review',
+              value: 'review',
+            },
+            {
+              label: 'Published',
+              value: 'published',
+            },
+          ],
+
+          admin: {
+            description:
+              'Editorial workflow: Draft → Review → Published.',
           },
-          {
-            label: 'Review',
-            value: 'review',
+        },
+
+        {
+          name: 'cornerstone',
+          type: 'checkbox',
+          defaultValue: false,
+          label: 'Cornerstone / Pillar Content',
+
+          admin: {
+            description:
+              'Marks this article as important pillar content for internal linking priority.',
           },
-          {
-            label: 'Published',
-            value: 'published',
+        },
+
+        {
+          name: 'includeInSitemap',
+          type: 'checkbox',
+          defaultValue: true,
+          label: 'Include in Sitemap',
+
+          admin: {
+            description:
+              'Controls whether this published post should appear in the sitemap.',
           },
-        ],
-
-        admin: {
-          description:
-            'Editorial workflow: Draft → Review → Published.',
         },
-      },
 
-      {
-        name: 'cornerstone',
-        type: 'checkbox',
-        defaultValue: false,
-        label: 'Cornerstone / Pillar Content',
+        {
+          name: 'redirectFrom',
+          type: 'text',
+          label: 'Previous URL',
 
-        admin: {
-          description:
-            'Marks this article as important pillar content for internal linking priority.',
+          admin: {
+            description:
+              'Optional previous URL/slug that should redirect to this post after a URL change.',
+          },
         },
-      },
-
-      {
-        name: 'includeInSitemap',
-        type: 'checkbox',
-        defaultValue: true,
-        label: 'Include in Sitemap',
-
-        admin: {
-          description:
-            'Controls whether this published post should appear in the sitemap.',
-        },
-      },
-
-      {
-        name: 'redirectFrom',
-        type: 'text',
-        label: 'Previous URL',
-
-        admin: {
-          description:
-            'Optional previous URL/slug that should redirect to this post after a URL change.',
-        },
-      },
       ],
     },
 
     // =====================================================================
-    // MAIN COLUMN (left): Title, Slug, Content, Excerpt
+    // MAIN COLUMN (left): Title, Slug, Content
+    // (Excerpt moved to the sidebar, see the Excerpt panel below)
     // =====================================================================
     {
       name: 'title',
@@ -1465,15 +1474,29 @@ export const Posts: CollectionConfig = {
 
     contentField,
 
+    // =====================================================================
+    // EXCERPT: sidebar panel (appears after SEO, before Migration / Internal)
+    // Unnamed collapsible => the `excerpt` column stays the same, no DB change.
+    // =====================================================================
     {
-      name: 'excerpt',
-      type: 'textarea',
+      type: 'collapsible',
       label: 'Excerpt',
-
       admin: {
-        description:
-          'Short summary used in blog listings and RSS-style outputs.',
+        position: 'sidebar',
+        initCollapsed: false,
       },
+      fields: [
+        {
+          name: 'excerpt',
+          type: 'textarea',
+          label: false,
+
+          admin: {
+            description:
+              'Short summary used in blog listings and RSS-style outputs.',
+          },
+        },
+      ],
     },
 
     // =====================================================================

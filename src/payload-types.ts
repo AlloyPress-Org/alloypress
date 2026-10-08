@@ -209,9 +209,9 @@ export interface Media {
    */
   originalUrl?: string | null;
   /**
-   * Alternative text for accessibility and image SEO. For audio files, use a short descriptive text.
+   * Alternative text for accessibility and image SEO. If left empty, it is auto-filled from the filename. Edit it later for better SEO. For audio files, use a short descriptive text.
    */
-  alt: string;
+  alt?: string | null;
   /**
    * Title used for identifying and managing the media.
    */
@@ -358,9 +358,6 @@ export interface Post {
    * The URL-friendly identifier used for the post URL.
    */
   slug: string;
-  /**
-   * Main article content. Add formatted text, links, images, videos, audio, styled boxes, buttons, code and tables.
-   */
   content: {
     root: {
       type: string;
@@ -376,10 +373,6 @@ export interface Post {
     };
     [k: string]: unknown;
   };
-  /**
-   * Short summary used in blog listings and RSS-style outputs.
-   */
-  excerpt?: string | null;
   meta: {
     title?: string | null;
     description: string;
@@ -416,6 +409,10 @@ export interface Post {
       image?: (number | null) | Media;
     };
   };
+  /**
+   * Short summary used in blog listings and RSS-style outputs.
+   */
+  excerpt?: string | null;
   legacy?: {
     wordpressId?: number | null;
     /**
@@ -856,7 +853,6 @@ export interface PostsSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
   content?: T;
-  excerpt?: T;
   meta?:
     | T
     | {
@@ -897,6 +893,7 @@ export interface PostsSelect<T extends boolean = true> {
               image?: T;
             };
       };
+  excerpt?: T;
   legacy?:
     | T
     | {
