@@ -1,60 +1,82 @@
-'use client'
 
-import { useEffect, useState } from 'react'
-import { ArrowUp } from 'lucide-react'
+"use client";
 
-export default function BackToTop() {
-  const [visible, setVisible] = useState(false)
-  const [progress, setProgress] = useState(0)
+import { useEffect, useState } from "react";
+import { ArrowUp } from "lucide-react";
+
+type BackToTopProps = {
+  variant?: "floating" | "toolbar";
+};
+
+export default function BackToTop({
+  variant = "floating",
+}: BackToTopProps) {
+  const [visible, setVisible] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrollTop = window.scrollY
-
+      const scrollTop = window.scrollY;
       const documentHeight =
-        document.documentElement.scrollHeight - window.innerHeight
+        document.documentElement.scrollHeight -
+        window.innerHeight;
 
       const scrollProgress =
         documentHeight > 0
           ? (scrollTop / documentHeight) * 100
-          : 0
+          : 0;
 
-      setVisible(scrollTop > 500)
-      setProgress(Math.min(100, Math.max(0, scrollProgress)))
-    }
+      setVisible(scrollTop > 500);
+      setProgress(
+        Math.min(100, Math.max(0, scrollProgress))
+      );
+    };
 
-    window.addEventListener('scroll', handleScroll, {
+    window.addEventListener("scroll", handleScroll, {
       passive: true,
-    })
+    });
 
-    handleScroll()
+    handleScroll();
 
     return () => {
-      window.removeEventListener('scroll', handleScroll)
-    }
-  }, [])
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth',
-    })
+      left: 0,
+      behavior: "smooth",
+    });
+  };
+
+  if (variant === "toolbar") {
+    return (
+      <button
+        type="button"
+        onClick={scrollToTop}
+        aria-label="Back to top"
+        className="back-to-top--toolbar"
+      >
+        <ArrowUp aria-hidden="true" size={18} />
+        <span>Back to Top</span>
+      </button>
+    );
   }
 
-  const radius = 21
-  const circumference = 2 * Math.PI * radius
-
+  const radius = 21;
+  const circumference = 2 * Math.PI * radius;
   const offset =
-    circumference - (progress / 100) * circumference
+    circumference - (progress / 100) * circumference;
 
   return (
     <button
       type="button"
       onClick={scrollToTop}
       aria-label="Back to top"
-      className={`back-to-top ${visible ? 'visible' : ''}`}
+      className={`back-to-top ${visible ? "visible" : ""}`}
     >
-      {/* Progress Ring */}
       <svg
         className="back-to-top-ring"
         viewBox="0 0 48 48"
@@ -66,7 +88,6 @@ export default function BackToTop() {
           cy="24"
           r={radius}
         />
-
         <circle
           className="back-to-top-ring-progress"
           cx="24"
@@ -79,12 +100,11 @@ export default function BackToTop() {
         />
       </svg>
 
-      {/* Arrow */}
       <ArrowUp
         className="back-to-top-icon"
         size={19}
         strokeWidth={2.2}
       />
     </button>
-  )
+  );
 }

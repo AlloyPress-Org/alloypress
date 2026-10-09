@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 
 import "./globals.css";
 
@@ -67,6 +68,8 @@ const organizationJsonLd = {
 
 const GTM_ID = "GTM-P72SG3JX";
 
+const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+
 const gtmScript = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
@@ -89,19 +92,25 @@ export default function RootLayout({
           rel="preconnect"
           href="https://media.alloypress.com"
         />
-
-        {/* Google Tag Manager */}
-        <script dangerouslySetInnerHTML={{ __html: gtmScript }} />
-
-        {/* Google AdSense */}
-        <script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
-          crossOrigin="anonymous"
-        />
       </head>
 
       <body>
+        {/* Google Tag Manager (next/script avoids <head> hydration mismatch) */}
+        <Script id="gtm-init" strategy="afterInteractive">
+          {gtmScript}
+        </Script>
+
+        {/* Google AdSense */}
+        {ADSENSE_CLIENT ? (
+          <Script
+            id="adsense-script"
+            async
+            strategy="afterInteractive"
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+            crossOrigin="anonymous"
+          />
+        ) : null}
+
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe

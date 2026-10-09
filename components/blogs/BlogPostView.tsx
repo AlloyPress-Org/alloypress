@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useId } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, useId } from "react";
 import {
   Check,
   Copy,
@@ -24,6 +24,9 @@ import {
   FaRedditAlien,
   FaPinterestP,
 } from "react-icons/fa6";
+import AdSenseSidebar from "@/components/ads/AdSenseSidebar";
+import AdSenseInArticle from "@/components/ads/AdSenseInArticle";
+import BackToTop from "@/components/BackToTop";
 
 import "./BlogPostView.css";
 type Props = {
@@ -1858,6 +1861,24 @@ function ArticleRenderer({
   const rootRef = useRef<HTMLDivElement>(null);
   const children = normalizeArticleContent(content?.root?.children || []);
 
+
+  const h2Indexes = children.flatMap((node: any, index: number) => {
+    const tag = String(node?.tag || "h2").toLowerCase();
+
+    return node?.type === "heading" && tag === "h2"
+      ? [index]
+      : [];
+  });
+
+  const adIndexes = [
+    h2Indexes[Math.floor(h2Indexes.length / 3)],
+    h2Indexes[Math.floor((h2Indexes.length * 2) / 3)],
+  ].filter(
+    (index, position, indexes) =>
+      index !== undefined && indexes.indexOf(index) === position
+  );
+
+
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -2216,13 +2237,31 @@ function ArticleRenderer({
     return () => root.removeEventListener("click", onClick);
   }, []);
 
+
   return (
     <div className="post-content" ref={rootRef}>
       {children.map((node: any, i: number) => (
-        <RenderNode key={i} node={node} index={i} headingIds={headingIds} />
+        <Fragment key={i}>
+          {adIndexes.includes(i) && (
+            <AdSenseInArticle
+              slot={
+                adIndexes.indexOf(i) === 0
+                  ? process.env.NEXT_PUBLIC_ADSENSE_ARTICLE_SLOT_1 || ""
+                  : process.env.NEXT_PUBLIC_ADSENSE_ARTICLE_SLOT_2 || ""
+              }
+            />
+          )}
+
+          <RenderNode
+            node={node}
+            index={i}
+            headingIds={headingIds}
+          />
+        </Fragment>
       ))}
     </div>
   );
+
 }
 
 /* -------------------------------------------------------------------------- */
@@ -2255,7 +2294,6 @@ export default function BlogPostView({
   const [tocOpen, setTocOpen] = useState(false);
   const [desktopTocOpen, setDesktopTocOpen] = useState(true);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [mobileToolsVisible, setMobileToolsVisible] = useState(false);
 
   useEffect(() => {
     setArticleUrl(window.location.href);
@@ -2322,103 +2360,6 @@ export default function BlogPostView({
 
     return () => {
       mediaQuery.removeEventListener("change", updateViewport);
-    };
-  }, []);
-
-  useEffect(() => {
-    const updateMobileTools = () => {
-      const isMobile = window.matchMedia(
-        "(max-width: 820px)"
-      ).matches;
-
-      if (!isMobile) {
-        setMobileToolsVisible(true);
-        return;
-      }
-
-      const start = document.getElementById(
-        "mobile-tools-start"
-      );
-
-      const end = document.getElementById(
-        "article-tools-end"
-      );
-
-      if (!start || !end) return;
-
-      const startTop =
-        start.getBoundingClientRect().top;
-
-      const endTop =
-        end.getBoundingClientRect().top;
-
-      const heroFinished = startTop <= 0;
-      const articleFinished = endTop <= 0;
-
-      setMobileToolsVisible(
-        heroFinished && !articleFinished
-      );
-    };
-
-    updateMobileTools();
-
-    let ticking = false;
-
-    const handleScroll = () => {
-      if (ticking) return;
-
-      ticking = true;
-
-      window.requestAnimationFrame(() => {
-        updateMobileTools();
-        ticking = false;
-      });
-    };
-
-    window.addEventListener(
-      "scroll",
-      handleScroll,
-      { passive: true }
-    );
-
-    window.addEventListener(
-      "resize",
-      updateMobileTools
-    );
-
-    return () => {
-      window.removeEventListener(
-        "scroll",
-        handleScroll
-      );
-
-      window.removeEventListener(
-        "resize",
-        updateMobileTools
-      );
-    };
-  }, []);
-
-  useEffect(() => {
-    const sentinel = document.getElementById("article-tools-end");
-
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setMobileToolsVisible(!entry.isIntersecting);
-      },
-      {
-        root: null,
-        threshold: 0,
-        rootMargin: "0px 0px -70px 0px",
-      }
-    );
-
-    observer.observe(sentinel);
-
-    return () => {
-      observer.disconnect();
     };
   }, []);
 
@@ -2524,7 +2465,7 @@ export default function BlogPostView({
   // Plain HTML snippet that works on ANY publisher website
   // (the previous version copied JSX, which does not work outside React).
   const badgeEmbedCode = `<a href="${badgeArticleUrl}" target="_blank" rel="noopener noreferrer" aria-label="Featured on AlloyPress — ${badgeToolName}">
-  <img src="https://alloypress.com/badges/featured.png" alt="Featured on AlloyPress" width="320" height="117" style="max-width:100%;height:auto;" />
+  <img src="https://alloypress.com/badges/featured.svg" alt="Featured on AlloyPress" width="320" height="117" style="max-width:100%;height:auto;" />
 </a>`
 
   async function copyBadgeEmbedCode() {
@@ -2666,7 +2607,7 @@ export default function BlogPostView({
                     >
                       <span className="author-dot">
                         <Image
-                          src="/ap-icon.png"
+                          src="/ap-icons.png"
                           alt="AlloyPress"
                           width={32}
                           height={32}
@@ -2725,11 +2666,50 @@ export default function BlogPostView({
           </div>
         </header>
 
-        <div
-          id="mobile-tools-start"
-          className="mobile-tools-sentinel"
-          aria-hidden="true"
-        />
+        {/* ---------------------------------------------------------------- */}
+        {/* Reading toolbar (mobile/tablet): Contents | Share | Back to Top  */}
+        {/* Sits directly below the hero. Hidden on desktop via CSS.         */}
+        {/* ---------------------------------------------------------------- */}
+        <nav
+          className="single-post-reading-toolbar"
+          aria-label="Article navigation tools"
+        >
+          <div className="post-shell reading-toolbar-inner">
+            <button
+              type="button"
+              className="reading-toolbar-button"
+              aria-haspopup="dialog"
+              aria-expanded={tocOpen}
+              aria-controls="mobile-article-toc"
+              onClick={() => setTocOpen(true)}
+            >
+              <FileText aria-hidden="true" />
+              <span>TOC</span>
+              <ChevronDown
+                className="reading-toolbar-chevron"
+                aria-hidden="true"
+              />
+            </button>
+
+            <button
+              type="button"
+              className="reading-toolbar-button"
+              aria-haspopup="dialog"
+              aria-expanded={shareOpen}
+              onClick={() => setShareOpen(true)}
+            >
+              <Share2 aria-hidden="true" />
+              <span>Share</span>
+              <ChevronDown
+                className="reading-toolbar-chevron"
+                aria-hidden="true"
+              />
+            </button>
+
+            <BackToTop variant="toolbar" />
+          </div>
+        </nav>
+
 
         {/* ---------------------------------------------------------------- */}
         {/* Main three-column reading workspace                               */}
@@ -2855,12 +2835,12 @@ export default function BlogPostView({
                 )}
               </div>
               <div className="sidebar-card alloypress-badge-card desktop-featured-badge">
-                <div className="side-label">FEATURED BADGE</div>
+                <div className="side-label">Tested by AlloyPress</div>
 
                 <div className="alloypress-badge-copy-box">
                   <div className="alloypress-badge-preview">
                     <Image
-                      src="/badges/featured.png"
+                      src="/badges/featured.svg"
                       alt="Featured on AlloyPress"
                       width={320}
                       height={117}
@@ -2885,8 +2865,7 @@ export default function BlogPostView({
                 </div>
 
                 <p className="alloypress-badge-text">
-                  Copy this badge and add it to your website to show that this tool is
-                  featured on AlloyPress.
+                  Is your tool in this article? Copy this badge to show it was independently tested by our team.
                 </p>
               </div>
             </aside>
@@ -2917,12 +2896,12 @@ export default function BlogPostView({
 
                 {/* Mobile AlloyPress Badge */}
                 <div className="mobile-alloypress-badge">
-                  <div className="side-label">Featured badge</div>
+                  <div className="side-label">Tested by AlloyPress</div>
 
                   <div className="alloypress-badge-copy-box">
                     <div className="alloypress-badge-preview">
                       <Image
-                        src="/badges/featured.png"
+                        src="/badges/featured.svg"
                         alt="Featured on AlloyPress"
                         width={320}
                         height={117}
@@ -2945,38 +2924,17 @@ export default function BlogPostView({
                   </div>
 
                   <p className="alloypress-badge-text">
-                    Copy this badge and add it to your website to show that this tool
-                    is featured on AlloyPress.
+                    Is your tool in this article? Copy this badge to show it was independently tested by our team.
                   </p>
                 </div>
               </div>
             </article>
 
-            {/* Right: trust / share / AI tools */}
+            {/* Right: share / ads / AI tools (desktop only; hidden on mobile via CSS) */}
             <aside
-              className={`article-sidebar${mobileToolsVisible ? "" : " mobile-tools-hidden"
-                }`}
+              className="article-sidebar"
               aria-label="Article tools"
             >
-
-              <div className="sidebar-card mobile-toc-card">
-                <div className="side-label">Article navigation</div>
-
-                <button
-                  type="button"
-                  className="mobile-toc-trigger"
-                  aria-haspopup="dialog"
-                  aria-expanded={tocOpen}
-                  aria-controls="mobile-article-toc"
-                  onClick={() => setTocOpen(true)}
-                >
-                  <span className="mobile-toc-trigger-label">
-                    <FileText aria-hidden="true" />
-                    <span>TOC</span>
-                  </span>
-                </button>
-              </div>
-
               <div className="sidebar-card">
                 <div className="side-label">Share article</div>
 
@@ -2993,6 +2951,9 @@ export default function BlogPostView({
                   </span>
                 </button>
               </div>
+
+              {/* Ad directly below Share Article */}
+              <AdSenseSidebar />
 
               {AI_ENABLED && (
                 <div className="sidebar-card ai-tools-card">
@@ -3014,12 +2975,6 @@ export default function BlogPostView({
             </aside>
           </div>
         </div >
-
-        <div
-          id="article-tools-end"
-          className="article-tools-end-sentinel"
-          aria-hidden="true"
-        />
 
         {/* ---------------------------------------------------------------- */}
         {/* Related articles                                                 */}

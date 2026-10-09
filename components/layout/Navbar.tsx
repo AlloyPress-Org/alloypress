@@ -175,7 +175,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" className="brand-logo">
           <Image
-            src="/ap-icon.png"
+            src="/ap-icons.png"
             alt="AlloyPress"
             width={34}
             height={34}

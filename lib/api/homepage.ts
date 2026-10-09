@@ -1,6 +1,6 @@
 import { cache } from 'react'
 
-const CMS_URL = process.env.NEXT_PUBLIC_CMS_URL
+const CMS_URL = process.env.NEXT_PUBLIC_PAYLOAD_URL
 
 export const getHomepageSettings = cache(async () => {
   const url = new URL(`${CMS_URL}/api/homepage-settings`)

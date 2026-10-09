@@ -55,7 +55,7 @@ export const SITE_LOGO_URL =
 // 1200x630 image create panni /public/og-default.png-la vainga
 export const DEFAULT_OG_IMAGE_URL =
   process.env.NEXT_PUBLIC_DEFAULT_OG_IMAGE_URL?.trim() ||
-  `${SITE_URL}/ap-icon.png`;
+  `${SITE_URL}/ap-icons.png`;
 
 export const DEFAULT_OG_IMAGE_SIZE = { width: 512, height: 512 } as const;
 

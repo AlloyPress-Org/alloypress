@@ -186,7 +186,7 @@ export default function Footer() {
    target="_blank"
    rel="noopener noreferrer"
    aria-label="Featured on AlloyPress">
- <img src="https://alloypress.com/badges/featured.png"
+ <img src="https://alloypress.com/badges/featured.svg"
      alt="Featured on AlloyPress"
      width="320"
      height="117">
@@ -216,7 +216,7 @@ export default function Footer() {
             <div className="footer-brand">
               <Link href="/" className="footer-logo">
                 <Image
-                  src="/ap-icon.png"
+                  src="/ap-icons.png"
                   alt="AlloyPress"
                   width={34}
                   height={34}
@@ -269,7 +269,7 @@ export default function Footer() {
                     aria-label="Featured on AlloyPress"
                   >
                     <img
-                      src="/badges/featured.png"
+                      src="/badges/featured.svg"
                       alt="Featured on AlloyPress"
                       width={320}
                       height={117}

@@ -14,7 +14,7 @@
 }
 
 .site-header-inner {
-  width: min(calc(100% - 48px), var(--container));
+  width: min(calc(100% - 48px), var(--site-container, 1260px));
   position: relative;
   min-height: 72px;
   margin-inline: auto;

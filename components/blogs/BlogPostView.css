@@ -450,92 +450,6 @@
   font: 600 .9em "DM Mono", monospace;
 }
 
-.table-scroll {
-  width: 100%;
-  overflow-x: auto;
-  margin: 34px 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  scrollbar-width: thin;
-}
-
-.post-table {
-  width: 100%;
-  min-width: 560px;
-  border-collapse: collapse;
-  color: var(--text-secondary);
-  font: 400 var(--text-md, 15px)/1.55 var(--font-body, "Lora", serif);
-  table-layout: auto;
-}
-
-.post-table .table-label-col {
-  width: 140px;
-}
-
-.post-table th,
-.post-table td {
-  padding: 14px 16px;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-  text-align: left;
-  overflow-wrap: break-word;
-  word-break: normal;
-  color: var(--text-secondary);
-}
-
-.post-table th:first-child,
-.post-table td:first-child {
-  width: 140px;
-  min-width: 140px;
-  color: var(--ink);
-  font-weight: 650;
-}
-
-.post-table th img,
-.post-table td img {
-  display: block;
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  object-fit: contain;
-  margin: 0 auto;
-}
-
-.post-table .post-image-frame {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 0;
-  background: var(--surface-elevated);
-}
-
-.post-table th:last-child,
-.post-table td:last-child {
-  border-right: 0;
-}
-
-.post-table tr:last-child td {
-  border-bottom: 0;
-}
-
-.post-table .table-head {
-  background: var(--brand-soft);
-  color: var(--green);
-  font-weight: 800;
-}
-
-.post-table .post-p {
-  margin: 0 0 7px;
-}
-
-.post-table .post-figure,
-.post-table .post-video,
-.post-table .post-audio {
-  margin: 8px 0;
-}
-
 .unknown-block {
   margin: 22px 0;
 }
@@ -928,12 +842,6 @@
   transform: translateY(-1px);
 }
 
-.share-option svg {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-}
-
 .share-option-primary {
   border-color: rgba(0, 216, 74, .3);
   background: var(--brand-soft);
@@ -1054,16 +962,6 @@
 
   font:
     400 var(--text-sm, 14px)/1.65 var(--font-body, "Lora", serif);
-}
-
-.ai-answer {
-  margin-top: 14px;
-  padding: 13px;
-  border: 1px solid rgba(0, 216, 74, .18);
-  border-radius: var(--radius-sm);
-  background: var(--brand-soft);
-  color: var(--text-secondary);
-  font: 400 var(--text-sm, 14px)/1.6 var(--font-body, "Lora", serif);
 }
 
 .ai-close {
@@ -1408,107 +1306,6 @@
   object-fit: contain;
 }
 
-.table-scroll {
-  width: 100%;
-  margin: 34px 0;
-  overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-elevated);
-}
-
-.post-table {
-  width: 100%;
-  min-width: 760px;
-  table-layout: auto;
-  border-collapse: separate;
-  border-spacing: 0;
-  color: var(--text-secondary);
-  font-family: var(--font-body);
-  font-size: var(--text-md);
-  line-height: 1.55;
-}
-
-.post-table col:first-child,
-.post-table .table-label-col {
-  width: auto;
-}
-
-.post-table th:first-child,
-.post-table td:first-child,
-.post-table .table-label-cell {
-  width: 180px;
-  min-width: 180px;
-  color: var(--text-primary);
-  font-family: var(--font-ui);
-  font-weight: 700;
-}
-
-.post-table th:first-child,
-.post-table td:first-child,
-.post-table .table-label-cell {
-  width: 30%;
-  min-width: 0;
-  color: var(--text-primary);
-  font-family: var(--font-ui);
-  font-weight: 700;
-}
-
-.post-table th {
-  color: var(--text-primary);
-  font-family: var(--font-ui);
-  font-weight: 750;
-}
-
-.post-table .table-head {
-  background: var(--surface-2);
-  color: var(--text-primary);
-  font-family: var(--font-ui);
-  font-weight: 750;
-}
-
-html[data-theme="dark"] .post-table .table-head {
-  background: var(--surface-elevated);
-  color: var(--text-primary);
-}
-
-.post-table tr:last-child td,
-.post-table tr:last-child th {
-  border-bottom: 0;
-}
-
-.post-table th:last-child,
-.post-table td:last-child {
-  border-right: 0;
-}
-
-.post-table .post-figure,
-.post-table .post-video,
-.post-table .post-audio {
-  margin: 0;
-}
-
-.post-table .post-image-frame {
-  min-height: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-}
-
-.post-table .post-figure img,
-.post-table img {
-  width: auto;
-  max-width: 100%;
-  max-height: 150px;
-  object-fit: contain;
-  margin: 0 auto;
-}
-
-.post-table figcaption {
-  padding: 6px 0 0;
-  font-size: var(--text-xs);
-}
-
 .summary-box,
 .styled-box {
   border-color: var(--border-strong);
@@ -1539,16 +1336,6 @@ html[data-theme="dark"] .post-table .table-head {
 .trust-item,
 .tag {
   font-family: var(--font-mono);
-}
-
-html[data-theme="light"] .post-table .table-head {
-  background: var(--surface-2);
-  color: var(--text-primary);
-}
-
-html[data-theme="dark"] .post-table .table-head {
-  background: var(--surface-elevated);
-  color: var(--text-primary);
 }
 
 .single-post {
@@ -1851,10 +1638,6 @@ html[data-theme="dark"] .post-table .table-head {
 
   .post-figure {
     margin: 28px 0;
-  }
-
-  .post-table {
-    min-width: 620px;
   }
 
   .share-modal-backdrop {
@@ -2718,10 +2501,6 @@ html[data-theme="dark"] .post-table .table-head {
 
 /* ==========================================================================
    FINAL RESPONSIVE / UX PASS
-   --------------------------------------------------------------------------
-   This section is intentionally authoritative for the mobile action bar.
-   It prevents nested-grid compression, keeps all three actions equal, and
-   improves tap targets, focus states, contrast, and safe-area handling.
    ========================================================================== */
 
 .single-post {
@@ -2842,7 +2621,6 @@ html[data-theme="dark"] .post-table .table-head {
     display: none !important;
   }
 
-  /* All three controls share exactly the same visual language. */
   .single-post .article-sidebar .share-trigger,
   .single-post .article-sidebar .ai-option,
   .single-post .article-sidebar .mobile-toc-trigger {
@@ -2897,7 +2675,6 @@ html[data-theme="dark"] .post-table .table-head {
     box-shadow: none !important;
   }
 
-  /* Share */
   .single-post .article-sidebar .share-trigger {
     padding: 0 8px !important;
     font: 700 11px/1 var(--font-ui, "Sora", sans-serif);
@@ -2923,7 +2700,6 @@ html[data-theme="dark"] .post-table .table-head {
     color: var(--green) !important;
   }
 
-  /* Ask AI — critical fix: ONE column inside the middle action cell. */
   .single-post .article-sidebar .ai-options {
     width: 100% !important;
     min-width: 0 !important;
@@ -2971,7 +2747,6 @@ html[data-theme="dark"] .post-table .table-head {
     color: var(--green) !important;
   }
 
-  /* TOC */
   .single-post .article-sidebar .mobile-toc-card {
     display: flex !important;
     align-items: stretch !important;
@@ -3002,27 +2777,19 @@ html[data-theme="dark"] .post-table .table-head {
     color: var(--green) !important;
   }
 
-  /* The in-flow desktop/mobile TOC is hidden on mobile; the action opens
-     the bottom sheet instead. */
   .single-post .toc {
     display: none !important;
   }
 
-  /* Mobile AI panel stays above the action bar. */
   .single-post .ai-panel {
     bottom: calc(78px + env(safe-area-inset-bottom)) !important;
   }
 
-  /* Mobile modal/sheet must sit above the action bar. */
   .single-post .share-modal-backdrop,
   .single-post .mobile-toc-backdrop {
     z-index: 120 !important;
   }
 }
-
-/* --------------------------------------------------------------------------
-   Small phones: preserve equal columns without squeezing labels.
-   -------------------------------------------------------------------------- */
 
 @media (max-width: 520px) {
   .single-post {
@@ -3122,13 +2889,8 @@ html[data-theme="dark"] .post-table .table-head {
   .single-post .styled-box {
     border-radius: 12px;
   }
-
-  .single-post .post-table {
-    font-size: 13px;
-  }
 }
 
-/* Prevent sticky/fixed UI from becoming inaccessible on very short screens. */
 @media (max-width: 820px) and (max-height: 600px) {
   .single-post .article-sidebar {
     bottom: calc(5px + env(safe-area-inset-bottom)) !important;
@@ -3139,7 +2901,6 @@ html[data-theme="dark"] .post-table .table-head {
   }
 }
 
-/* Respect users who request reduced motion. */
 @media (prefers-reduced-motion: reduce) {
 
   .single-post .article-sidebar .share-trigger,
@@ -3151,7 +2912,6 @@ html[data-theme="dark"] .post-table .table-head {
 
 /* ==========================================================================
    TRUST / PROMOTIONAL CARD
-   Desktop only — hidden on tablet and mobile
    ========================================================================== */
 
 @media (max-width: 1180px) {
@@ -3160,32 +2920,17 @@ html[data-theme="dark"] .post-table .table-head {
   }
 }
 
-
-/* ==========================================================================
-   MOBILE TOC ACTION CARD
-   Never render the mobile Article Navigation card on desktop/tablet.
-   ========================================================================== */
-
 @media (min-width: 821px) {
   .single-post .article-sidebar .mobile-toc-card {
     display: none !important;
   }
 }
 
-
-
-/* ==========================================================================
-   DESKTOP AI ASSISTANT
-   Desktop uses floating AI launcher.
-   Mobile keeps the existing bottom action bar.
-   ========================================================================== */
-
 @media (min-width: 821px) {
   .single-post .article-sidebar .ai-tools-card {
     display: none !important;
   }
 }
-
 
 /* ==========================================================================
    ALLOYPRESS AI — DESKTOP FLOATING ASSISTANT
@@ -3295,12 +3040,9 @@ html[data-theme="dark"] .post-table .table-head {
 
 /* ============================================================================
    ALLOYPRESS — FINAL EDITORIAL TYPOGRAPHY & UX PASS
-   Scope: single blog post only.
-   Keeps existing component structure and functionality intact.
    ============================================================================ */
 
 .single-post {
-  /* Editorial system: compact sans headings + highly readable sans body. */
   --blog-heading-font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --blog-body-font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --blog-mono-font: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -3310,9 +3052,6 @@ html[data-theme="dark"] .post-table .table-head {
   --blog-paragraph-spacing: 1.15em;
 }
 
-/* --------------------------------------------------------------------------
-   Typography foundation
-   -------------------------------------------------------------------------- */
 .single-post,
 .single-post button,
 .single-post input,
@@ -3363,9 +3102,6 @@ html[data-theme="dark"] .post-table .table-head {
   font-family: var(--blog-body-font);
 }
 
-/* --------------------------------------------------------------------------
-   Hero — Zapier-inspired hierarchy without changing the existing layout
-   -------------------------------------------------------------------------- */
 @media (min-width: 821px) {
   .single-post .post-hero {
     padding: 48px 0 42px;
@@ -3405,9 +3141,6 @@ html[data-theme="dark"] .post-table .table-head {
   }
 }
 
-/* --------------------------------------------------------------------------
-   Featured image — larger editorial hero, stable aspect ratio
-   -------------------------------------------------------------------------- */
 .single-post .hero-image {
   width: min(700px, 100%);
   margin: 30px auto 0;
@@ -3431,9 +3164,6 @@ html[data-theme="dark"] .post-table .table-head {
   }
 }
 
-/* --------------------------------------------------------------------------
-   Article reading measure and rhythm
-   -------------------------------------------------------------------------- */
 .single-post .post-content {
   width: 100%;
   max-width: var(--blog-content-width);
@@ -3481,7 +3211,6 @@ html[data-theme="dark"] .post-table .table-head {
   padding-left: .25em;
 }
 
-/* Headings: clear visual landmarks, not oversized walls of text. */
 .single-post .post-h2 {
   margin: 2.15em 0 .58em;
   font-family: var(--blog-heading-font);
@@ -3519,9 +3248,6 @@ html[data-theme="dark"] .post-table .table-head {
   font-weight: 750;
 }
 
-/* --------------------------------------------------------------------------
-   Editorial components
-   -------------------------------------------------------------------------- */
 .single-post .summary-box,
 .single-post .styled-box {
   padding: 20px 22px;
@@ -3566,24 +3292,6 @@ html[data-theme="dark"] .post-table .table-head {
   line-height: 1.7;
 }
 
-.single-post .table-scroll {
-  margin: 36px 0;
-}
-
-.single-post .post-table {
-  font-family: var(--blog-body-font);
-  font-size: 15px;
-  line-height: 1.55;
-}
-
-.single-post .post-table th,
-.single-post .post-table td {
-  padding: 14px 15px;
-}
-
-/* --------------------------------------------------------------------------
-   Breadcrumb readability
-   -------------------------------------------------------------------------- */
 .single-post .post-breadcrumb {
   font-family: var(--blog-body-font);
   font-size: 13px;
@@ -3591,9 +3299,6 @@ html[data-theme="dark"] .post-table .table-head {
   letter-spacing: -.002em;
 }
 
-/* --------------------------------------------------------------------------
-   Desktop AI — round floating launcher + compact popup
-   -------------------------------------------------------------------------- */
 @media (min-width: 821px) {
   .single-post .desktop-ai-fab {
     right: 24px;
@@ -3693,8 +3398,6 @@ html[data-theme="dark"] .post-table .table-head {
   }
 }
 
-/* Explicitly keep the old desktop sidebar AI card and mobile navigation card
-   out of desktop rendering. */
 @media (min-width: 821px) {
 
   .single-post .article-sidebar .ai-tools-card,
@@ -3703,9 +3406,6 @@ html[data-theme="dark"] .post-table .table-head {
   }
 }
 
-/* --------------------------------------------------------------------------
-   Mobile — readable first, controls remain unchanged in purpose
-   -------------------------------------------------------------------------- */
 @media (max-width: 820px) {
   .single-post .post-hero {
     padding: 36px 0 30px;
@@ -3855,9 +3555,6 @@ html[data-theme="dark"] .post-table .table-head {
   }
 }
 
-/* --------------------------------------------------------------------------
-   Theme safety — use existing semantic tokens so light/dark remain automatic
-   -------------------------------------------------------------------------- */
 html[data-theme="light"] .single-post .desktop-ai-fab,
 html[data-theme="light"] .single-post .ai-panel {
   background: var(--surface-elevated);
@@ -3870,9 +3567,6 @@ html[data-theme="dark"] .single-post .ai-panel {
   color: var(--text-primary);
 }
 
-/* --------------------------------------------------------------------------
-   Accessibility / interaction safety
-   -------------------------------------------------------------------------- */
 .single-post :where(a, button):focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 3px;
@@ -3890,22 +3584,15 @@ html[data-theme="dark"] .single-post .ai-panel {
 }
 
 /* ============================================================================
-   READABILITY MAX PASS — targeted fixes only, appended so it safely overrides
-   earlier rules of equal specificity. Nothing above this block was removed;
-   layout, components, and behaviour are untouched.
+   READABILITY MAX PASS
    ============================================================================ */
 
-/* 1. Crisper glyph rendering — biggest "free" readability win, especially
-      for green-on-dark and thin Inter weights. */
 .single-post {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
-/* 2. Relax over-tight letter-spacing on headings.
-      Anything past about -0.02em starts hurting legibility at these sizes,
-      especially on FAQ/heading text that runs to 2+ lines. */
 .single-post .post-title {
   letter-spacing: -.02em;
 }
@@ -3931,32 +3618,13 @@ html[data-theme="dark"] .single-post .ai-panel {
   }
 }
 
-/* 3. Push secondary/muted body text closer to full contrast.
-      Keeps your theme tokens (still reads as "secondary" vs headings) but
-      guarantees comfortable contrast against the page background in both
-      light and dark themes, instead of trusting an unknown --text-secondary
-      value in isolation. */
 .single-post .post-content .post-p,
 .single-post .post-quote,
 .single-post .styled-box-body,
-.single-post .summary-box p,
-.single-post .post-table,
-.single-post .post-table th,
-.single-post .post-table td {
+.single-post .summary-box p {
   color: color-mix(in srgb, var(--text-secondary) 78%, var(--foreground) 22%);
 }
 
-/* Table label column and header row stay fully on foreground/heading color
-   — first column and header are the scan path, so they get max contrast. */
-.single-post .post-table th:first-child,
-.single-post .post-table td:first-child,
-.single-post .post-table .table-label-cell,
-.single-post .post-table th {
-  color: var(--text-primary);
-}
-
-/* 4. Links: heavier weight + thicker underline so they read as links at
-      body size, not just a color shift (helps colorblind readers too). */
 .single-post .post-content a.post-link,
 .single-post .post-link {
   font-weight: 600;
@@ -3964,9 +3632,6 @@ html[data-theme="dark"] .single-post .ai-panel {
   text-underline-offset: 3px;
 }
 
-/* 5. Raise the smallest UI/mono text off the sub-11px floor.
-      Anything under ~11px is a real legibility problem, particularly in the
-      mobile action bar and AI option labels. */
 .single-post .share-trigger,
 .single-post .mobile-toc-trigger,
 .single-post .article-sidebar .share-trigger,
@@ -4000,34 +3665,17 @@ html[data-theme="dark"] .single-post .ai-panel {
   font-size: 11px;
 }
 
-/* 6. Table borders/cells: firmer separation so rows and columns don't
-      visually merge into the background on either theme. */
-.single-post .post-table th,
-.single-post .post-table td {
-  border-color: var(--border-strong);
-}
-
-.single-post .table-scroll {
-  border-color: var(--border-strong);
-}
-
-/* 7. Bump the copied-content / callout box body text so it matches the
-      surrounding paragraph size instead of reading noticeably smaller. */
 .single-post .summary-box p,
 .single-post .styled-box-body {
   font-size: 16.5px;
   line-height: 1.7;
 }
 
-/* 8. Prevent orphan words on quote blocks and FAQ answers too. */
 .single-post .post-quote,
 .single-post .styled-box-body {
   text-wrap: pretty;
 }
 
-/* 9. Slightly wider paragraph measure cap kept, but guard against overly
-      long lines on ultra-wide desktop windows if content ever exceeds the
-      680px column (defensive, no visual change at current widths). */
 @media (min-width: 821px) {
   .single-post .post-content .post-p {
     max-width: 70ch;
@@ -4038,7 +3686,6 @@ html[data-theme="dark"] .single-post .ai-panel {
 
 /* ==========================================================================
    ALLOYPRESS AI ASSISTANT — FINAL UI
-   UI shell only. AI API will be connected separately.
    ========================================================================== */
 
 @media (min-width: 821px) {
@@ -4062,7 +3709,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     flex-direction: column;
   }
 
-  /* Header */
   .single-post .ai-panel-header {
     display: flex;
     align-items: center;
@@ -4124,7 +3770,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     color: var(--text-muted);
   }
 
-  /* Close */
   .single-post .ai-panel .ai-close {
     position: static;
 
@@ -4158,7 +3803,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     outline: none;
   }
 
-  /* Intro */
   .single-post .ai-intro {
     padding: 16px 18px 4px;
   }
@@ -4173,7 +3817,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     color: var(--text-secondary);
   }
 
-  /* Quick answer */
   .single-post .ai-answer {
     margin: 14px 18px 0;
     padding: 15px;
@@ -4221,7 +3864,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     color: var(--text-secondary);
   }
 
-  /* Suggestions */
   .single-post .ai-suggestions {
     padding: 18px 18px 4px;
   }
@@ -4282,7 +3924,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     transform: translateY(-1px);
   }
 
-  /* Input */
   .single-post .ai-input-wrap {
     display: flex;
     align-items: center;
@@ -4347,7 +3988,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     height: 16px;
   }
 
-  /* Status */
   .single-post .ai-powered-note {
     display: flex;
     align-items: center;
@@ -4374,9 +4014,7 @@ html[data-theme="dark"] .single-post .ai-panel {
 }
 
 
-/* ==========================================================================
-   MOBILE AI PANEL
-   ========================================================================== */
+/* MOBILE AI PANEL */
 
 @media (max-width: 820px) {
   .single-post .ai-panel {
@@ -4449,11 +4087,7 @@ html[data-theme="dark"] .single-post .ai-panel {
 }
 
 
-
-
-/* ==========================================================================
-   AI PANEL — FIX CONTENT SCROLL
-   ========================================================================== */
+/* AI PANEL — FIX CONTENT SCROLL */
 
 @media (min-width: 821px) {
   .single-post .ai-panel {
@@ -4513,18 +4147,9 @@ html[data-theme="dark"] .single-post .ai-panel {
 }
 
 
-
-
-/* ==========================================================================
-   ALLOYPRESS AI ASSISTANT
-   MOBILE + TABLET FINAL FIX
-   ========================================================================== */
+/* ALLOYPRESS AI ASSISTANT — MOBILE + TABLET FINAL FIX */
 
 @media (max-width: 820px) {
-
-  /* ------------------------------------------------------------------------
-     PANEL
-     ------------------------------------------------------------------------ */
 
   .single-post .ai-panel {
     position: fixed !important;
@@ -4556,11 +4181,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     box-sizing: border-box !important;
   }
 
-
-  /* ------------------------------------------------------------------------
-     HEADER
-     ------------------------------------------------------------------------ */
-
   .single-post .ai-panel-header {
     position: sticky !important;
     top: 0 !important;
@@ -4576,11 +4196,6 @@ html[data-theme="dark"] .single-post .ai-panel {
 
     border-bottom: 1px solid var(--border) !important;
   }
-
-
-  /* ------------------------------------------------------------------------
-     AI HEADER CONTENT
-     ------------------------------------------------------------------------ */
 
   .single-post .ai-panel-heading {
     display: flex !important;
@@ -4620,11 +4235,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     line-height: 1.3 !important;
   }
 
-
-  /* ------------------------------------------------------------------------
-     CLOSE BUTTON
-     ------------------------------------------------------------------------ */
-
   .single-post .ai-panel .ai-close {
     position: static !important;
 
@@ -4638,11 +4248,6 @@ html[data-theme="dark"] .single-post .ai-panel {
 
     padding: 0 !important;
   }
-
-
-  /* ------------------------------------------------------------------------
-     INTRO
-     ------------------------------------------------------------------------ */
 
   .single-post .ai-intro {
     display: block !important;
@@ -4660,11 +4265,6 @@ html[data-theme="dark"] .single-post .ai-panel {
 
     color: var(--text-secondary) !important;
   }
-
-
-  /* ------------------------------------------------------------------------
-     QUICK TAKE
-     ------------------------------------------------------------------------ */
 
   .single-post .ai-answer {
     display: block !important;
@@ -4705,11 +4305,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     color: var(--text-secondary) !important;
   }
 
-
-  /* ------------------------------------------------------------------------
-     TRY ASKING
-     ------------------------------------------------------------------------ */
-
   .single-post .ai-suggestions {
     display: flex !important;
 
@@ -4743,11 +4338,6 @@ html[data-theme="dark"] .single-post .ai-panel {
 
     color: var(--text-muted) !important;
   }
-
-
-  /* ------------------------------------------------------------------------
-     SUGGESTION BUTTONS
-     ------------------------------------------------------------------------ */
 
   .single-post .ai-suggestion {
     display: flex !important;
@@ -4794,11 +4384,6 @@ html[data-theme="dark"] .single-post .ai-panel {
 
     outline: none !important;
   }
-
-
-  /* ------------------------------------------------------------------------
-     INPUT
-     ------------------------------------------------------------------------ */
 
   .single-post .ai-input-wrap {
     display: flex !important;
@@ -4854,11 +4439,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     padding: 0 !important;
   }
 
-
-  /* ------------------------------------------------------------------------
-     FOOTER / STATUS
-     ------------------------------------------------------------------------ */
-
   .single-post .ai-powered-note {
     display: flex !important;
     align-items: center !important;
@@ -4872,11 +4452,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     font-size: 10px !important;
     line-height: 1.4 !important;
   }
-
-
-  /* ------------------------------------------------------------------------
-     SCROLLBAR
-     ------------------------------------------------------------------------ */
 
   .single-post .ai-panel::-webkit-scrollbar {
     width: 5px !important;
@@ -4893,9 +4468,7 @@ html[data-theme="dark"] .single-post .ai-panel {
 }
 
 
-/* ==========================================================================
-   VERY SMALL PHONES
-   ========================================================================== */
+/* VERY SMALL PHONES */
 
 @media (max-width: 420px) {
 
@@ -4950,7 +4523,7 @@ html[data-theme="dark"] .single-post .ai-panel {
 .post-live-code-frame {
   display: block;
   width: 100%;
-  min-height: 0;          /* fixed min-height illa, content-ku mattum space */
+  min-height: 0;
   border: 0;
   background: transparent;
 }
@@ -5112,11 +4685,6 @@ html[data-theme="dark"] .single-post .ai-panel {
   object-position: center;
 }
 
-
-/* --------------------------------------------------------------------------
-   Tablet
-   -------------------------------------------------------------------------- */
-
 @media (max-width: 1100px) and (min-width: 821px) {
   .single-post .post-hero-grid {
     grid-template-columns: minmax(0, 1fr) minmax(360px, .85fr);
@@ -5131,11 +4699,6 @@ html[data-theme="dark"] .single-post .ai-panel {
     font-size: 17px;
   }
 }
-
-
-/* --------------------------------------------------------------------------
-   Mobile
-   -------------------------------------------------------------------------- */
 
 @media (max-width: 820px) {
   .single-post .post-hero {
@@ -5196,11 +4759,6 @@ html[data-theme="dark"] .single-post .ai-panel {
   }
 }
 
-
-/* --------------------------------------------------------------------------
-   Small mobile
-   -------------------------------------------------------------------------- */
-
 @media (max-width: 520px) {
   .single-post .post-hero-grid {
     gap: 24px;
@@ -5237,7 +4795,7 @@ html[data-theme="dark"] .single-post .ai-panel {
 
 
 /* ==========================================================================
-   FINAL MOBILE ARTICLE TOOLS
+   FINAL MOBILE ARTICLE TOOLS (merged — duplicates removed)
    ========================================================================== */
 
 .single-post .article-tools-end-sentinel {
@@ -5248,58 +4806,12 @@ html[data-theme="dark"] .single-post .ai-panel {
 
 @media (max-width: 820px) {
 
-  /* Only TOC + Share when AI is disabled */
-  .single-post .article-sidebar {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
-
-  /* Hide the mobile action bar after the article ends */
-  .single-post .article-sidebar.mobile-tools-hidden {
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    transform: translateY(calc(100% + 24px)) !important;
-  }
-
-  .single-post .article-sidebar {
-    transition:
-      opacity .2s ease,
-      transform .2s ease,
-      visibility .2s ease !important;
-  }
-}
-
-
-
-/* ==========================================================================
-   FINAL MOBILE ARTICLE TOOLS
-   ========================================================================== */
-
-@media (max-width: 820px) {
-
   /* AI disabled = only TOC + Share */
   .single-post .article-sidebar {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
   /* Hide tools after article ends */
-  .single-post .article-sidebar.mobile-tools-hidden {
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    transform: translateY(calc(100% + 24px)) !important;
-  }
-
-  .single-post .article-sidebar {
-    transition:
-      opacity .2s ease,
-      transform .2s ease,
-      visibility .2s ease !important;
-  }
-}
-
-
-@media (max-width: 820px) {
   .single-post .article-sidebar.mobile-tools-hidden {
     opacity: 0 !important;
     visibility: hidden !important;
@@ -5438,6 +4950,9 @@ html[data-theme="dark"] .single-post .ai-panel {
 }
 
 
+/* ==========================================================================
+   MIGRATED HTML CONTENT (non-table rules; table rules live in TABLES below)
+   ========================================================================== */
 
 .post-html-content {
   width: 100%;
@@ -5467,24 +4982,6 @@ html[data-theme="dark"] .single-post .ai-panel {
   padding-left: 1.5rem;
 }
 
-.post-html-content table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1.5rem 0;
-}
-
-.post-html-content th,
-.post-html-content td {
-  padding: 0.75rem;
-  border: 1px solid #dfe5e2;
-  text-align: left;
-  vertical-align: top;
-}
-
-.post-html-content th {
-  font-weight: 700;
-}
-
 .post-html-content img {
   max-width: 100%;
   height: auto;
@@ -5495,256 +4992,9 @@ html[data-theme="dark"] .single-post .ai-panel {
 }
 
 
-
 /* ==========================================================================
-   ARTICLE TABLES
-   Unified light/dark theme styling for both:
-   - Native Lexical/Payload tables (.post-table)
-   - Migrated HTML tables (.post-html-content table)
+   FEATURED BADGE (copy box)
    ========================================================================== */
-
-.post-table,
-.post-html-content table {
-  width: max-content;
-  min-width: 900px;
-  border-collapse: separate;
-  border-spacing: 0;
-  table-layout: auto;
-
-  background: var(--surface-elevated);
-  color: var(--text-secondary);
-
-  font-family: var(--font-body);
-  font-size: var(--text-md);
-  line-height: 1.6;
-
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-/* --------------------------------------------------------------------------
-   Header
-   -------------------------------------------------------------------------- */
-
-.post-table th,
-.post-html-content table th {
-  padding: 15px 16px;
-
-  background: var(--brand-soft);
-  color: var(--brand);
-
-  font-family: var(--font-ui);
-  font-weight: 750;
-  line-height: 1.4;
-
-  text-align: left;
-  vertical-align: middle;
-
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-}
-
-/* --------------------------------------------------------------------------
-   Body cells
-   -------------------------------------------------------------------------- */
-
-.post-table td,
-.post-html-content table td {
-  padding: 16px;
-
-  background: var(--surface-elevated);
-  color: var(--text-secondary);
-
-  font-family: var(--font-body);
-  font-weight: 400;
-
-  text-align: left;
-  vertical-align: middle;
-
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-
-  overflow-wrap: break-word;
-  word-break: normal;
-}
-
-/* --------------------------------------------------------------------------
-   First column
-   -------------------------------------------------------------------------- */
-
-.post-table th:first-child,
-.post-table td:first-child,
-.post-html-content table th:first-child,
-.post-html-content table td:first-child {
-  width: 180px;
-  min-width: 180px;
-
-  color: var(--text-primary);
-  font-family: var(--font-ui);
-}
-
-/* First-column body values slightly stronger */
-.post-table td:first-child,
-.post-html-content table td:first-child {
-  font-weight: 650;
-}
-
-/* Header first column stays AlloyPress green */
-.post-table th:first-child,
-.post-html-content table th:first-child {
-  color: var(--brand);
-  font-weight: 750;
-}
-
-/* --------------------------------------------------------------------------
-   Header row / green heading
-   -------------------------------------------------------------------------- */
-
-.post-table .table-head {
-  background: var(--brand-soft);
-  color: var(--brand);
-}
-
-.post-table .table-head,
-.post-table .table-head * {
-  color: var(--brand);
-}
-
-/* --------------------------------------------------------------------------
-   Row hover
-   -------------------------------------------------------------------------- */
-
-.post-table tbody tr:hover td,
-.post-html-content table tbody tr:hover td {
-  background: var(--surface-2);
-}
-
-/* --------------------------------------------------------------------------
-   Last row / last column borders
-   -------------------------------------------------------------------------- */
-
-.post-table tr:last-child td,
-.post-table tr:last-child th,
-.post-html-content table tr:last-child td,
-.post-html-content table tr:last-child th {
-  border-bottom: 0;
-}
-
-.post-table th:last-child,
-.post-table td:last-child,
-.post-html-content table th:last-child,
-.post-html-content table td:last-child {
-  border-right: 0;
-}
-
-/* --------------------------------------------------------------------------
-   HTML migrated table wrapper
-   -------------------------------------------------------------------------- */
-
-.post-html-content {
-  width: 100%;
-  max-width: 100%;
-  margin: 34px 0;
-
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/*
- * Remove double border because the table itself already owns the border.
- */
-.post-html-content table {
-  margin: 0;
-}
-
-/* --------------------------------------------------------------------------
-   Dark theme
-   -------------------------------------------------------------------------- */
-
-html[data-theme="dark"] .post-table,
-html[data-theme="dark"] .post-html-content table {
-  background: var(--surface-elevated);
-  color: var(--text-secondary);
-}
-
-html[data-theme="dark"] .post-table th,
-html[data-theme="dark"] .post-html-content table th {
-  background: var(--brand-soft);
-  color: var(--brand);
-}
-
-html[data-theme="dark"] .post-table td,
-html[data-theme="dark"] .post-html-content table td {
-  background: var(--surface-elevated);
-  color: var(--text-secondary);
-}
-
-html[data-theme="dark"] .post-table tbody tr:hover td,
-html[data-theme="dark"] .post-html-content table tbody tr:hover td {
-  background: var(--surface-2);
-}
-
-/* --------------------------------------------------------------------------
-   Light theme
-   -------------------------------------------------------------------------- */
-
-html[data-theme="light"] .post-table,
-html[data-theme="light"] .post-html-content table {
-  background: var(--surface-elevated);
-  color: var(--text-secondary);
-}
-
-html[data-theme="light"] .post-table th,
-html[data-theme="light"] .post-html-content table th {
-  background: var(--brand-soft);
-  color: var(--brand);
-}
-
-html[data-theme="light"] .post-table td,
-html[data-theme="light"] .post-html-content table td {
-  background: var(--surface-elevated);
-  color: var(--text-secondary);
-}
-
-html[data-theme="light"] .post-table tbody tr:hover td,
-html[data-theme="light"] .post-html-content table tbody tr:hover td {
-  background: var(--surface-2);
-}
-
-/* --------------------------------------------------------------------------
-   Mobile
-   -------------------------------------------------------------------------- */
-
-@media (max-width: 820px) {
-
-  .table-scroll,
-  .post-html-content {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .post-table,
-  .post-html-content table {
-    min-width: 620px;
-    font-size: var(--text-sm);
-  }
-
-  .post-table th,
-  .post-html-content table th {
-    padding: 13px 14px;
-  }
-
-  .post-table td,
-  .post-html-content table td {
-    padding: 14px;
-  }
-}
-
-
-
-
 
 .alloypress-badge-copy-box {
   display: flex !important;
@@ -5820,9 +5070,6 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
   line-height: 1.55;
 }
 
-
-
-
 .mobile-alloypress-badge {
   display: none;
 }
@@ -5887,6 +5134,10 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
   }
 }
 
+
+/* ==========================================================================
+   FAQ
+   ========================================================================== */
 
 .post-faq {
   margin: 30px 0;
@@ -5954,7 +5205,7 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
     width: 100%;
     max-width: 100%;
     height: auto;
-     transform: translateX(-6px);
+    transform: translateX(-6px);
   }
 
   .single-post .desktop-featured-badge .alloypress-badge-copy-button {
@@ -5969,6 +5220,7 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
     line-height: 1.5;
   }
 }
+
 
 /* ============================================================
    LITE YOUTUBE
@@ -6062,91 +5314,124 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
 }
 
 
+.article-cta:hover {
+  background: var(--cta-hover-bg, #15803d) !important;
+  color: var(--cta-hover-color, #fff) !important;
+}
+
 
 /* ==========================================================================
-   THEME-SAFE ARTICLE TABLES
+   ██████  TABLES — SINGLE SOURCE OF TRUTH  ██████
    --------------------------------------------------------------------------
-   Migrated WordPress content can contain inline color/background styles.
+   Handles both:
+   - Native Lexical/Payload tables (.post-table inside .table-scroll)
+   - Migrated HTML tables (.post-html-content table)
 
-   Example:
-   <span style="color:#111111">Text</span>
+   All earlier, conflicting table rules were removed. This section is the
+   only place table styling lives.
 
-   Those inline styles override the article theme. We intentionally neutralize
-   legacy presentation styles inside article tables so tables always follow
-   the active AlloyPress theme.
+   Fixes:
+   1. Header words no longer break mid-word ("Citati/ons") -> nowrap headers
+   2. Header/body alignment unified (vertical-align: middle, same padding)
+   3. Empty space in cells removed -> paragraph/figure margins zeroed,
+      empty <p> and trailing <br> hidden
+   4. Table scrolls horizontally instead of squeezing columns
+   5. Migrated WordPress inline colors neutralised so theme always wins
    ========================================================================== */
 
-/* --------------------------------------------------------------------------
-   Table shell
-   -------------------------------------------------------------------------- */
+/* Wrapper: scrolls horizontally, owns the outer border + radius */
+.single-post .table-scroll,
+.single-post .post-html-content {
+  width: 100%;
+  margin: 34px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--elevated);
+  scrollbar-width: thin;
+}
 
+/* Table: natural width, columns never squeezed */
 .single-post .post-table,
 .single-post .post-html-content table {
   width: 100%;
-  min-width: 560px;
-
+  min-width: max-content;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
   border-collapse: collapse;
   border-spacing: 0;
-
+  table-layout: auto;
   background: var(--elevated);
   color: var(--ink);
-
-  border: 1px solid var(--line);
+  font-family: var(--font-body, "Lora", serif);
+  font-size: 15px;
+  line-height: 1.5;
 }
 
-/* --------------------------------------------------------------------------
-   Header cells
-   -------------------------------------------------------------------------- */
+.single-post .post-table .table-label-col {
+  width: auto;
+}
 
+/* All cells: same padding + alignment, no mid-word breaking */
 .single-post .post-table th,
-.single-post .post-html-content table th {
-  padding: 13px 14px;
+.single-post .post-table td,
+.single-post .post-html-content table th,
+.single-post .post-html-content table td {
+  padding: 14px 16px;
+  text-align: left;
+  vertical-align: middle;
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+}
 
+/* Header cells */
+.single-post .post-table th,
+.single-post .post-table .table-head,
+.single-post .post-html-content table th {
+  min-width: 90px;
+  white-space: nowrap;
+  font-family: var(--font-ui, "Sora", sans-serif);
+  font-size: 14px;
+  font-weight: 750;
+  line-height: 1.4;
   background: var(--brand-soft) !important;
   color: var(--green) !important;
-
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-
-  text-align: left;
-  vertical-align: top;
-
-  font-family: var(--font-ui, "Sora", sans-serif);
-  font-weight: 750;
 }
 
-/* --------------------------------------------------------------------------
-   Body cells
-   -------------------------------------------------------------------------- */
-
+/* Body cells */
 .single-post .post-table td,
 .single-post .post-html-content table td {
-  padding: 14px;
-
-  background: var(--elevated) !important;
-  color: var(--ink) !important;
-
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-
-  text-align: left;
-  vertical-align: top;
-
+  min-width: 110px;
+  white-space: normal;
   font-family: var(--font-body, "Lora", serif);
   font-weight: 400;
-
-  overflow-wrap: break-word;
-  word-break: normal;
+  background: var(--elevated) !important;
+  color: var(--ink) !important;
 }
 
-/* --------------------------------------------------------------------------
-   IMPORTANT:
-   WordPress migrated content may contain inline colors/backgrounds on
-   nested spans, strong, links, etc.
+/* First column: label column — flexible, readable, not squeezed */
+.single-post .post-table th:first-child,
+.single-post .post-table td:first-child,
+.single-post .post-html-content table th:first-child,
+.single-post .post-html-content table td:first-child,
+.single-post .post-table .table-label-cell {
+  width: auto;
+  min-width: 64px;
+  max-width: 240px;
+}
 
-   Force nested content to inherit the table theme.
-   -------------------------------------------------------------------------- */
+.single-post .post-table td:first-child,
+.single-post .post-html-content table td:first-child {
+  font-family: var(--font-ui, "Sora", sans-serif);
+  font-weight: 650;
+}
 
+/* Nested content (WordPress inline spans/colors) inherits the theme */
 .single-post .post-table th *,
 .single-post .post-table td *,
 .single-post .post-html-content table th *,
@@ -6154,10 +5439,6 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
   color: inherit !important;
 }
 
-/*
- * Do NOT allow migrated inline backgrounds to create random light/dark
- * patches inside the table.
- */
 .single-post .post-table th [style*="background"],
 .single-post .post-table td [style*="background"],
 .single-post .post-html-content table th [style*="background"],
@@ -6165,10 +5446,7 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
   background-color: transparent !important;
 }
 
-/* --------------------------------------------------------------------------
-   Links inside tables
-   -------------------------------------------------------------------------- */
-
+/* Links / strong / inline-code inside tables */
 .single-post .post-table td a,
 .single-post .post-html-content table td a {
   color: var(--green) !important;
@@ -6178,13 +5456,11 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
 }
 
 .single-post .post-table th a,
-.single-post .post-html-content table th a {
+.single-post .post-html-content table th a,
+.single-post .post-table th strong,
+.single-post .post-html-content table th strong {
   color: var(--green) !important;
 }
-
-/* --------------------------------------------------------------------------
-   Strong / emphasized content
-   -------------------------------------------------------------------------- */
 
 .single-post .post-table td strong,
 .single-post .post-html-content table td strong {
@@ -6192,34 +5468,19 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
   font-weight: 700;
 }
 
-.single-post .post-table th strong,
-.single-post .post-html-content table th strong {
-  color: var(--green) !important;
-}
-
-/* --------------------------------------------------------------------------
-   Inline code inside tables
-   -------------------------------------------------------------------------- */
-
 .single-post .post-table .inline-code,
 .single-post .post-html-content table .inline-code {
   color: var(--green) !important;
   background: var(--brand-soft) !important;
 }
 
-/* --------------------------------------------------------------------------
-   Hover
-   -------------------------------------------------------------------------- */
-
+/* Row hover */
 .single-post .post-table tbody tr:hover td,
 .single-post .post-html-content table tbody tr:hover td {
   background: var(--soft-2) !important;
 }
 
-/* --------------------------------------------------------------------------
-   Borders
-   -------------------------------------------------------------------------- */
-
+/* Outer borders handled by wrapper */
 .single-post .post-table th:last-child,
 .single-post .post-table td:last-child,
 .single-post .post-html-content table th:last-child,
@@ -6234,67 +5495,79 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
   border-bottom: 0;
 }
 
-/* --------------------------------------------------------------------------
-   Mobile
-   -------------------------------------------------------------------------- */
-
-@media (max-width: 820px) {
-  .single-post .table-scroll,
-  .single-post .post-html-content {
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .single-post .post-table,
-  .single-post .post-html-content table {
-    min-width: 560px;
-  }
-
-  .single-post .post-table th,
-  .single-post .post-html-content table th {
-    padding: 12px 13px;
-  }
-
-  .single-post .post-table td,
-  .single-post .post-html-content table td {
-    padding: 13px;
-  }
+/* Rows: height follows content only */
+.single-post .post-table tr,
+.single-post .post-html-content table tr {
+  height: auto;
 }
 
-.article-cta:hover {
-  background: var(--cta-hover-bg, #15803d) !important;
-  color: var(--cta-hover-color, #fff) !important;
+/* ---- EMPTY SPACE FIX: kill margins/blank lines inside cells ---- */
+.single-post .post-table td > *:first-child,
+.single-post .post-table th > *:first-child {
+  margin-top: 0 !important;
 }
 
-/* ==========================================================================
-   TABLE CELL — IMAGE SIZE + PADDING FIX
-   ========================================================================== */
+.single-post .post-table td > *:last-child,
+.single-post .post-table th > *:last-child {
+  margin-bottom: 0 !important;
+}
 
-/* Cell padding kammi (image irukkura cell-ku mattum) */
+.single-post .post-table .post-p,
+.single-post .post-content .post-table .post-p,
+.single-post .post-html-content table p {
+  max-width: none;
+  margin: 0 0 6px;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.single-post .post-table .post-p:last-child,
+.single-post .post-content .post-table .post-p:last-child,
+.single-post .post-html-content table p:last-child {
+  margin-bottom: 0;
+}
+
+.single-post .post-table .post-p:empty,
+.single-post .post-html-content table p:empty {
+  display: none;
+}
+
+.single-post .post-table br:last-child,
+.single-post .post-html-content table br:last-child {
+  display: none;
+}
+
+/* ---- Image cells ---- */
 .single-post .post-table td:has(img),
 .single-post .post-table th:has(img) {
-  padding: 6px 8px;
+  padding: 8px 10px;
+  text-align: center;
+  vertical-align: middle;
 }
 
-/* Figure wrapper-oda extra margin remove */
-.single-post .post-table .post-figure {
+.single-post .post-table .post-figure,
+.single-post .post-table .post-video,
+.single-post .post-table .post-audio {
+  display: flex;
+  justify-content: center;
   width: auto;
-  margin: 0;
+  margin: 0 !important;
 }
 
 .single-post .post-table .post-image-frame {
   display: inline-flex;
   width: auto;
+  min-height: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
 }
 
-/* Image size control */
 .single-post .post-table .post-figure img,
 .single-post .post-table td img,
 .single-post .post-table th img {
+  display: block;
   width: auto;
   height: auto;
   max-width: 48px;
@@ -6303,31 +5576,30 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
   margin: 0 auto;
 }
 
-/* Cell-kulla paragraph spacing */
-.single-post .post-table .post-p {
-  margin: 0;
+.single-post .post-table figcaption {
+  display: none;
 }
 
-.single-post .post-table td:has(img),
-.single-post .post-table th:has(img) {
-  text-align: center;
-  padding: 4px 8px;
+/* ---- Mobile ---- */
+@media (max-width: 820px) {
+  .single-post .post-table,
+  .single-post .post-html-content table {
+    min-width: max-content;
+    font-size: 14px;
+  }
+
+  .single-post .post-table th,
+  .single-post .post-table td,
+  .single-post .post-html-content table th,
+  .single-post .post-html-content table td {
+    padding: 12px 13px;
+  }
 }
 
-.single-post .post-table .post-figure {
-  display: flex;
-  justify-content: center;
-}
 
-.single-post .post-table {
-  table-layout: fixed;
-}
-
-.single-post .post-table th:first-child,
-.single-post .post-table td:first-child {
-  width: 180px;
-}
-
+/* ==========================================================================
+   APX TOKENS
+   ========================================================================== */
 
 :root {
   --apx-bg: var(--surface-elevated);
@@ -6336,4 +5608,257 @@ html[data-theme="light"] .post-html-content table tbody tr:hover td {
   --apx-muted: var(--text-secondary);
   --apx-border: var(--border);
   --apx-accent: var(--brand);
+}
+
+
+/* Desktop sidebar ad */
+@media (min-width: 821px) {
+  .single-post .article-sidebar .sidebar-ad-card {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+}
+
+
+/* ==========================================================================
+   READING TOOLBAR  (Contents | Share | Back to Top)
+   Mobile/tablet only. Sticky just under the site header.
+   ========================================================================== */
+
+/* Hidden on desktop: TOC + share live in the side columns there */
+.single-post .single-post-reading-toolbar {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  /* 1. Kill the old fixed bottom bar completely */
+  .single-post .article-sidebar {
+    display: none !important;
+  }
+
+  .single-post {
+    padding-bottom: 0 !important;
+  }
+
+  .single-post .post-layout {
+    padding-bottom: 34px !important;
+  }
+
+  /* 2. Kill the floating back-to-top circle (toolbar has its own button) */
+  body:has(.single-post) .back-to-top {
+    display: none !important;
+  }
+
+  /* 3. The toolbar band: sticky + fully opaque (no content showing through) */
+  .single-post .single-post-reading-toolbar {
+    display: block;
+    position: sticky;
+    top: var(--site-header-height, 63px); /* = your header height */
+    z-index: 30;                           /* below header, above content */
+    width: 100%;
+    padding: 8px 0;
+    background-color: var(--background);
+    background-image: linear-gradient(
+      color-mix(in srgb, var(--brand-soft) 70%, transparent),
+      color-mix(in srgb, var(--brand-soft) 70%, transparent)
+    );
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .single-post .reading-toolbar-inner {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  /* 4. The three equal buttons (same look in every state on touch) */
+  .single-post .reading-toolbar-button,
+  .single-post .single-post-reading-toolbar .back-to-top--toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    width: 100%;
+    min-width: 0;
+    height: 38px;
+    margin: 0;
+    padding: 0 6px;
+    box-sizing: border-box;
+
+    border: 1px solid color-mix(in srgb, var(--brand) 55%, var(--border)) !important;
+    border-radius: 10px;
+    background: var(--surface-elevated) !important;
+    color: var(--text-primary) !important;
+    box-shadow: none !important;
+
+    font-family: var(--font-ui, "Sora", sans-serif);
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .12s ease;
+  }
+
+  .single-post .reading-toolbar-button > svg,
+  .single-post .single-post-reading-toolbar .back-to-top--toolbar > svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    color: var(--brand) !important;
+  }
+
+  .single-post .reading-toolbar-button .reading-toolbar-chevron {
+    width: 12px;
+    height: 12px;
+    flex-basis: 12px;
+    color: var(--text-muted) !important;
+  }
+
+  .single-post .reading-toolbar-button > span,
+  .single-post .back-to-top--toolbar > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Tap feedback = tiny press only, NO colour change */
+  .single-post .reading-toolbar-button:active,
+  .single-post .single-post-reading-toolbar .back-to-top--toolbar:active {
+    transform: scale(.97);
+  }
+
+  .single-post .reading-toolbar-button:focus,
+  .single-post .single-post-reading-toolbar .back-to-top--toolbar:focus {
+    outline: none;
+  }
+
+  /* Hover colour only for real mouse devices (never sticks after a tap) */
+  @media (hover: hover) and (pointer: fine) {
+    .single-post .reading-toolbar-button:hover,
+    .single-post .single-post-reading-toolbar .back-to-top--toolbar:hover {
+      border-color: var(--brand) !important;
+      background: var(--brand-soft) !important;
+      color: var(--brand) !important;
+    }
+  }
+
+  /* Modals must sit above everything */
+  .single-post .share-modal-backdrop,
+  .single-post .mobile-toc-backdrop {
+    z-index: 120 !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .single-post .reading-toolbar-inner {
+    gap: 4px;
+  }
+
+  .single-post .reading-toolbar-button,
+  .single-post .single-post-reading-toolbar .back-to-top--toolbar {
+    height: 36px;
+    gap: 3px;
+    padding: 0 4px;
+    font-size: 10.5px;
+  }
+
+  .single-post .reading-toolbar-button .reading-toolbar-chevron {
+    display: none;
+  }
+}
+
+
+
+
+
+/* ==========================================================================
+   FLUID LARGE-SCREEN LAYOUT (v3)
+   Width comes from --site-container (globals.css), the same variable the
+   navbar and footer use, so everything shares the same left/right edges.
+   ========================================================================== */
+
+@media (min-width: 1500px) {
+  .single-post {
+    --col-gap: clamp(40px, 2.6vw, 80px);
+    --blog-content-width: 100%;
+  }
+
+  .single-post .post-shell,
+  .single-post .post-breadcrumb {
+    width: min(calc(100% - 96px), var(--site-container, 1260px));
+  }
+
+  .single-post .post-layout {
+    grid-template-columns: minmax(220px, 16%) minmax(0, 1fr) minmax(240px, 18%);
+    gap: var(--col-gap);
+    justify-content: stretch;
+  }
+
+  .single-post .toc,
+  .single-post .toc-card,
+  .single-post .desktop-featured-badge {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .single-post .post-content {
+    max-width: 100%;
+  }
+
+  .single-post .post-content .post-p,
+  .single-post .post-content li {
+    max-width: 100%;
+    font-size: clamp(18px, 0.6vw + 8px, 24px);
+    line-height: 1.78;
+  }
+
+  .single-post .post-h2 { font-size: clamp(32px, 1.1vw + 14px, 46px); }
+  .single-post .post-h3 { font-size: clamp(23px, 0.7vw + 11px, 32px); }
+  .single-post .post-h4 { font-size: clamp(19px, 0.4vw + 12px, 26px); }
+
+  .single-post .post-title {
+    font-size: clamp(48px, 1.6vw + 22px, 80px);
+    max-width: none;
+  }
+
+  .single-post .post-excerpt {
+    font-size: clamp(19px, 0.5vw + 10px, 25px);
+    max-width: 62ch;
+  }
+
+  .single-post .post-hero-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
+    gap: clamp(48px, 3.4vw, 96px);
+  }
+
+  .single-post .hero-image img {
+    max-height: clamp(520px, 30vw, 780px);
+  }
+
+  .single-post .styled-box-body,
+  .single-post .summary-box p {
+    font-size: clamp(16.5px, 0.4vw + 9px, 21px);
+  }
+
+  .single-post .post-table,
+  .single-post .post-html-content table {
+    font-size: clamp(15px, 0.3vw + 9px, 19px);
+  }
+
+  .single-post .toc-link {
+    font-size: clamp(12px, 0.2vw + 8px, 15px);
+  }
+
+  .single-post .related-grid {
+    gap: clamp(16px, 1.2vw, 30px);
+  }
 }

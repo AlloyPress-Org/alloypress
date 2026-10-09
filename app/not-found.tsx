@@ -55,7 +55,7 @@ export default function NotFound() {
 
           <div className="alloy-404__core">
             <img
-              src="/ap-icon.png"
+              src="/ap-icons.png"
               alt="AlloyPress"
               className="alloy-404__core-mark"
             />

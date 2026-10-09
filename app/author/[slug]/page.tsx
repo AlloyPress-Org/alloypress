@@ -250,7 +250,7 @@ export default async function AuthorPage() {
               <div className="profile-card-pattern" aria-hidden="true" />
               <div className="flex h-11 w-11 items-center justify-center overflow-hidden">
                 <Image
-                  src="/ap-icon.png"
+                  src="/ap-icons.png"
                   alt="AlloyPress"
                   width={44}
                   height={44}

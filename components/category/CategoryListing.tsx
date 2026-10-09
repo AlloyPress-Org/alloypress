@@ -21,16 +21,7 @@ type CategoryListingProps = {
   slug: string;
   title: string;
   description: string;
-  page?: number;
 };
-
-type PaginatedPayloadResponse<T> =
-  PayloadResponse<T> & {
-    totalPages?: number;
-    totalDocs?: number;
-    page?: number;
-    limit?: number;
-  };
 
 // ============================================================
 // LOCAL CMS TYPES
@@ -238,16 +229,20 @@ function getAuthor(post: Post): string {
 
 // ============================================================
 // GET CATEGORY + POSTS
+// Cached at two levels:
+//   1. React cache()  -> dedupes calls within one render
+//   2. Next fetch cache (revalidate: 300 + tags) -> Payload
+//      responses are reused for 5 min, so Neon is not hit on
+//      every visit. Tags allow on-demand revalidation:
+//      revalidateTag(`category:${slug}`) / revalidateTag("posts")
 // ============================================================
 
 const getCategoryPosts = cache(
   async (
     slug: string,
-    page: number,
   ): Promise<{
     category: ListingCategory | null;
     posts: Post[];
-    totalPages: number;
   }> => {
     try {
       // ========================================================
@@ -278,17 +273,16 @@ const getCategoryPosts = cache(
         return {
           category: null,
           posts: [],
-          totalPages: 0,
         };
       }
 
       // ========================================================
-      // 2. GET PUBLISHED POSTS WITH REAL PAGINATION
+      // 2. GET LATEST 12 PUBLISHED POSTS (NO PAGINATION)
       // ========================================================
 
       const postsData =
         await payloadFetch<
-          PaginatedPayloadResponse<Post>
+          PayloadResponse<Post>
         >(
           `/posts` +
           `?where[workflowStatus][equals]=published` +
@@ -296,8 +290,7 @@ const getCategoryPosts = cache(
             String(category.id),
           )}` +
           `&sort=-publishedAt` +
-          `&limit=13` +
-          `&page=${page}` +
+          `&limit=100` +
           `&depth=1` +
           `&select[id]=true` +
           `&select[title]=true` +
@@ -323,14 +316,10 @@ const getCategoryPosts = cache(
       return {
         category,
         posts,
-        totalPages: Math.max(
-          1,
-          postsData?.totalPages ?? 1,
-        ),
       };
     } catch (error) {
       console.error(
-        `CategoryListing fetch error for "${slug}" page ${page}:`,
+        `CategoryListing fetch error for "${slug}":`,
         error,
       );
 
@@ -338,6 +327,7 @@ const getCategoryPosts = cache(
     }
   },
 );
+
 // ============================================================
 // CATEGORY LISTING
 // ============================================================
@@ -346,27 +336,14 @@ export default async function CategoryListing({
   slug,
   title,
   description,
-  page = 1,
 }: CategoryListingProps) {
-  const currentPage = Math.max(1, page);
+  const { posts } =
+    await getCategoryPosts(slug);
 
-  const { posts, totalPages } =
-    await getCategoryPosts(
-      slug,
-      currentPage,
-    );
+  // 1 featured + remaining 11 = 12 articles
+  const featuredPost = posts[0] || null;
 
-  // Page 1 keeps the existing featured layout.
-  // Pagination pages render every fetched article as a card.
-  const featuredPost =
-    currentPage === 1
-      ? posts[0] || null
-      : null;
-
-  const remainingPosts =
-    currentPage === 1
-      ? posts.slice(1)
-      : posts;
+  const remainingPosts = posts.slice(1);
 
   // ==========================================================
   // SECTION NUMBER
@@ -558,7 +535,7 @@ export default async function CategoryListing({
             </>
           )}
 
-          {!featuredPost && currentPage === 1 && (
+          {!featuredPost && (
             <div className="empty-state">
               <span>
                 NO ARTICLES YET
@@ -632,18 +609,11 @@ export default async function CategoryListing({
                           />
 
                           {/*
-                          FIX (Bug 2): was `index + 1`, which
-                          restarted numbering at 01 and collided
-                          with the Featured post's own "01" label.
-                          Featured post occupies slot 1, so the
-                          grid now continues from 2.
-                        */}
+                            Featured post occupies slot 01,
+                            so the grid numbering starts from 02.
+                          */}
                           <span className="article-card-number">
-                            {String(
-                              currentPage === 1
-                                ? index + 2
-                                : (currentPage - 1) * 13 + index + 1,
-                            ).padStart(2, "0")}
+                            {String(index + 2).padStart(2, "0")}
                           </span>
 
                           <span
@@ -692,37 +662,6 @@ export default async function CategoryListing({
                     ),
                   )}
                 </ArticleGrid>
-
-                {totalPages > 1 && (
-                  <nav
-                    className="category-pagination"
-                    aria-label={`${title} pagination`}
-                  >
-                    {currentPage > 1 && (
-                      <Link
-                        href={
-                          currentPage === 2
-                            ? `/${slug}`
-                            : `/${slug}/page/${currentPage - 1}`
-                        }
-                        className="category-pagination-arrow"
-                        aria-label="Previous page"
-                      >
-                        ←
-                      </Link>
-                    )}
-
-                    {currentPage < totalPages && (
-                      <Link
-                        href={`/${slug}/page/${currentPage + 1}`}
-                        className="category-pagination-arrow"
-                        aria-label="Next page"
-                      >
-                        →
-                      </Link>
-                    )}
-                  </nav>
-                )}
               </section>
             )}
 
