@@ -5862,3 +5862,13 @@ html[data-theme="dark"] .single-post .ai-panel {
     gap: clamp(16px, 1.2vw, 30px);
   }
 }
+
+
+
+
+/* Video / audio / image captions ellam center */
+.single-post .post-video figcaption,
+.single-post .post-audio figcaption,
+.single-post .post-figure figcaption {
+  text-align: center;
+}
