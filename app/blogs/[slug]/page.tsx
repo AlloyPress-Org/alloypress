@@ -64,6 +64,7 @@ type PostMeta = {
 
 type PostWithMeta = Post & {
   meta?: PostMeta;
+  createdAt?: string | null;
 };
 
 // ============================================================
@@ -342,6 +343,7 @@ const getPost = cache(
     params.set("select[tags]", "true");
     params.set("select[publishedAt]", "true");
     params.set("select[updatedAt]", "true");
+    params.set("select[createdAt]", "true"); 
     params.set("select[author]", "true");
     params.set("select[legacy]", "true");
     params.set("select[meta]", "true");
@@ -682,6 +684,7 @@ export default async function BlogPostPage({
             featuredImage: post.featuredImage,
             publishedAt: post.publishedAt,
             updatedAt: post.updatedAt,
+            createdAt: post.createdAt, 
             legacy: post.legacy,
             tags: post.tags,
           }}

@@ -57,18 +57,52 @@ type PayloadResponse<T> = {
 };
 
 // ------------------------------------------------------------
-// Fetch helpers. Fail aanaa THROW, empty return panna maatom.
+// Rate limit config
 // ------------------------------------------------------------
-async function payloadGet<T>(path: string): Promise<T> {
-  const data = await payloadFetch<T>(path, {
-    next: { revalidate: 3600, tags: ["sitemap"] },
-  });
+const MAX_429_RETRIES = 5; // 429 vandha max 5 thadava retry
+const BASE_BACKOFF_MS = 1000; // 1s, 2s, 4s, 8s, 16s
+const GAP_BETWEEN_REQUESTS_MS = 150; // requests naduvula small gap
 
-  // payloadFetch 404 na null return pannum. Sitemap-ku idhu error.
-  if (!data) throw new Error(`[Sitemap] Payload returned null for ${path}`);
-  return data;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+function isRateLimitError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes("429") || /too many requests/i.test(msg);
 }
 
+// ------------------------------------------------------------
+// Fetch helpers. Fail aanaa THROW, empty/partial return panna maatom.
+// (Throw aana Next.js pazhaya cached sitemap-ae serve pannum)
+// ------------------------------------------------------------
+async function payloadGet<T>(path: string): Promise<T> {
+  let attempt = 0;
+
+  while (true) {
+    try {
+      const data = await payloadFetch<T>(path, {
+        next: { revalidate: 3600, tags: ["sitemap"] },
+      });
+
+      // payloadFetch 404 na null return pannum. Sitemap-ku idhu error.
+      if (!data) throw new Error(`[Sitemap] Payload returned null for ${path}`);
+      return data;
+    } catch (err) {
+      // 429 na mattum backoff panni retry. Vera error na udane throw.
+      if (isRateLimitError(err) && attempt < MAX_429_RETRIES) {
+        const wait = BASE_BACKOFF_MS * 2 ** attempt;
+        console.warn(
+          `[Sitemap] 429 for ${path}. Retry ${attempt + 1}/${MAX_429_RETRIES} in ${wait}ms`,
+        );
+        await sleep(wait);
+        attempt++;
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+// Pages ellam SEQUENTIAL-a fetch (parallel burst illa), rate limit-ku safe.
 async function fetchAll<T>(basePath: string, limit = 500): Promise<T[]> {
   const sep = basePath.includes("?") ? "&" : "?";
   const url = (page: number) => `${basePath}${sep}limit=${limit}&page=${page}`;
@@ -76,13 +110,15 @@ async function fetchAll<T>(basePath: string, limit = 500): Promise<T[]> {
   const first = await payloadGet<PayloadResponse<T>>(url(1));
   const totalPages = first.totalPages ?? 1;
 
-  const rest = await Promise.all(
-    Array.from({ length: Math.max(totalPages - 1, 0) }, (_, i) =>
-      payloadGet<PayloadResponse<T>>(url(i + 2)),
-    ),
-  );
+  const docs: T[] = [...(first.docs ?? [])];
 
-  return [first, ...rest].flatMap((d) => d.docs ?? []);
+  for (let p = 2; p <= totalPages; p++) {
+    await sleep(GAP_BETWEEN_REQUESTS_MS);
+    const res = await payloadGet<PayloadResponse<T>>(url(p));
+    docs.push(...(res.docs ?? []));
+  }
+
+  return docs;
 }
 
 // ------------------------------------------------------------
@@ -105,7 +141,7 @@ const getPages = () =>
   fetchAll<Page>(
     "/pages?where[status][equals]=published" +
       "&select[slug]=true&select[updatedAt]=true",
-    100,
+    500,
   );
 
 const getCategories = () =>
@@ -133,14 +169,13 @@ function resolveCategorySlug(
 }
 
 // ------------------------------------------------------------
-// Sitemap
+// Build sitemap (full data fetch + entries)
 // ------------------------------------------------------------
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [posts, pages, categories] = await Promise.all([
-    getPosts(),
-    getPages(),
-    getCategories(),
-  ]);
+async function buildSitemap(): Promise<MetadataRoute.Sitemap> {
+  // SEQUENTIAL: Promise.all illa, so Payload-ku burst requests pogaadhu.
+  const categories = await getCategories();
+  const pages = await getPages();
+  const posts = await getPosts();
 
   const entries = new Map<string, MetadataRoute.Sitemap[number]>();
 
@@ -207,4 +242,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
 
   return Array.from(entries.values());
+}
+
+// ------------------------------------------------------------
+// Sitemap (last-good fallback)
+// Fetch fail aanaa: 1) memory-la last good copy irundha adha kudukkum
+//                   2) illa-na throw -> Next.js pazhaya cached sitemap serve pannum
+// ------------------------------------------------------------
+let lastGood: MetadataRoute.Sitemap | null = null;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  try {
+    const result = await buildSitemap();
+    lastGood = result;
+    return result;
+  } catch (err) {
+    console.error("[Sitemap] build failed", err);
+    if (lastGood) return lastGood;
+    throw err;
+  }
 }

@@ -732,6 +732,12 @@ const getPost = cache(
       "true",
     );
 
+    params.set("select[createdAt]", "true");
+    params.set("select[legacy]", "true");
+    params.set("select[author]", "true");
+    params.set("select[tags]", "true");
+
+
     const data =
       await payloadFetch<
         PayloadResponse<PostWithMeta>
@@ -1065,51 +1071,51 @@ export default async function CategoryPostPage({
   }
 
   const reviewedSoftwareName =
-  getReviewedSoftwareName(post.slug || slug);
+    getReviewedSoftwareName(post.slug || slug);
 
   const articleUrl = `${SITE_URL}/${category}/${post.slug}`;
 
-const categoryPath =
-  CATEGORY_PATHS[category as keyof typeof CATEGORY_PATHS] ||
-  `/${category}`;
+  const categoryPath =
+    CATEGORY_PATHS[category as keyof typeof CATEGORY_PATHS] ||
+    `/${category}`;
 
-const faqs = collectFaqs(post.content);
+  const faqs = collectFaqs(post.content);
 
-const breadcrumb = createBreadcrumbSchema(
-  [
-    { name: "Home", url: SITE_URL },
-    { name: categoryLabel, url: `${SITE_URL}${categoryPath}` },
-    { name: post.title || "", url: articleUrl },
-  ],
-  articleUrl,
-);
+  const breadcrumb = createBreadcrumbSchema(
+    [
+      { name: "Home", url: SITE_URL },
+      { name: categoryLabel, url: `${SITE_URL}${categoryPath}` },
+      { name: post.title || "", url: articleUrl },
+    ],
+    articleUrl,
+  );
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    createWebPageSchema({
-      url: articleUrl,
-      name: post.title || "",
-      description: post.meta?.description || post.excerpt,
-      image: articleImage,
-      publishedAt: post.publishedAt,
-      modifiedAt: post.updatedAt || post.publishedAt,
-      hasBreadcrumb: Boolean(breadcrumb),
-    }),
-    createArticleSchema({
-      url: articleUrl,
-      title: post.title || "",
-      description: post.meta?.description || post.excerpt,
-      image: articleImage,
-      publishedAt: post.publishedAt,
-      modifiedAt: post.updatedAt || post.publishedAt,
-      category: categoryLabel,
-      authorName: post.author?.name,
-    }),
-    breadcrumb,
-    faqs.length ? createFAQSchema(faqs, articleUrl) : null,
-  ].filter(Boolean),
-};
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      createWebPageSchema({
+        url: articleUrl,
+        name: post.title || "",
+        description: post.meta?.description || post.excerpt,
+        image: articleImage,
+        publishedAt: post.publishedAt,
+        modifiedAt: post.updatedAt || post.publishedAt,
+        hasBreadcrumb: Boolean(breadcrumb),
+      }),
+      createArticleSchema({
+        url: articleUrl,
+        title: post.title || "",
+        description: post.meta?.description || post.excerpt,
+        image: articleImage,
+        publishedAt: post.publishedAt,
+        modifiedAt: post.updatedAt || post.publishedAt,
+        category: categoryLabel,
+        authorName: post.author?.name,
+      }),
+      breadcrumb,
+      faqs.length ? createFAQSchema(faqs, articleUrl) : null,
+    ].filter(Boolean),
+  };
 
   // ==========================================================
   // RENDER

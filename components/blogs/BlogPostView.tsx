@@ -2419,8 +2419,19 @@ export default function BlogPostView({
     })
     : "";
 
-  const rawUpdatedAt =
-    post?.legacy?.wordpressModifiedAt || post?.updatedAt;
+  const DAY = 24 * 60 * 60 * 1000;
+
+  // Payload-la migration-ku aprm edit pannirukkaangala?
+  const editedInPayload =
+    post?.updatedAt &&
+    post?.createdAt &&
+    new Date(post.updatedAt).getTime() -
+    new Date(post.createdAt).getTime() >
+    DAY;
+
+  const rawUpdatedAt = editedInPayload
+    ? post.updatedAt
+    : post?.legacy?.wordpressModifiedAt || post?.updatedAt;
 
   const updatedDate = rawUpdatedAt
     ? new Date(rawUpdatedAt).toLocaleDateString("en-US", {
