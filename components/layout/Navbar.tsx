@@ -237,10 +237,10 @@ export default function Navbar() {
 
           {/* CTA */}
           <Link
-            href="/get-reviewed"
+            href="/contact-us"
             className="header-cta"
           >
-            Get Reviewed
+            Contact Us
             <span aria-hidden="true">
               ↗
             </span>
@@ -322,11 +322,11 @@ export default function Navbar() {
           <div className="mobile-nav-divider" />
 
           <Link
-            href="/get-reviewed"
+            href="/contact-us"
             className="mobile-nav-cta"
             onClick={closeMobileMenu}
           >
-            Get Reviewed
+            Contact Us
             <span aria-hidden="true">
               ↗
             </span>

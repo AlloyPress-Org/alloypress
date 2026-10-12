@@ -143,7 +143,7 @@ const outputs = [
   {
     mark: "Visibility",
     title: "Editorial coverage opportunity",
-    text: "Tools that perform well in testing are considered for AlloyPress articles and reviews. Coverage there ranks in search and gets cited in AI platforms including ChatGPT, Claude, Gemini, and Perplexity.",
+    text: "Tools that perform well in testing are considered for AlloyPress articles and reviews. Coverage ranks in search and gets cited in AI platforms including ChatGPT, Claude, Gemini, and Perplexity. Performance determines inclusion, not partnership",
   },
 ];
 
@@ -259,8 +259,12 @@ export default function TestingPartnerPage() {
               <p>
                 We have tested 250+ AI tools across more than 15 categories.
                 That gives us a calibrated view of what good looks like in each
-                space — and where a product falls short before its users find
+                space and where a product falls short before its users find
                 out.
+              </p>
+              <p style={{ maxWidth: "none" }}>
+                We currently work with AI brands across video, writing, image
+                generation, and productivity categories.
               </p>
               <span className="testing-partner-section-count">01 / 05</span>
             </div>
@@ -423,16 +427,18 @@ export default function TestingPartnerPage() {
                   We will respond within 1 to 2 business days and take it from
                   there. No templates, no lengthy intake forms.
                 </p>
+                <p>
+                  Price is based on what you need. Share your products and priorities and we'll put together a scope that fits.
+                </p>
               </div>
 
-              <button
-                type="button"
+              <Link
                 className="testing-partner-cta-email"
-                data-testing-email-open
+                href="/contact-us"
               >
                 Contact AlloyPress
                 <ArrowUpRight aria-hidden="true" />
-              </button>
+              </Link>
             </div>
           </div>
         </section>
@@ -457,8 +463,7 @@ export default function TestingPartnerPage() {
             <h2>Let’s talk about your product.</h2>
 
             <p>
-              Send your product details, testing requirements,
-              and any relevant access information to our email.
+              Share your product, what you’d like tested, and any relevant access details. We review every message and respond within 1 to 2 business days.
             </p>
 
             <div className="testing-partner-email-row">
