@@ -460,11 +460,10 @@ export default function TestingPartnerPage() {
               Contact AlloyPress
             </span>
 
-            <h2>Let’s talk about your product.</h2>
+            <h2>Your product deserves an honest look.</h2>
 
             <p>
-              Share your product, what you’d like tested, and any relevant access details. We review every message and respond within 1 to 2 business days.
-            </p>
+              Tell us about your product, what you’d like improve or test regularly and the monthly budget you have in mind. We respond within 2 to 3 business days.            </p>
 
             <div className="testing-partner-email-row">
               <span>contact@alloypress.com</span>
@@ -479,62 +478,52 @@ export default function TestingPartnerPage() {
             </div>
           </div>
         </dialog>
-        <Script id="testing-partner-email-popup">
+
+        <Script id="testing-partner-email-popup" strategy="afterInteractive">
           {`
     (() => {
-      const dialog = document.querySelector(
-        "[data-testing-email-dialog]"
-      );
-
-      if (!dialog || dialog.dataset.ready === "true") {
+      if (document.documentElement.dataset.testingPartnerEmailReady === "true") {
         return;
       }
 
-      dialog.dataset.ready = "true";
+      document.documentElement.dataset.testingPartnerEmailReady = "true";
 
-      const openButtons = document.querySelectorAll(
-        "[data-testing-email-open]"
-      );
+      document.addEventListener("click", async (event) => {
+        const target = event.target;
 
-      const closeButton = dialog.querySelector(
-        "[data-testing-email-close]"
-      );
+        if (!(target instanceof Element)) return;
 
-      const copyButton = dialog.querySelector(
-        "[data-testing-email-copy]"
-      );
+        const openButton = target.closest("[data-testing-email-open]");
+        const closeButton = target.closest("[data-testing-email-close]");
+        const copyButton = target.closest("[data-testing-email-copy]");
+        const dialog = document.querySelector("[data-testing-email-dialog]");
 
-      openButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          dialog.showModal();
-        });
-      });
+        if (!dialog) return;
 
-      closeButton?.addEventListener("click", () => {
-        dialog.close();
-      });
-
-      dialog.addEventListener("click", (event) => {
-        if (event.target === dialog) {
-          dialog.close();
+        if (openButton) {
+          if (!dialog.open) dialog.showModal();
+          return;
         }
-      });
 
-      copyButton?.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(
-            "contact@alloypress.com"
-          );
+        if (closeButton) {
+          dialog.close();
+          return;
+        }
 
-          copyButton.textContent = "Copied!";
+        if (target === dialog) {
+          dialog.close();
+          return;
+        }
 
-          setTimeout(() => {
-            copyButton.textContent = "Copy";
-          }, 1600);
-        } catch {
-          copyButton.textContent = "Copy failed";
+        if (copyButton) {
+          try {
+            await navigator.clipboard.writeText("contact@alloypress.com");
+            copyButton.textContent = "Copied!";
+          } catch {
+            copyButton.textContent = "Copy failed";
+          }
 
-          setTimeout(() => {
+          window.setTimeout(() => {
             copyButton.textContent = "Copy";
           }, 1600);
         }
@@ -542,6 +531,7 @@ export default function TestingPartnerPage() {
     })();
   `}
         </Script>
+
       </main>
     </div>
   );
