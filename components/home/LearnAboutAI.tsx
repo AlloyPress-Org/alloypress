@@ -59,7 +59,7 @@ const getBlogsCategory = cache(
           `/categories?where[slug][equals]=${BLOGS_CATEGORY_SLUG}&limit=1&depth=0&select[id]=true`,
           {
             next: {
-              revalidate: 300,
+              revalidate: 86400,
               tags: [
                 `category:${BLOGS_CATEGORY_SLUG}`,
                 "categories",
@@ -107,7 +107,7 @@ const getLearnPosts = cache(
           )}&sort=-publishedAt&limit=${HOME_BLOG_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[excerpt]=true&select[publishedAt]=true&select[author]=true&select[category]=true&select[featuredImage]=true`,
           {
             next: {
-              revalidate: 300,
+              revalidate: 86400,
               tags: [
                 "home:latest-blogs",
                 "posts",

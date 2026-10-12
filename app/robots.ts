@@ -1,5 +1,5 @@
-import type { MetadataRoute } from "next";
 
+import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/seo/constants";
 
 export default function robots(): MetadataRoute.Robots {
@@ -16,6 +16,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           "/api/",
           "/admin/",
+          "/search",
           "/*?*preview=*",
           "/*?*_status=draft",
         ],

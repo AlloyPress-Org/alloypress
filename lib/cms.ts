@@ -243,7 +243,7 @@ export async function getPostBySlug(
       `/posts?${params.toString()}`,
       {
         next: {
-          revalidate: 300,
+          revalidate: 86400,
           tags: [`post:${slug}`],
         },
       },
@@ -271,7 +271,7 @@ export async function getPostById(
       `/posts/${encodeURIComponent(id)}?${params.toString()}`,
       {
         next: {
-          revalidate: 300,
+          revalidate: 86400,
           tags: [`post:id:${id}`],
         },
       },

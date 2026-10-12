@@ -230,7 +230,7 @@ const getCategories = cache(
           "/categories?where[slug][in]=blogs,reviews,news,alternatives,comparisons&limit=5&depth=0&select[slug]=true",
           {
             next: {
-              revalidate: 300,
+              revalidate: 86400,
               tags: [
                 "categories",
                 "category:blogs",

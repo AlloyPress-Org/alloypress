@@ -70,7 +70,7 @@ const getReviewsCategory = cache(
           )}&limit=1&depth=0&select[id]=true`,
           {
             next: {
-              revalidate: 300,
+              revalidate: 86400,
               tags: [CATEGORY_TAG],
             },
           },
@@ -170,7 +170,7 @@ const getReviewPosts = cache(
           `/posts?${params.toString()}`,
           {
             next: {
-              revalidate: 300,
+              revalidate: 86400,
               tags: [HOME_TAG],
             },
           },

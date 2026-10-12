@@ -87,7 +87,7 @@ const getNewsCategory = cache(
           `/categories?where[slug][equals]=${NEWS_CATEGORY_SLUG}&limit=1&depth=0&select[id]=true`,
           {
             next: {
-              revalidate: 300,
+              revalidate: 86400,
               tags: [
                 `category:${NEWS_CATEGORY_SLUG}`,
                 "categories",
@@ -134,7 +134,7 @@ const getRecentAINews = cache(
           )}&sort=-publishedAt&limit=${HOME_NEWS_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[excerpt]=true&select[publishedAt]=true&select[featuredImage]=true`,
           {
             next: {
-              revalidate: 300,
+              revalidate: 86400,
               tags: [
                 "home:latest-news",
                 "posts",

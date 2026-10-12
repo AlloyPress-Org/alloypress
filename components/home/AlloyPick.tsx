@@ -163,7 +163,7 @@ const getPublishedPosts = cache(
           `/posts?${params.toString()}`,
           {
             next: {
-              revalidate: 300,
+              revalidate: 86400,
               tags: [
                 "home:latest-posts",
                 "posts",
@@ -224,7 +224,7 @@ const getHomepageSettings = cache(
           `/homepage-settings?${params.toString()}`,
           {
             next: {
-              revalidate: 300,
+              revalidate: 86400,
               tags: [
                 "homepage:featured",
                 "homepage",

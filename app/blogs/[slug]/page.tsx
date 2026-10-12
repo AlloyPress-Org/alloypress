@@ -215,7 +215,7 @@ async function hydrateContentMedia(
     `/media?where[id][in]=${encodeURIComponent(idList)}&limit=${ids.size}&depth=0&select[id]=true&select[url]=true&select[filename]=true&select[width]=true&select[height]=true&select[mimeType]=true&select[alt]=true`,
     {
       next: {
-        revalidate: 300,
+        revalidate: 86400,
         tags: Array.from(ids).map((id) => `media:${id}`),
       },
     },
@@ -354,7 +354,7 @@ const getPost = cache(
         strict: true, // 429/5xx na 404 kaattaama error
         next: isDraft
           ? { revalidate: 0 }
-          : { revalidate: 3600, tags: [`post:${slug}`] },
+          : { revalidate: 86400, tags: [`post:${slug}`] },
       },
     );
 
@@ -439,7 +439,7 @@ async function getRelatedPosts(
       `/posts?${params.toString()}`,
       {
         next: {
-          revalidate: 300,
+          revalidate: 86400,
           tags: [
             `category:${String(categoryId)}`,
             "posts",

@@ -24,11 +24,13 @@ export const PAYLOAD_API_URL =
   process.env.PAYLOAD_API_URL || "https://api.alloypress.com/api";
 export { getApiUrl };
 
-const DEFAULT_REVALIDATE = 300;
-const MAX_ATTEMPTS = 3;
-const STALE_MAX_AGE = 60 * 60 * 1000; // 1 hour
+
+const DEFAULT_REVALIDATE = 86400; // 24 hours
+const MAX_ATTEMPTS = 2; // Initial request + at most 1 retry
+const STALE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
 const MAX_STALE_ENTRIES = 200;
 const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+
 
 // Last successful responses (plain data only, safe on Workers)
 const lastGood = new Map<string, { data: unknown; at: number }>();
@@ -92,7 +94,7 @@ export async function payloadFetch<T>(
       }
 
       // Free the connection before retrying / returning
-      await res.body?.cancel().catch(() => {});
+      await res.body?.cancel().catch(() => { });
 
       if (res.status === 404) return null; // genuine not found
 

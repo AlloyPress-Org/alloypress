@@ -10,7 +10,7 @@ export const getHomepageSettings = cache(async () => {
 
   const response = await fetch(url.toString(), {
     next: {
-      revalidate: 300,
+      revalidate: 86400,
       tags: ['homepage'],
     },
   })

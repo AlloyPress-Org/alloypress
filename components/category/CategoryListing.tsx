@@ -258,7 +258,7 @@ const getCategoryPosts = cache(
           )}&limit=1&depth=0&select[id]=true`,
           {
             next: {
-              revalidate: 300,
+              revalidate: 86400,
               tags: [
                 `category:${slug}`,
                 "categories",
@@ -301,7 +301,7 @@ const getCategoryPosts = cache(
           `&select[author]=true`,
           {
             next: {
-              revalidate: 300,
+              revalidate: 86400,
               tags: [
                 `category:${slug}`,
                 "posts",

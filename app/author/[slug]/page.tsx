@@ -55,7 +55,7 @@ const getAuthorPosts = cache(async (): Promise<Post[]> => {
       "&select[featuredImage]=true",
       {
         next: {
-          revalidate: 300,
+          revalidate: 86400,
           tags: [
             "author:alloypress",
             "posts",
