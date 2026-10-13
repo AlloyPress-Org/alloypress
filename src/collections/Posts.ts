@@ -1,6 +1,8 @@
 import type { Access, Block, CollectionConfig, Field } from 'payload'
 import type { PayloadRequest } from 'payload'
 import { sql } from '@payloadcms/db-postgres/drizzle'
+import { sendWebRevalidation } from '@/hooks/revalidateWeb'
+import { hasInternalKey, forbidUnlessInternalOrUser } from '@/access/internalKey'
 
 import {
   BlocksFeature,
@@ -930,6 +932,41 @@ const contentField: Field = {
   // ("Main article content. Add formatted text, ...") was removed on purpose.
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function triggerWebRevalidation(doc: any, req: any, previousDoc?: any) {
+  try {
+    const idOf = (c: unknown) =>
+      typeof c === 'object' && c !== null
+        ? (c as { id?: number | string }).id
+        : (c as number | string | undefined)
+
+    const slugOfCategory = async (c: unknown): Promise<string | undefined> => {
+      const id = idOf(c)
+      if (id == null) return undefined
+      const found = (await req.payload.findByID({
+        collection: 'categories', id, depth: 0,
+      })) as { slug?: unknown } | null
+      return typeof found?.slug === 'string' ? found.slug : undefined
+    }
+
+    const categorySlug = await slugOfCategory(doc.category)
+    const categoryChanged = previousDoc && idOf(previousDoc.category) !== idOf(doc.category)
+    const previousCategorySlug = categoryChanged ? await slugOfCategory(previousDoc.category) : undefined
+    const previousSlug =
+      previousDoc?.slug && previousDoc.slug !== doc.slug ? previousDoc.slug : undefined
+
+    await sendWebRevalidation(
+      { slug: doc.slug, previousSlug, categorySlug, previousCategorySlug, authorSlug: 'alloypress' },
+      req.payload.logger,
+      `post "${doc.slug}"`,
+    )
+  } catch (error) {
+    req.payload.logger.error(
+      `Failed to trigger web revalidation for post: ${doc.slug} - ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
+}
+
 export const Posts: CollectionConfig = {
   slug: 'posts',
 
@@ -938,12 +975,14 @@ export const Posts: CollectionConfig = {
       if (req.user) {
         return true
       }
-
-      return {
-        workflowStatus: {
-          equals: 'published',
-        },
+      if (hasInternalKey(req)) {
+        return {
+          workflowStatus: {
+            equals: 'published',
+          },
+        }
       }
+      return false
     },
 
     create: isEditorOrAdmin,
@@ -967,69 +1006,17 @@ export const Posts: CollectionConfig = {
     ],
 
     afterChange: [
+      async ({ doc, previousDoc, req }) => {
+        // Publish / "Publish changes" only. Draft saves and autosave never change the public site.
+        if (doc._status !== 'published' || !doc.slug) return
+        await triggerWebRevalidation(doc, req, previousDoc)
+      },
+    ],
+
+    afterDelete: [
       async ({ doc, req }) => {
-        if (doc._status !== 'published' || !doc.slug) {
-          return
-        }
-
-        const webUrl = process.env.WEB_REVALIDATION_URL
-        const secret = process.env.REVALIDATION_SECRET
-
-        if (!webUrl || !secret) {
-          req.payload.logger.warn(
-            'Revalidation skipped: WEB_REVALIDATION_URL or REVALIDATION_SECRET is missing.',
-          )
-          return
-        }
-
-        try {
-          let categorySlug: string | undefined
-
-          if (doc.category) {
-            const categoryId =
-              typeof doc.category === 'object' && doc.category !== null
-                ? doc.category.id
-                : doc.category
-
-            const category = (await req.payload.findByID({
-              collection: 'categories',
-              id: categoryId,
-              depth: 0,
-            })) as { slug?: unknown } | null
-
-            if (typeof category?.slug === 'string') {
-              categorySlug = category.slug
-            }
-          }
-
-          const authorSlug = 'alloypress'
-
-          const response = await fetch(webUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'x-revalidate-secret': secret,
-            },
-            body: JSON.stringify({
-              slug: doc.slug,
-              categorySlug,
-              authorSlug,
-            }),
-          })
-
-          if (!response.ok) {
-            const responseText = await response.text().catch(() => '')
-
-            req.payload.logger.error(
-              `Web revalidation returned ${response.status}: ${responseText || response.statusText}`,
-            )
-          }
-        } catch (error) {
-          req.payload.logger.error(
-            `Failed to trigger web revalidation for post: ${doc.slug} - ${error instanceof Error ? error.message : String(error)
-            }`,
-          )
-        }
+        if (!doc?.slug) return
+        await triggerWebRevalidation(doc, req)
       },
     ],
   },
@@ -1040,6 +1027,8 @@ export const Posts: CollectionConfig = {
       method: 'get',
 
       handler: async (req) => {
+        const denied = forbidUnlessInternalOrUser(req)
+        if (denied) return denied
         if (!req.url) {
           return Response.json({
             docs: [],
@@ -1136,6 +1125,8 @@ export const Posts: CollectionConfig = {
       method: 'get',
 
       handler: async (req) => {
+        const denied = forbidUnlessInternalOrUser(req)
+        if (denied) return denied
         const posts = await req.payload.find({
           collection: 'posts',
 
@@ -1155,7 +1146,7 @@ export const Posts: CollectionConfig = {
           },
 
           limit: 1000,
-          depth: 1,
+          depth: 0,
 
           select: {
             title: true,
@@ -1177,6 +1168,8 @@ export const Posts: CollectionConfig = {
       method: 'get',
 
       handler: async (req) => {
+        const denied = forbidUnlessInternalOrUser(req)
+        if (denied) return denied
         const posts = await req.payload.find({
           collection: 'posts',
 
@@ -1203,7 +1196,7 @@ export const Posts: CollectionConfig = {
           },
 
           limit: 1000,
-          depth: 1,
+          depth: 0,
 
           select: {
             title: true,
@@ -1288,7 +1281,6 @@ export const Posts: CollectionConfig = {
         interval: 2500,
         showSaveDraftButton: true,
       },
-      schedulePublish: true,
     },
   },
 

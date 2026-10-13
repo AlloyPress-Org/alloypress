@@ -1,4 +1,6 @@
 import type { Access, CollectionConfig } from 'payload'
+import { pageAfterChange, pageAfterDelete } from '@/hooks/revalidateWeb'
+import { hasInternalKey } from '@/access/internalKey'
 
 // ==========================================================
 // ACCESS CONTROL
@@ -26,9 +28,14 @@ const canRead: Access = ({ req }) => {
     return true
   }
 
-  // Public / unauthenticated requests (the Next.js frontend,
-  // generateMetadata, sitemap, etc.) can only read PUBLISHED
-  // pages. Without this, every public read gets a 403.
+  if (hasInternalKey(req)) {
+    return {
+      status: {
+        equals: 'published',
+      },
+    }
+  }
+
   return {
     status: {
       equals: 'published',
@@ -43,6 +50,11 @@ const canRead: Access = ({ req }) => {
 export const Pages: CollectionConfig = {
   slug: 'pages',
 
+  hooks: {
+    afterChange: [pageAfterChange],
+    afterDelete: [pageAfterDelete],
+  },
+
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', 'status', 'updatedAt'],
@@ -50,11 +62,11 @@ export const Pages: CollectionConfig = {
   },
 
   access: {
-  read: canRead,
-  create: isEditorOrAdmin,
-  update: isEditorOrAdmin,
-  delete: isAdmin,
-},
+    read: canRead,
+    create: isEditorOrAdmin,
+    update: isEditorOrAdmin,
+    delete: isAdmin,
+  },
 
   fields: [
     // ========================================================

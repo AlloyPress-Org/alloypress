@@ -1,7 +1,13 @@
 import type { CollectionConfig } from "payload";
+import { homepageAfterChange, homepageAfterDelete } from "@/hooks/revalidateWeb";
 
 export const HomepageSettings: CollectionConfig = {
   slug: "homepage-settings",
+
+  hooks: {
+    afterChange: [homepageAfterChange],
+    afterDelete: [homepageAfterDelete],
+  },
 
   admin: {
     useAsTitle: "title",
@@ -36,12 +42,12 @@ export const HomepageSettings: CollectionConfig = {
       hasMany: true,
       required: true,
 
-      minRows: 3,
-      maxRows: 3,
+      minRows: 1,
+      maxRows: 5,
 
       admin: {
         description:
-          "Select exactly 3 posts to display in the Featured section. Order determines the display order.",
+          "Select 1 to 5 posts for the Featured carousel. Order determines the display order.",
       },
     },
   ],

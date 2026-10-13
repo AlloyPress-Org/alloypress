@@ -1,5 +1,7 @@
 import { slugField } from 'payload'
 import type { Access, CollectionConfig } from 'payload'
+import { categoryAfterChange, categoryAfterDelete } from '@/hooks/revalidateWeb'
+import { hasInternalKey } from '@/access/internalKey'
 
 const isAdmin: Access = ({ req }) => {
   return req.user?.role === 'admin'
@@ -12,13 +14,27 @@ const isEditorOrAdmin: Access = ({ req }) => {
   )
 }
 
-const canRead: Access = () => true
+const canRead: Access = ({ req }) => {
+  // Authenticated Payload users can read categories.
+  if (req.user) {
+    return true
+  }
+
+  // Block anonymous requests without the internal key.
+  if (!hasInternalKey(req)) {
+    return false
+  }
+
+  // Valid internal key: allow category reads.
+  return true
+}
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
-  // ==========================================================
-  // ADMIN
-  // ==========================================================
+  hooks: {
+    afterChange: [categoryAfterChange],
+    afterDelete: [categoryAfterDelete],
+  },
 
   admin: {
     useAsTitle: 'name',

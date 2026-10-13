@@ -70,7 +70,6 @@ type EditorFilterKey =
   | 'updatedThisWeek'
   | 'updatedThisMonth'
   | 'draftPosts'
-  | 'scheduledPosts'
 
 type EditorStats = Record<EditorFilterKey, number>
 
@@ -99,7 +98,6 @@ const EDITOR_FILTER_KEYS: EditorFilterKey[] = [
   'updatedThisWeek',
   'updatedThisMonth',
   'draftPosts',
-  'scheduledPosts',
 ]
 
 const EMPTY_EDITOR_STATS: EditorStats = {
@@ -108,7 +106,6 @@ const EMPTY_EDITOR_STATS: EditorStats = {
   updatedThisWeek: 0,
   updatedThisMonth: 0,
   draftPosts: 0,
-  scheduledPosts: 0,
 }
 
 const EMPTY_DATA: DashboardData = {
@@ -132,7 +129,6 @@ const DEFAULT_EDITOR_URLS: Record<EditorFilterKey, string> = {
   updatedThisWeek: DEFAULT_POSTS_URL,
   updatedThisMonth: DEFAULT_POSTS_URL,
   draftPosts: DEFAULT_POSTS_URL,
-  scheduledPosts: DEFAULT_POSTS_URL,
 }
 
 /**
@@ -140,9 +136,9 @@ const DEFAULT_EDITOR_URLS: Record<EditorFilterKey, string> = {
  * - older                       -> cached data shows instantly,
  *                                  then refreshes in the background
  */
-const CACHE_FRESH_MS = 2 * 60_000
-const CACHE_MAX_AGE_MS = 30 * 60_000
-const CACHE_VERSION = 'v6'
+const CACHE_FRESH_MS = 10 * 60_000
+const CACHE_MAX_AGE_MS = 24 * 60 * 60_000
+const CACHE_VERSION = 'v7'
 
 /**
  * Max requests in flight at once. Kept at 2 on purpose: Hostinger serves
@@ -438,8 +434,7 @@ const serializeWhere = (where: WhereClause): string => {
      migrated post -> legacy.wordpressModifiedAt
      native post   -> updatedAt fallback
 
-   Draft Posts      draft + draft workflow, NOT scheduled
-   Scheduled Posts  draft + draft workflow + future publishedAt
+   Draft Posts      draft + draft workflow
    ========================================================= */
 
 const buildEditorFilters = (
@@ -482,20 +477,6 @@ const buildEditorFilters = (
       and: [
         { _status: { equals: 'draft' } },
         { workflowStatus: { equals: 'draft' } },
-        {
-          or: [
-            { publishedAt: { exists: false } },
-            { publishedAt: { less_than_equal: ranges.now } },
-          ],
-        },
-      ],
-    },
-
-    scheduledPosts: {
-      and: [
-        { _status: { equals: 'draft' } },
-        { workflowStatus: { equals: 'draft' } },
-        { publishedAt: { greater_than: ranges.now } },
       ],
     },
   }
@@ -508,7 +489,7 @@ const buildEditorPostUrl = (where: WhereClause): string => {
 }
 
 /* =========================================================
-   SESSION CACHE
+   LOCAL CACHE (localStorage, survives tab close)
    ========================================================= */
 
 type CachePayload = { ts: number; data: DashboardData }
@@ -518,7 +499,7 @@ const cacheKey = (userId: string | number, role: string) =>
 
 const readCache = (key: string): CachePayload | null => {
   try {
-    const raw = window.sessionStorage.getItem(key)
+    const raw = window.localStorage.getItem(key)
     if (!raw) return null
 
     const parsed = JSON.parse(raw) as CachePayload
@@ -540,7 +521,7 @@ const readCache = (key: string): CachePayload | null => {
 
 const writeCache = (key: string, data: DashboardData) => {
   try {
-    window.sessionStorage.setItem(
+    window.localStorage.setItem(
       key,
       JSON.stringify({ ts: Date.now(), data } satisfies CachePayload),
     )
@@ -974,14 +955,6 @@ export default function AlloyDashboard() {
         value: data.editorStats.draftPosts,
         icon: <FileClock />,
         accent: 'red' as Accent,
-      },
-      {
-        id: 'scheduledPosts' as EditorFilterKey,
-        title: 'Scheduled Posts',
-        description: 'Posts waiting for publication',
-        value: data.editorStats.scheduledPosts,
-        icon: <CalendarDays />,
-        accent: 'purple' as Accent,
       },
     ],
     [data.editorStats],
