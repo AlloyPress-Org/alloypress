@@ -84,6 +84,23 @@ export async function payloadFetch<T>(
       res = await fetch(url, fetchOptions);
 
       if (res.ok) {
+        const contentType = res.headers.get("content-type") || "";
+
+        if (!contentType.toLowerCase().includes("application/json")) {
+          lastError = new Error(
+            `Payload returned non-JSON response: status=${res.status}, content-type=${contentType || "missing"}`,
+          );
+
+          console.error("[Payload] Unexpected response format", {
+            path,
+            status: res.status,
+            contentType,
+          });
+
+          await res.body?.cancel().catch(() => { });
+          break;
+        }
+
         const data = (await res.json()) as T;
         if (lastGood.size >= MAX_STALE_ENTRIES) {
           const first = lastGood.keys().next().value;
