@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
       }
     } else if (scope === "homepage") {
       ["homepage", "homepage:featured"].forEach((t) => tags.add(t));
+      paths.add("/");
     } else if (scope === "media") {
       const id = clean(body.mediaId);
       if (!id) return bad("mediaId is required");
