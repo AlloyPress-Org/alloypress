@@ -47,6 +47,7 @@ type Post = {
   slug?: string | null;
   excerpt?: string | null;
   publishedAt?: string | null;
+  updatedAt?: string | null;
   featuredImage?: number | Media | null;
   category?: number | ListingCategory | null;
   author?: {
@@ -179,6 +180,20 @@ function isUsefulPost(post: Post): boolean {
 // ============================================================
 // DATE
 // ============================================================
+function getDisplayDate(post: Post): string {
+  const published = post.publishedAt ? new Date(post.publishedAt).getTime() : 0;
+  const updated = post.updatedAt ? new Date(post.updatedAt).getTime() : 0;
+  const DAY = 24 * 60 * 60 * 1000;
+
+  const raw = updated - published > DAY ? post.updatedAt : post.publishedAt;
+
+  if (!raw) return "Recently";
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    year: "numeric",
+  }).format(new Date(raw));
+}
 
 function formatDate(
   date?: string | null,
@@ -289,7 +304,7 @@ const getCategoryPosts = cache(
           `&where[category][equals]=${encodeURIComponent(
             String(category.id),
           )}` +
-          `&sort=-publishedAt` +
+          `&sort=-updatedAt` +
           `&limit=100` +
           `&depth=1` +
           `&select[id]=true` +
@@ -297,6 +312,7 @@ const getCategoryPosts = cache(
           `&select[slug]=true` +
           `&select[excerpt]=true` +
           `&select[publishedAt]=true` +
+          `&select[updatedAt]=true` +
           `&select[featuredImage]=true` +
           `&select[author]=true`,
           {
@@ -505,9 +521,7 @@ export default async function CategoryListing({
                     <i />
 
                     <span>
-                      {formatDate(
-                        featuredPost.publishedAt,
-                      )}
+                     {getDisplayDate(featuredPost)}
                     </span>
                   </div>
 
@@ -633,9 +647,7 @@ export default async function CategoryListing({
                             <i />
 
                             <span>
-                              {formatDate(
-                                post.publishedAt,
-                              )}
+                             {getDisplayDate(post)}
                             </span>
                           </div>
 
