@@ -131,7 +131,6 @@ const getReviewsCategory = cache(async (): Promise<Category | null> => {
         next: {
           revalidate: 86400,
           tags: [
-            `category:${REVIEWS_CATEGORY_SLUG}`,
             "categories",
           ],
         },
@@ -171,14 +170,15 @@ const getLatestPosts = cache(async (): Promise<Post[]> => {
         String(reviewsCategory.id),
       )}&sort=-publishedAt&limit=${HOME_REVIEW_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[publishedAt]=true&select[featuredImage]=true&select[category]=true`,
       {
+
         next: {
           revalidate: 86400,
           tags: [
             "home:reviews",
-            "posts",
-            `category:${REVIEWS_CATEGORY_SLUG}`,
+            "category:reviews",
           ],
         },
+
       },
     );
 
@@ -278,12 +278,12 @@ export default async function LatestUpdates() {
                       src={image}
                       alt={
                         typeof post.featuredImage ===
-                        "object"
+                          "object"
                           ? post.featuredImage?.alt ||
-                            post.title ||
-                            "Latest AI update"
+                          post.title ||
+                          "Latest AI update"
                           : post.title ||
-                            "Latest AI update"
+                          "Latest AI update"
                       }
                       fill
                       sizes="(max-width: 700px) 100vw, 240px"

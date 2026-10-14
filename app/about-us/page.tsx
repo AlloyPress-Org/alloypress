@@ -26,6 +26,12 @@ type PageDoc = {
 async function getAboutPage(): Promise<PageDoc | null> {
   const data = await payloadFetch<{ docs?: PageDoc[] }>(
     "/pages?where[slug][equals]=about&where[status][equals]=published&limit=1",
+    {
+      next: {
+        revalidate: 86400,
+        tags: ["pages", "page:about"],
+      },
+    },
   );
 
   return data?.docs?.[0] ?? null;

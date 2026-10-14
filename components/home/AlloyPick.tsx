@@ -10,7 +10,7 @@ import FeaturedCarousel from "./FeaturedCarousel";
 // ============================================================
 
 const HOME_POST_LIMIT = 12;
-const FEATURED_POST_COUNT = 3;
+const FEATURED_POST_COUNT = 5;   // was 3
 const TRENDING_POST_COUNT = 4;
 
 // ============================================================
@@ -162,13 +162,12 @@ const getPublishedPosts = cache(
         await payloadFetch<PayloadPostsResponse>(
           `/posts?${params.toString()}`,
           {
+
             next: {
               revalidate: 86400,
-              tags: [
-                "home:latest-posts",
-                "posts",
-              ],
+              tags: ["home:latest-posts"],
             },
+
           },
         );
 
@@ -440,6 +439,7 @@ export default async function AlloyPick() {
 
                     return (
                       <Link
+                        prefetch={false}
                         key={post.id}
                         href={`/${category.slug}/${post.slug}`}
                         className="alloy-trending-card"

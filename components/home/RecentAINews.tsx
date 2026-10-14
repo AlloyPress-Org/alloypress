@@ -50,12 +50,12 @@ type NewsPost = {
   excerpt?: string | null;
   publishedAt?: string | null;
   featuredImage?:
-    | {
-        url?: string | null;
-        alt?: string | null;
-      }
-    | number
-    | null;
+  | {
+    url?: string | null;
+    alt?: string | null;
+  }
+  | number
+  | null;
 };
 
 type NewsCategory = {
@@ -89,7 +89,6 @@ const getNewsCategory = cache(
             next: {
               revalidate: 86400,
               tags: [
-                `category:${NEWS_CATEGORY_SLUG}`,
                 "categories",
               ],
             },
@@ -137,7 +136,6 @@ const getRecentAINews = cache(
               revalidate: 86400,
               tags: [
                 "home:latest-news",
-                "posts",
                 `category:${NEWS_CATEGORY_SLUG}`,
               ],
             },
@@ -319,9 +317,9 @@ export default async function RecentAINews() {
                     alt={
                       typeof featured.featuredImage ===
                         "object" &&
-                      featured.featuredImage !== null
+                        featured.featuredImage !== null
                         ? featured.featuredImage.alt ||
-                          featured.title
+                        featured.title
                         : featured.title
                     }
                     fill
@@ -367,8 +365,8 @@ export default async function RecentAINews() {
                 <h3>{featured.title}</h3>
 
                 {featured.excerpt && (
-  <p>{cleanNewsExcerpt(featured.excerpt)}</p>
-)}
+                  <p>{cleanNewsExcerpt(featured.excerpt)}</p>
+                )}
 
                 <span className="recent-news-read">
                   Read story
@@ -408,11 +406,11 @@ export default async function RecentAINews() {
                           alt={
                             typeof post.featuredImage ===
                               "object" &&
-                            post.featuredImage !==
+                              post.featuredImage !==
                               null
                               ? post.featuredImage
-                                  .alt ||
-                                post.title
+                                .alt ||
+                              post.title
                               : post.title
                           }
                           fill

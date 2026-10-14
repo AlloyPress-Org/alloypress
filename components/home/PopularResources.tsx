@@ -76,7 +76,6 @@ const getAlternativesCategory = cache(
             next: {
               revalidate: 86400,
               tags: [
-                `category:${ALTERNATIVES_CATEGORY_SLUG}`,
                 "categories",
               ],
             },
@@ -134,7 +133,6 @@ const getLatestPosts = cache(
               revalidate: 86400,
               tags: [
                 "home:alternatives",
-                "posts",
                 `category:${ALTERNATIVES_CATEGORY_SLUG}`,
               ],
             },
@@ -146,7 +144,7 @@ const getLatestPosts = cache(
       }
 
       return postsData.docs
-        .filter((post) => { 
+        .filter((post) => {
           if (
             !post?.id ||
             !post?.title?.trim() ||
@@ -296,14 +294,14 @@ export default async function PopularResources() {
                         typeof resource.post
                           .featuredImage ===
                           "object" &&
-                        resource.post.featuredImage !==
+                          resource.post.featuredImage !==
                           null
                           ? resource.post
-                              .featuredImage?.alt ||
-                            resource.post.title ||
-                            "Popular AI resource"
+                            .featuredImage?.alt ||
+                          resource.post.title ||
+                          "Popular AI resource"
                           : resource.post.title ||
-                            "Popular AI resource"
+                          "Popular AI resource"
                       }
                       fill
                       sizes="(max-width: 620px) 100vw, (max-width: 950px) 50vw, 25vw"

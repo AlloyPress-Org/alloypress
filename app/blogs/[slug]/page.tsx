@@ -343,7 +343,7 @@ const getPost = cache(
     params.set("select[tags]", "true");
     params.set("select[publishedAt]", "true");
     params.set("select[updatedAt]", "true");
-    params.set("select[createdAt]", "true"); 
+    params.set("select[createdAt]", "true");
     params.set("select[author]", "true");
     params.set("select[legacy]", "true");
     params.set("select[meta]", "true");
@@ -354,7 +354,7 @@ const getPost = cache(
         strict: true, // 429/5xx na 404 kaattaama error
         next: isDraft
           ? { revalidate: 0 }
-          : { revalidate: 86400, tags: [`post:${slug}`] },
+          : { revalidate: 86400, tags: [`post:${slug}`, "posts-content"], },
       },
     );
 
@@ -440,10 +440,7 @@ async function getRelatedPosts(
       {
         next: {
           revalidate: 86400,
-          tags: [
-            `category:${String(categoryId)}`,
-            "posts",
-          ],
+          tags: ["related"],
         },
       },
     );
@@ -684,7 +681,7 @@ export default async function BlogPostPage({
             featuredImage: post.featuredImage,
             publishedAt: post.publishedAt,
             updatedAt: post.updatedAt,
-            createdAt: post.createdAt, 
+            createdAt: post.createdAt,
             legacy: post.legacy,
             tags: post.tags,
           }}

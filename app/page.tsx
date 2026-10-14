@@ -51,8 +51,6 @@ export default function Home() {
 
       <Hero />
 
-      <TestingPartnerPromo />
-
       <CategorySection />
 
       <AlloyPick />
@@ -67,7 +65,7 @@ export default function Home() {
 
       <AIToolReviews />
 
-      <NewsletterSection />
+      <TestingPartnerPromo />
 
       <ToolSubmissionCTA />
     </>

@@ -1,16 +1,5 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { cache } from "react";
-
-import { payloadFetch } from "@/lib/payload";
-
-type PayloadCategory = {
-  slug: string;
-};
-
-type CategoryResponse = {
-  docs?: PayloadCategory[];
-};
 
 type CategoryDefinition = {
   number: string;
@@ -23,6 +12,9 @@ type CategoryDefinition = {
 
 /* =========================================================
    CATEGORY CONFIGURATION
+
+   Fully static. These cards are just navigation links to
+   fixed routes, so no Payload / Neon DB call is needed.
 ========================================================= */
 
 const categoryDefinitions: CategoryDefinition[] = [
@@ -30,10 +22,8 @@ const categoryDefinitions: CategoryDefinition[] = [
     number: "01",
     slug: "blogs",
     title: "Blogs",
-    description:
-      "AI Guides and explainers, in plain English.",
+    description: "AI Guides and explainers, in plain English.",
     href: "/blogs",
-
     icon: (
       <svg
         width="24"
@@ -47,7 +37,6 @@ const categoryDefinitions: CategoryDefinition[] = [
           stroke="currentColor"
           strokeWidth="1.5"
         />
-
         <path
           d="M8 8h8M8 11.5h8M8 15h5"
           stroke="currentColor"
@@ -62,10 +51,8 @@ const categoryDefinitions: CategoryDefinition[] = [
     number: "02",
     slug: "reviews",
     title: "Reviews",
-    description:
-      "Real testing, Honest verdicts, No sponsored rankings.",
+    description: "Real testing, Honest verdicts, No sponsored rankings.",
     href: "/reviews",
-
     icon: (
       <svg
         width="24"
@@ -81,7 +68,6 @@ const categoryDefinitions: CategoryDefinition[] = [
           stroke="currentColor"
           strokeWidth="1.5"
         />
-
         <path
           d="m15 15 4.5 4.5"
           stroke="currentColor"
@@ -96,10 +82,8 @@ const categoryDefinitions: CategoryDefinition[] = [
     number: "03",
     slug: "news",
     title: "News",
-    description:
-      "AI updates filtered for what actually matters.",
+    description: "AI updates filtered for what actually matters.",
     href: "/news",
-
     icon: (
       <svg
         width="24"
@@ -117,7 +101,6 @@ const categoryDefinitions: CategoryDefinition[] = [
           stroke="currentColor"
           strokeWidth="1.5"
         />
-
         <path
           d="M8 8h8M8 11.5h5M8 15h8"
           stroke="currentColor"
@@ -135,7 +118,6 @@ const categoryDefinitions: CategoryDefinition[] = [
     description:
       "Better AI tool options when the obvious choice falls short.",
     href: "/alternatives",
-
     icon: (
       <svg
         width="24"
@@ -150,27 +132,9 @@ const categoryDefinitions: CategoryDefinition[] = [
           strokeWidth="1.5"
           strokeLinecap="round"
         />
-
-        <circle
-          cx="9"
-          cy="7"
-          r="1.5"
-          fill="currentColor"
-        />
-
-        <circle
-          cx="15"
-          cy="12"
-          r="1.5"
-          fill="currentColor"
-        />
-
-        <circle
-          cx="11"
-          cy="17"
-          r="1.5"
-          fill="currentColor"
-        />
+        <circle cx="9" cy="7" r="1.5" fill="currentColor" />
+        <circle cx="15" cy="12" r="1.5" fill="currentColor" />
+        <circle cx="11" cy="17" r="1.5" fill="currentColor" />
       </svg>
     ),
   },
@@ -179,10 +143,8 @@ const categoryDefinitions: CategoryDefinition[] = [
     number: "05",
     slug: "comparisons",
     title: "Comparisons",
-    description:
-      "Head-to-head AI tool testing so you don't have to.",
+    description: "Head-to-head AI tool testing so you don't have to.",
     href: "/comparisons",
-
     icon: (
       <svg
         width="24"
@@ -197,7 +159,6 @@ const categoryDefinitions: CategoryDefinition[] = [
           strokeWidth="1.5"
           strokeLinecap="round"
         />
-
         <path
           d="M4.5 8.5 7 5l2.5 3.5M14.5 15.5 17 19l2.5-3.5"
           stroke="currentColor"
@@ -211,88 +172,17 @@ const categoryDefinitions: CategoryDefinition[] = [
 ];
 
 /* =========================================================
-   FETCH REAL PAYLOAD CATEGORIES
-
-   Only fetch the five categories this component can render.
-
-   - depth=0
-   - slug only
-   - limit=5
-   - ISR: 5 minutes
-   - cached with React cache()
-========================================================= */
-
-const getCategories = cache(
-  async (): Promise<PayloadCategory[]> => {
-    try {
-      const categoryData =
-        await payloadFetch<CategoryResponse>(
-          "/categories?where[slug][in]=blogs,reviews,news,alternatives,comparisons&limit=5&depth=0&select[slug]=true",
-          {
-            next: {
-              revalidate: 86400,
-              tags: [
-                "categories",
-                "category:blogs",
-                "category:reviews",
-                "category:news",
-                "category:alternatives",
-                "category:comparisons",
-              ],
-            },
-          },
-        );
-
-      return Array.isArray(categoryData?.docs)
-        ? categoryData.docs
-        : [];
-    } catch (error) {
-      console.error(
-        "[CategorySection] Failed to fetch categories:",
-        error,
-      );
-
-      return [];
-    }
-  },
-);
-
-/* =========================================================
    CATEGORY SECTION
 ========================================================= */
 
-export default async function CategorySection() {
-  const payloadCategories =
-    await getCategories();
-
-  /*
-   * Match the frontend presentation config
-   * against real Payload category slugs.
-   */
-
-  const availableSlugs = new Set(
-    payloadCategories.map(
-      (category) => category.slug,
-    ),
-  );
-
-  const categories =
-    categoryDefinitions.filter(
-      (category) =>
-        availableSlugs.has(category.slug),
-    );
-
+export default function CategorySection() {
   return (
     <section
       className="category-section"
       aria-labelledby="category-section-title"
     >
       <div className="container">
-
-        {/* =================================================
-            HEADER
-        ================================================= */}
-
+        {/* HEADER */}
         <div className="category-header">
           <div>
             <div className="category-eyebrow">
@@ -300,54 +190,35 @@ export default async function CategorySection() {
               Explore by category
             </div>
 
-            <h2 id="category-section-title">
-              Explore AI, your way.
-            </h2>
+            <h2 id="category-section-title">Explore AI, your way.</h2>
           </div>
         </div>
 
-        {/* =================================================
-            CATEGORY CARDS
-        ================================================= */}
-
+        {/* CATEGORY CARDS */}
         <div className="category-grid">
-          {categories.map((category) => (
+          {categoryDefinitions.map((category) => (
             <Link
               key={category.slug}
               href={category.href}
               className="category-card"
             >
               <div className="category-card-top">
-                <span className="category-number">
-                  {category.number}
-                </span>
+                <span className="category-number">{category.number}</span>
 
-                <span className="category-icon">
-                  {category.icon}
-                </span>
+                <span className="category-icon">{category.icon}</span>
 
-                <span
-                  className="category-arrow"
-                  aria-hidden="true"
-                >
+                <span className="category-arrow" aria-hidden="true">
                   ↗
                 </span>
               </div>
 
               <div className="category-card-content">
-                <h3>
-                  {category.title}
-                </h3>
+                <h3>{category.title}</h3>
 
-                <p>
-                  {category.description}
-                </p>
+                <p>{category.description}</p>
               </div>
 
-              <span
-                className="category-card-line"
-                aria-hidden="true"
-              />
+              <span className="category-card-line" aria-hidden="true" />
             </Link>
           ))}
         </div>

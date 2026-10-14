@@ -37,7 +37,7 @@ const getLatestPostByCategory = cache(
         {
           next: {
             revalidate: 86400,
-            tags: [`hero:category:${categoryId}`, "posts"],
+            tags: [`hero:category:${categoryId}`, "home:hero"]
           },
         }
       );

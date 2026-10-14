@@ -34,7 +34,7 @@ function getMediaUrl(media: Post["featuredImage"]): string | null {
   }
 
   const cmsUrl =
-    process.env.NEXT_PUBLIC_PAYLOAD_API_URL ||
+    process.env.NEXT_PUBLIC_PAYLOAD_URL ||
     "http://localhost:3001/api";
 
   return `${cmsUrl.replace(/\/api$/, "")}${media.url}`;
@@ -83,7 +83,7 @@ export default function FeaturedCarousel({
   const [isPaused, setIsPaused] = useState(false);
 
   const slides = useMemo(
-    () => posts.slice(0, 3),
+    () => posts.slice(0, 5),   // was 3
     [posts]
   );
 
@@ -172,9 +172,8 @@ export default function FeaturedCarousel({
             <Link
               key={post.id}
               href={`/${category.slug}/${post.slug}`}
-              className={`alloy-featured-card${
-                isActive ? " is-active" : ""
-              }`}
+              className={`alloy-featured-card${isActive ? " is-active" : ""
+                }`}
               aria-hidden={!isActive}
               tabIndex={isActive ? 0 : -1}
               aria-label={`Read ${post.title || "featured article"}`}
@@ -189,12 +188,12 @@ export default function FeaturedCarousel({
                     src={image}
                     alt={
                       typeof post.featuredImage ===
-                      "object"
+                        "object"
                         ? post.featuredImage?.alt ||
-                          post.title ||
-                          "AlloyPress featured article"
+                        post.title ||
+                        "AlloyPress featured article"
                         : post.title ||
-                          "AlloyPress featured article"
+                        "AlloyPress featured article"
                     }
                     fill
                     sizes="(max-width: 860px) 100vw, 58vw"
@@ -297,14 +296,12 @@ export default function FeaturedCarousel({
             <button
               key={post.id}
               type="button"
-              className={`alloy-featured-dot${
-                index === activeIndex
+              className={`alloy-featured-dot${index === activeIndex
                   ? " is-active"
                   : ""
-              }`}
-              aria-label={`Show featured article ${
-                index + 1
-              }`}
+                }`}
+              aria-label={`Show featured article ${index + 1
+                }`}
               aria-current={
                 index === activeIndex
                   ? "true"

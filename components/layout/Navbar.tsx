@@ -207,6 +207,7 @@ export default function Navbar() {
           {/* Search */}
           <Link
             href="/search"
+            prefetch={false}
             className="header-icon-button"
             aria-label="Search AlloyPress"
             title="Search AlloyPress"
@@ -253,6 +254,7 @@ export default function Navbar() {
           {/* Search */}
           <Link
             href="/search"
+            prefetch={false}
             className="header-icon-button"
             aria-label="Search AlloyPress"
             title="Search AlloyPress"

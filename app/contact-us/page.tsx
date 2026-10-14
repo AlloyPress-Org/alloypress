@@ -32,28 +32,24 @@ const breadcrumbSchema = {
 const paths = [
   {
     icon: "▣",
-    tag: "PAID COLLABORATION",
     title: "Article Inclusion",
     text: "Get your tool featured in one of our existing listicles or alternatives articles. We test the product, write a dedicated section, and include a link so readers can navigate to your site directly. Position is based on how the tool performs during our evaluation.",
-    href: "#how-we-work",
+    href: "get-featured",
   },
   {
     icon: "⌕",
-    tag: "PAID COLLABORATION",
     title: "Dedicated Review",
     text: "A completely new, standalone article written specifically for your product. We test it hands-on across real workflows, document everything with screenshots, and publish a detailed in-depth review optimised for long-term search visibility.",
-    href: "#how-we-work",
+    href: "get-reviewed",
   },
   {
     icon: "◈",
-    tag: "PARTNERSHIP",
     title: "Long-Term Partnership",
     text: "For brands and agencies looking to build an ongoing editorial relationship with AlloyPress. This includes early access for feature testing, regular content updates, promotional coverage, and digital marketing support.",
-    href: "mailto:contact@alloypress.com?subject=Long-Term%20Partnership",
+    href: "testing-partner",
   },
   {
     icon: "◇",
-    tag: "GENERAL",
     title: "General Enquiries",
     text: "For anything else — press mentions, factual corrections on an existing article, product update notifications, or anything that doesn't fit the other categories. Use the email directly and we'll route it to the right person.",
     link: "Send us an email",
@@ -90,249 +86,272 @@ export default function ContactPage() {
         }}
       />
       <main className="contact-page">
-      <style dangerouslySetInnerHTML={{ __html: styles }} />
+        <style dangerouslySetInnerHTML={{ __html: styles }} />
 
-      <section className="contact-hero">
-        <div className="contact-hero-grid" aria-hidden="true" />
-        <div className="contact-hero-glow" aria-hidden="true" />
+        <section className="contact-hero">
+          <div className="contact-hero-grid" aria-hidden="true" />
+          <div className="contact-hero-glow" aria-hidden="true" />
 
-        <div className="contact-container contact-hero-inner">
-          <div className="contact-hero-copy">
+          <div className="contact-container contact-hero-inner">
+            <div className="contact-hero-copy">
+              <div className="contact-eyebrow contact-eyebrow-light">
+                <span />
+                GET IN TOUCH
+              </div>
+
+              <h1>
+                Let's Talk About
+                <br />
+                What You're <em>Building</em>
+              </h1>
+
+              <p>
+                Whether you're looking to get your tool reviewed, featured in one
+                of our lists, or explore a longer-term partnership — reach out
+                and we'll take it from there.
+              </p>
+            </div>
+
+            <aside className="contact-quick-card">
+              <div className="contact-response">
+                <span />
+                Usually responds within <strong>1 to 2 business days</strong>
+              </div>
+
+              <div className="contact-card-divider" />
+
+              <div className="contact-label">CONTACT EMAIL</div>
+
+              <button
+                type="button"
+                className="contact-email"
+                data-email-popup-open
+              >
+                <span>Contact</span>
+                <b>→</b>
+              </button>
+
+              <div className="contact-meta-grid">
+                <div>
+                  <strong>Editorial</strong>
+                  <span>All collaborations</span>
+                </div>
+                <div>
+                  <strong>AI + SaaS</strong>
+                  <span>Focus area</span>
+                </div>
+                <div>
+                  <strong>1 to 2 days</strong>
+                  <span>Response time</span>
+                </div>
+                <div>
+                  <strong>Global</strong>
+                  <span>Open to work with</span>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          <div className="contact-hero-bottom">
+            <div className="contact-container contact-note">
+              <span className="contact-note-icon">⊘</span>
+              <p>
+                <strong>Quick note:</strong> Generic outreach, link swap requests,
+                and unrelated pitches are filtered and ignored. If you have a
+                genuine product or collaboration in mind, we'd love to hear from
+                you.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="contact-section contact-paths" id="how-we-work">
+          <div className="contact-container">
+            <header className="contact-section-heading">
+              <div>
+                <div className="contact-eyebrow">
+                  <span />
+                  HOW WE WORK TOGETHER
+                </div>
+                <h2>Choose the right path for your goal.</h2>
+                <p>
+                  We collaborate in a few specific ways. Read through and pick
+                  the one that matches what you need — it helps us get back to
+                  you faster.
+                </p>
+              </div>
+              <span className="contact-index">01 / 03</span>
+            </header>
+
+            <div className="contact-path-grid">
+              {paths.map((path) => (
+
+                <article className="contact-path-card" key={path.title}>
+                  <div className="contact-path-top">
+                    <span className="contact-path-icon">{path.icon}</span>
+                  </div>
+
+                  <h3>{path.title}</h3>
+                  <p>{path.text}</p>
+
+
+                  {path.title === "General Enquiries" ? (
+                    <button
+                      type="button"
+                      className="contact-path-cta"
+                      data-email-popup-open
+                    >
+                      Explore this option
+                      <span aria-hidden="true">↗</span>
+                    </button>
+                  ) : (
+                    <Link
+                      className="contact-path-cta"
+                      href={`/${path.href}`}
+                    >
+                      Explore this option
+                      <span aria-hidden="true">↗</span>
+                    </Link>
+                  )}
+
+                </article>
+
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="contact-section contact-outreach">
+          <div className="contact-container">
+            <header className="contact-section-heading">
+              <div>
+                <div className="contact-eyebrow">
+                  <span />
+                  MAKE IT EASY FOR US
+                </div>
+                <h2>What to include when you reach out.</h2>
+                <p>
+                  The more context you give us upfront, the faster we can give
+                  you a clear answer. Here is what helps.
+                </p>
+              </div>
+              <span className="contact-index">02 / 03</span>
+            </header>
+
+            <div className="contact-outreach-layout">
+              <div className="contact-outreach-list">
+                {outreach.map(([number, title, text]) => (
+                  <div className="contact-outreach-item" key={number}>
+                    <span>{number}</span>
+                    <div>
+                      <h3>{title}</h3>
+                      <p>{text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <aside className="contact-expect-card">
+                <div className="contact-eyebrow contact-eyebrow-light">
+                  <span />
+                  WHAT TO EXPECT
+                </div>
+                <h3>We keep things straightforward.</h3>
+                <p>
+                  No automated responses, no complex onboarding. When you email
+                  us, a real person reads it and replies with a clear answer —
+                  whether that is next steps or a polite pass.
+                </p>
+
+                <ul>
+                  {expectations.map((item) => (
+                    <li key={item}>
+                      <span>✓</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </aside>
+            </div>
+          </div>
+        </section>
+
+        <section className="contact-final-cta">
+          <div className="contact-final-grid" aria-hidden="true" />
+          <div className="contact-final-glow" aria-hidden="true" />
+
+          <div className="contact-container contact-final-inner">
             <div className="contact-eyebrow contact-eyebrow-light">
+              <span />
+              START A CONVERSATION
+            </div>
+
+            <h2>
+              Have something useful
+              <br />
+              to <em>build together?</em>
+            </h2>
+
+            <p>
+              Tell us what you're working on and what you have in mind. We'll
+              review the details and get back to you.
+            </p>
+
+            <button
+              type="button"
+              className="contact-primary-button"
+              data-email-popup-open
+            >
+              Email AlloyPress <span>↗</span>
+            </button>
+
+            <div className="contact-final-email">
+              <span>·</span>
+              <span>Usually responds within 1–2 business days</span>
+            </div>
+          </div>
+        </section>
+        <dialog
+          className="contact-email-dialog"
+          data-email-dialog
+        >
+          <div className="contact-email-dialog-inner">
+            <button
+              type="button"
+              className="contact-email-dialog-close"
+              data-email-popup-close
+              aria-label="Close"
+            >
+              ×
+            </button>
+
+            <div className="contact-eyebrow">
               <span />
               GET IN TOUCH
             </div>
 
-            <h1>
-              Let's Talk About
-              <br />
-              What You're <em>Building</em>
-            </h1>
+            <h2>Contact AlloyPress</h2>
 
             <p>
-              Whether you're looking to get your tool reviewed, featured in one
-              of our lists, or explore a longer-term partnership — reach out
-              and we'll take it from there.
+              Send your enquiry to our email address.
+              Copy the email below to continue.
             </p>
-          </div>
 
-          <aside className="contact-quick-card">
-            <div className="contact-response">
-              <span />
-              Usually responds within <strong>1 to 2 business days</strong>
+            <div className="contact-email-copy-row">
+              <span>contact@alloypress.com</span>
+
+              <button
+                type="button"
+                data-email-copy
+                className="contact-email-copy-button"
+              >
+                Copy
+              </button>
             </div>
-
-            <div className="contact-card-divider" />
-
-            <div className="contact-label">CONTACT EMAIL</div>
-
-            <button
-              type="button"
-              className="contact-email"
-              data-email-popup-open
-            >
-              <span>Contact</span>
-              <b>→</b>
-            </button>
-
-            <div className="contact-meta-grid">
-              <div>
-                <strong>Editorial</strong>
-                <span>All collaborations</span>
-              </div>
-              <div>
-                <strong>AI + SaaS</strong>
-                <span>Focus area</span>
-              </div>
-              <div>
-                <strong>1 to 2 days</strong>
-                <span>Response time</span>
-              </div>
-              <div>
-                <strong>Global</strong>
-                <span>Open to work with</span>
-              </div>
-            </div>
-          </aside>
-        </div>
-
-        <div className="contact-hero-bottom">
-          <div className="contact-container contact-note">
-            <span className="contact-note-icon">⊘</span>
-            <p>
-              <strong>Quick note:</strong> Generic outreach, link swap requests,
-              and unrelated pitches are filtered and ignored. If you have a
-              genuine product or collaboration in mind, we'd love to hear from
-              you.
-            </p>
           </div>
-        </div>
-      </section>
-
-      <section className="contact-section contact-paths" id="how-we-work">
-        <div className="contact-container">
-          <header className="contact-section-heading">
-            <div>
-              <div className="contact-eyebrow">
-                <span />
-                HOW WE WORK TOGETHER
-              </div>
-              <h2>Choose the right path for your goal.</h2>
-              <p>
-                We collaborate in a few specific ways. Read through and pick
-                the one that matches what you need — it helps us get back to
-                you faster.
-              </p>
-            </div>
-            <span className="contact-index">01 / 03</span>
-          </header>
-
-          <div className="contact-path-grid">
-            {paths.map((path) => (
-              <article className="contact-path-card" key={path.title}>
-                <div className="contact-path-top">
-                  <span className="contact-path-icon">{path.icon}</span>
-                  <span className="contact-path-tag">{path.tag}</span>
-                </div>
-                <h3>{path.title}</h3>
-                <p>{path.text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="contact-section contact-outreach">
-        <div className="contact-container">
-          <header className="contact-section-heading">
-            <div>
-              <div className="contact-eyebrow">
-                <span />
-                MAKE IT EASY FOR US
-              </div>
-              <h2>What to include when you reach out.</h2>
-              <p>
-                The more context you give us upfront, the faster we can give
-                you a clear answer. Here is what helps.
-              </p>
-            </div>
-            <span className="contact-index">02 / 03</span>
-          </header>
-
-          <div className="contact-outreach-layout">
-            <div className="contact-outreach-list">
-              {outreach.map(([number, title, text]) => (
-                <div className="contact-outreach-item" key={number}>
-                  <span>{number}</span>
-                  <div>
-                    <h3>{title}</h3>
-                    <p>{text}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <aside className="contact-expect-card">
-              <div className="contact-eyebrow contact-eyebrow-light">
-                <span />
-                WHAT TO EXPECT
-              </div>
-              <h3>We keep things straightforward.</h3>
-              <p>
-                No automated responses, no complex onboarding. When you email
-                us, a real person reads it and replies with a clear answer —
-                whether that is next steps or a polite pass.
-              </p>
-
-              <ul>
-                {expectations.map((item) => (
-                  <li key={item}>
-                    <span>✓</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </aside>
-          </div>
-        </div>
-      </section>
-
-      <section className="contact-final-cta">
-        <div className="contact-final-grid" aria-hidden="true" />
-        <div className="contact-final-glow" aria-hidden="true" />
-
-        <div className="contact-container contact-final-inner">
-          <div className="contact-eyebrow contact-eyebrow-light">
-            <span />
-            START A CONVERSATION
-          </div>
-
-          <h2>
-            Have something useful
-            <br />
-            to <em>build together?</em>
-          </h2>
-
-          <p>
-            Tell us what you're working on and what you have in mind. We'll
-            review the details and get back to you.
-          </p>
-
-          <button
-            type="button"
-            className="contact-primary-button"
-            data-email-popup-open
-          >
-            Email AlloyPress <span>↗</span>
-          </button>
-
-          <div className="contact-final-email">
-            <span>·</span>
-            <span>Usually responds within 1–2 business days</span>
-          </div>
-        </div>
-      </section>
-      <dialog
-        className="contact-email-dialog"
-        data-email-dialog
-      >
-        <div className="contact-email-dialog-inner">
-          <button
-            type="button"
-            className="contact-email-dialog-close"
-            data-email-popup-close
-            aria-label="Close"
-          >
-            ×
-          </button>
-
-          <div className="contact-eyebrow">
-            <span />
-            GET IN TOUCH
-          </div>
-
-          <h2>Contact AlloyPress</h2>
-
-          <p>
-            Send your enquiry to our email address.
-            Copy the email below to continue.
-          </p>
-
-          <div className="contact-email-copy-row">
-            <span>contact@alloypress.com</span>
-
-            <button
-              type="button"
-              data-email-copy
-              className="contact-email-copy-button"
-            >
-              Copy
-            </button>
-          </div>
-        </div>
-      </dialog>
-      <Script id="contact-email-popup">
-  {`
+        </dialog>
+        <Script id="contact-email-popup">
+          {`
     (() => {
       const dialog = document.querySelector("[data-email-dialog]");
 
@@ -391,8 +410,8 @@ export default function ContactPage() {
       });
     })();
   `}
-</Script>
-    </main>
+        </Script>
+      </main>
     </>
   );
 }
@@ -704,6 +723,45 @@ const styles = `
   background: var(--surface);
   box-shadow: var(--shadow-md);
 }
+
+
+.contact-path-card .contact-path-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  min-height: 40px;
+  margin-top: 18px;
+  padding: 0 15px;
+
+  border: 1px solid var(--brand);
+  border-radius: var(--radius-sm);
+
+  background: var(--brand);
+  color: #ffffff;
+
+  font: 600 13px/1 var(--font-ui);
+  text-decoration: none;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.contact-path-card .contact-path-cta:hover {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.contact-path-card .contact-path-cta[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.9;
+}
+
 
 .contact-path-top {
   display: flex;
@@ -1053,15 +1111,16 @@ const styles = `
   }
 }
 
+
 @media (max-width: 480px) {
   .contact-container {
     width: min(100% - 22px, 620px);
   }
-
-  .contact-hero-copy h1 br,
   .contact-final-inner h2 br {
     display: none;
   }
+}
+
 
   .contact-quick-card {
     padding: 19px;
@@ -1169,19 +1228,47 @@ html[data-theme="dark"] .contact-final-inner > p,
 html[data-theme="light"] .contact-final-inner > p {
   color: var(--text-secondary);
 }
+
 .contact-email {
   width: 100%;
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 13px;
+
+  border: 1px solid var(--brand);
+  border-radius: 7px;
+
+  background: var(--brand);
+  color: #ffffff;
+
+  text-decoration: none;
+  font: 600 14px/1.25 var(--font-mono);
+
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
   text-align: left;
+
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
-.contact-primary-button {
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
+.contact-email b {
+  color: #ffffff;
 }
+
+.contact-email:hover {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
+  color: #ffffff;
+}
+
+.contact-email:hover b {
+  color: #ffffff;
+}
+
 
 .contact-email-dialog {
   position: fixed;

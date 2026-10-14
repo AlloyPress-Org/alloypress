@@ -61,7 +61,6 @@ const getBlogsCategory = cache(
             next: {
               revalidate: 86400,
               tags: [
-                `category:${BLOGS_CATEGORY_SLUG}`,
                 "categories",
               ],
             },
@@ -110,7 +109,6 @@ const getLearnPosts = cache(
               revalidate: 86400,
               tags: [
                 "home:latest-blogs",
-                "posts",
                 `category:${BLOGS_CATEGORY_SLUG}`,
               ],
             },

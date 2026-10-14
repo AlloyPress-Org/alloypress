@@ -747,9 +747,7 @@ const getPost = cache(
           next: {
             revalidate: 86400,
             tags: [
-              `post:${category}:${slug}`,
-              `post:${slug}`,
-              "posts",
+              `post:${category}:${slug}`, `post:${slug}`, "posts-content",
             ],
           },
         },
@@ -900,10 +898,7 @@ const getRelatedPosts = cache(
         {
           next: {
             revalidate: 86400,
-            tags: [
-              `category:${category}`,
-              "posts",
-            ],
+            tags: ["related"],
           },
         },
       );
