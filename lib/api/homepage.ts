@@ -1,25 +1,34 @@
-import { cache } from 'react'
+import { cache } from "react";
 
-const CMS_URL = process.env.NEXT_PUBLIC_PAYLOAD_URL
+import { payloadFetch } from "@/lib/payload";
 
-export const getHomepageSettings = cache(async () => {
-  const url = new URL(`${CMS_URL}/api/homepage-settings`)
+type HomepageSettings = {
+  id: number | string;
+  title?: string | null;
+  featuredPosts?: Array<unknown> | null;
+};
 
-  url.searchParams.set('limit', '1')
-  url.searchParams.set('depth', '2')
+type HomepageSettingsResponse = {
+  docs?: HomepageSettings[];
+};
 
-  const response = await fetch(url.toString(), {
-    next: {
-      revalidate: 86400,
-      tags: ['homepage'],
-    },
-  })
+export const getHomepageSettings = cache(
+  async (): Promise<HomepageSettings | null> => {
+    const params = new URLSearchParams();
+    params.set("limit", "1");
+    params.set("depth", "2");
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch homepage settings')
-  }
+    const data = await payloadFetch<HomepageSettingsResponse>(
+      `/homepage-settings?${params.toString()}`,
+      {
+        strict: false, // CMS fail aanaalum crash aagaadhu, null return pannum
+        next: {
+          revalidate: 86400,
+          tags: ["homepage", "homepage:featured"],
+        },
+      },
+    );
 
-  const data = await response.json()
-
-  return data.docs?.[0] ?? null
-})
+    return data?.docs?.[0] ?? null;
+  },
+);

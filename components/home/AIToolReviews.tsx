@@ -83,7 +83,7 @@ const getReviewsCategory = cache(
         error,
       );
 
-       throw error; 
+      return null;
     }
   },
 );
@@ -199,7 +199,7 @@ const getReviewPosts = cache(
         error,
       );
 
-       throw error; 
+      return [];
     }
   },
 );

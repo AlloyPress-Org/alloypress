@@ -64,7 +64,7 @@ const getLatestPostByCategory = cache(
         error
       );
 
-       throw error; 
+      return null;
     }
   }
 );

@@ -186,7 +186,7 @@ const getPublishedPosts = cache(
         error,
       );
 
-       throw error; 
+        return [];
     }
   },
 );
@@ -245,7 +245,7 @@ const getHomepageSettings = cache(
         error,
       );
 
-       throw error; 
+        return null;
     }
   },
 );
