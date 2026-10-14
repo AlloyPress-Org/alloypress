@@ -89,7 +89,7 @@ const getAlternativesCategory = cache(
         error,
       );
 
-      return null;
+       throw error; 
     }
   },
 );
@@ -177,7 +177,7 @@ const getLatestPosts = cache(
         error,
       );
 
-      return [];
+       throw error; 
     }
   },
 );

@@ -74,7 +74,7 @@ const getBlogsCategory = cache(
         error,
       );
 
-      return null;
+       throw error; 
     }
   },
 );
@@ -153,7 +153,7 @@ const getLearnPosts = cache(
         error,
       );
 
-      return [];
+       throw error; 
     }
   },
 );

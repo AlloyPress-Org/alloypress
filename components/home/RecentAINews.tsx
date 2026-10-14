@@ -102,7 +102,7 @@ const getNewsCategory = cache(
         error,
       );
 
-      return null;
+       throw error; 
     }
   },
 );
@@ -180,7 +180,7 @@ const getRecentAINews = cache(
         error,
       );
 
-      return [];
+       throw error; 
     }
   },
 );

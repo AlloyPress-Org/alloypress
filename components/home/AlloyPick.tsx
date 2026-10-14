@@ -10,7 +10,7 @@ import FeaturedCarousel from "./FeaturedCarousel";
 // ============================================================
 
 const HOME_POST_LIMIT = 12;
-const FEATURED_POST_COUNT = 5;   // was 3
+const FEATURED_POST_COUNT = 5; 
 const TRENDING_POST_COUNT = 4;
 
 // ============================================================
@@ -186,7 +186,7 @@ const getPublishedPosts = cache(
         error,
       );
 
-      return [];
+       throw error; 
     }
   },
 );
@@ -245,7 +245,7 @@ const getHomepageSettings = cache(
         error,
       );
 
-      return null;
+       throw error; 
     }
   },
 );

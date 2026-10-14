@@ -144,7 +144,7 @@ const getReviewsCategory = cache(async (): Promise<Category | null> => {
       error,
     );
 
-    return null;
+     throw error; 
   }
 });
 
@@ -195,7 +195,7 @@ const getLatestPosts = cache(async (): Promise<Post[]> => {
       error,
     );
 
-    return [];
+     throw error; 
   }
 });
 
