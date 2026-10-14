@@ -34,9 +34,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const scope = typeof body?.scope === "string" ? body.scope : "post";
     const tags = new Set<string>();
-    // NOTE: "/" is intentionally NOT added by default.
-    // revalidatePath("/") invalidates every fetch rendered on the home page
-    // (hero, all sections, category lookups), which defeats the granular tags.
     const paths = new Set<string>();
     const bad = (m: string) => NextResponse.json({ error: m }, { status: 400 });
 
@@ -72,6 +69,7 @@ export async function POST(request: NextRequest) {
       tags.add(`post:${slug}`);
       paths.add(`/blogs/${slug}`);
       paths.add("/sitemap.xml");
+      paths.add("/"); 
       if (author) tags.add(`author:${author}`);
       if (cat) {
         tags.add(`post:${cat}:${slug}`);
@@ -105,6 +103,7 @@ export async function POST(request: NextRequest) {
       addHomeTags([slug, prev]);
       tags.add(`category:${slug}`);
       paths.add(`/${slug}`);
+      paths.add("/");
       if (prev) {
         tags.add(`category:${prev}`);
         paths.add(`/${prev}`);
