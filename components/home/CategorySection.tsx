@@ -206,7 +206,6 @@ export default function CategorySection() {
                 <span className="category-number">{category.number}</span>
 
                 <span className="category-icon">{category.icon}</span>
-
                 <span className="category-arrow" aria-hidden="true">
                   ↗
                 </span>
