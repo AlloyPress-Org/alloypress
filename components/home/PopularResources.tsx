@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { cache } from "react";
+import Image from "@/components/CfImage";
 
 import { payloadFetch } from "@/lib/payload";
 

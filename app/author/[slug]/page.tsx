@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import Image from "@/components/CfImage";
 import Link from "next/link";
 import { cache } from "react";
 import { payloadFetch } from "@/lib/payload";

@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import cfLoader from '@/lib/imageLoader' 
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useRef, useState, useId } from "react";
 import {
@@ -423,6 +424,7 @@ function SmartImage({
     return (
       <Image
         src={src}
+        loader={cfLoader}
         alt={alt}
         width={width}
         height={height}

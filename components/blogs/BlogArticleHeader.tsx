@@ -1,4 +1,4 @@
-import Image from 'next/image'
+import Image from "@/components/CfImage";
 import type { Media } from '@/lib/cms'
 
 type BlogArticleHeaderProps = {
@@ -201,7 +201,7 @@ export default function BlogArticleHeader({
                 featuredImage?.height ||
                 675
               }
-              unoptimized
+              
               priority
                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 92vw, 900px"
             />

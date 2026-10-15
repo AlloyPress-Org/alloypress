@@ -51,7 +51,6 @@ export default function AdSenseSidebar() {
 
   return (
     <div className="sidebar-ad-card">
-      <span className="sidebar-ad-label">ADVERTISEMENT</span>
 
       <ins
         ref={adRef}

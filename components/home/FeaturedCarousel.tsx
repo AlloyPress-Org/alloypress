@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import cfLoader from "@/lib/imageLoader";
 
 type Media = {
   url?: string | null;
@@ -83,7 +84,7 @@ export default function FeaturedCarousel({
   const [isPaused, setIsPaused] = useState(false);
 
   const slides = useMemo(
-    () => posts.slice(0, 5),   // was 3
+    () => posts.slice(0, 5),
     [posts]
   );
 
@@ -186,6 +187,7 @@ export default function FeaturedCarousel({
                 {image ? (
                   <Image
                     src={image}
+                    loader={cfLoader}
                     alt={
                       typeof post.featuredImage ===
                         "object"

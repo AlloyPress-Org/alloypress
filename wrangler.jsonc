@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
 
   "name": "alloypress",
+  "account_id": "43e8e534581434d4296afcdb1b88e3e8",
 
   "compatibility_date": "2026-09-15",
 
