@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import Script from "next/script";
 
 import "./globals.css";
 
@@ -26,6 +25,7 @@ import Footer from "@/components/layout/Footer";
 import ThemeScript from "@/components/ThemeScript";
 import BackToTop from "@/components/BackToTop";
 import ScrollToTop from "@/components/ScrollToTop";
+import DelayedScripts from "@/components/DelayedScripts";
 
 import { SITE_URL } from "@/lib/seo/constants";
 import { createOrganizationSchema } from "@/lib/seo/schema";
@@ -37,6 +37,9 @@ const inter = Inter({
   preload: false,
   weight: ["400", "500", "600", "700", "800"],
 });
+
+const GTM_ID = "GTM-P72SG3JX";
+const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -59,6 +62,11 @@ export const metadata: Metadata = {
   verification: {
     google: "u-tEyx4uriJ97Uw5PGR_BZS1fghdWv8q28OLfQPpQpc",
   },
+
+  // AdSense site ownership (script delay aanalum verify aagum)
+  ...(ADSENSE_CLIENT
+    ? { other: { "google-adsense-account": ADSENSE_CLIENT } }
+    : {}),
 };
 
 const organizationJsonLd = {
@@ -66,52 +74,19 @@ const organizationJsonLd = {
   "@graph": [createOrganizationSchema()],
 };
 
-const GTM_ID = "GTM-P72SG3JX";
-
-const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
-
-const gtmScript = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${GTM_ID}');`;
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={inter.variable}
-    >
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
-        <link
-          rel="preconnect"
-          href="https://media.alloypress.com"
-        />
+        <link rel="preconnect" href="https://media.alloypress.com" />
       </head>
 
       <body>
-        {/* Google Tag Manager (next/script avoids <head> hydration mismatch) */}
-        <Script id="gtm-init" strategy="afterInteractive">
-          {gtmScript}
-        </Script>
-
-        {/* Google AdSense */}
-        {ADSENSE_CLIENT ? (
-          <Script
-            id="adsense-script"
-            async
-            strategy="afterInteractive"
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
-            crossOrigin="anonymous"
-          />
-        ) : null}
-
-        {/* Google Tag Manager (noscript) */}
+        {/* GTM (noscript) */}
         <noscript>
           <iframe
             src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
@@ -130,7 +105,6 @@ export default function RootLayout({
         />
 
         <ThemeScript />
-
         <ScrollToTop />
 
         <Navbar />
@@ -139,9 +113,11 @@ export default function RootLayout({
         <main>{children}</main>
 
         <BackToTop />
-
         <Footer />
         <EmailCtaModal />
+
+        {/* GTM + AdSense: interaction illa 4s after load */}
+        <DelayedScripts />
       </body>
     </html>
   );
