@@ -4,11 +4,20 @@ import { useEffect } from "react";
 
 const GTM_ID = "GTM-P72SG3JX";
 const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+const WEBPUSHR_KEY = process.env.NEXT_PUBLIC_WEBPUSHR_KEY;
 
 // Page load aana apuram evlo ms wait pannanum (user interact pannala na)
 const FALLBACK_DELAY_MS = 4000;
 
-type W = Window & { dataLayer?: unknown[] };
+type WebpushrFn = {
+  (...args: unknown[]): void;
+  q?: IArguments[];
+};
+
+type W = Window & {
+  dataLayer?: unknown[];
+  webpushr?: WebpushrFn;
+};
 
 function injectScript(id: string, src: string, crossOrigin?: string) {
   if (document.getElementById(id)) return;
@@ -20,10 +29,33 @@ function injectScript(id: string, src: string, crossOrigin?: string) {
   document.head.appendChild(s);
 }
 
+function loadWebpushr(key: string) {
+  const w = window as W;
+
+  // Official Webpushr queue stub (SDK load aagura varaikkum calls queue aagum)
+  if (!w.webpushr) {
+    const stub = function () {
+      // eslint-disable-next-line prefer-rest-params
+      (stub.q = stub.q || []).push(arguments);
+    } as WebpushrFn;
+    w.webpushr = stub;
+  }
+
+  injectScript("webpushr-jssdk", "https://cdn.webpushr.com/app.min.js");
+  w.webpushr("setup", { key });
+}
+
 export default function DelayedScripts() {
   useEffect(() => {
     let started = false;
     let timer: number | undefined;
+
+    const events = ["scroll", "click", "touchstart", "keydown", "mousemove"];
+
+    const cleanup = () => {
+      events.forEach((e) => window.removeEventListener(e, start));
+      if (timer) window.clearTimeout(timer);
+    };
 
     const start = () => {
       if (started) return;
@@ -47,13 +79,11 @@ export default function DelayedScripts() {
           "anonymous"
         );
       }
-    };
 
-    const events = ["scroll", "click", "touchstart", "keydown", "mousemove"];
-
-    const cleanup = () => {
-      events.forEach((e) => window.removeEventListener(e, start));
-      if (timer) window.clearTimeout(timer);
+      // Webpushr (push + email popup)
+      if (WEBPUSHR_KEY) {
+        loadWebpushr(WEBPUSHR_KEY);
+      }
     };
 
     events.forEach((e) =>
