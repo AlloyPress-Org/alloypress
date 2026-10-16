@@ -1,21 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
+import { withDefaultSocial } from "@/lib/seo/metadata";
 
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
 
-export const metadata: Metadata = {
-  title: "AI Tool Article Inclusion",
-  description:
-    "Submit your AI tool for consideration in AlloyPress editorial lists and alternatives articles. Learn how inclusion works, what we evaluate, and what to expect.",
-  alternates: { canonical: "/get-featured" },
-  openGraph: {
+export const metadata: Metadata = withDefaultSocial(
+  {
     title: "AI Tool Article Inclusion",
     description:
-      "Get your AI tool considered for relevant AlloyPress lists and alternatives articles through a reader-first editorial process.",
-    type: "website",
+      "Submit your AI tool for consideration in AlloyPress editorial lists and alternatives articles. Learn how inclusion works, what we evaluate, and what to expect.",
+    alternates: { canonical: "/get-featured" },
+    openGraph: {
+      title: "AI Tool Article Inclusion",
+      description:
+        "Get your AI tool considered for relevant AlloyPress lists and alternatives articles through a reader-first editorial process.",
+      type: "website",
+    },
   },
-};
+  "/get-featured"
+);
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",

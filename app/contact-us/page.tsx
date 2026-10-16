@@ -1,23 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
+import { withDefaultSocial } from "@/lib/seo/metadata";
 
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
 
-export const metadata: Metadata = {
-  title: "Contact AlloyPress — AI Reviews, Partnerships & Enquiries",
-  description:
-    "Contact AlloyPress for AI tool reviews, article inclusion, partnerships, editorial enquiries, and other collaboration requests.",
-  alternates: {
-    canonical: "/contact-us",
-  },
-  openGraph: {
-    title: "Contact AlloyPress — AI Reviews & Partnerships",
+export const metadata: Metadata = withDefaultSocial(
+  {
+    title: "Contact AlloyPress — AI Reviews, Partnerships & Enquiries",
     description:
-      "Get in touch with AlloyPress about AI tool reviews, editorial collaborations, partnerships, and enquiries.",
-    type: "website",
+      "Contact AlloyPress for AI tool reviews, article inclusion, partnerships, editorial enquiries, and other collaboration requests.",
+    alternates: { canonical: "/contact-us" },
+    openGraph: {
+      title: "Contact AlloyPress — AI Reviews & Partnerships",
+      description:
+        "Get in touch with AlloyPress about AI tool reviews, editorial collaborations, partnerships, and enquiries.",
+      type: "website",
+    },
   },
-};
+  "/contact-us"
+);
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",

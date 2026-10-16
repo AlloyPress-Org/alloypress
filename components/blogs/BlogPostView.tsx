@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import cfLoader from '@/lib/imageLoader' 
+import cfLoader from '@/lib/imageLoader'
 import Link from "next/link";
 import { Fragment, useEffect, useMemo, useRef, useState, useId } from "react";
 import {
@@ -2847,48 +2847,57 @@ export default function BlogPostView({
                   <div className="toc-empty">Article sections will appear here.</div>
                 )}
               </div>
-              <div className="sidebar-card alloypress-badge-card desktop-featured-badge">
-                <div className="side-label">Tested by AlloyPress</div>
 
-                <div className="alloypress-badge-copy-box">
-                  <div className="alloypress-badge-preview">
-                    <Image
-                      src="/badges/featured.svg"
-                      alt="Featured on AlloyPress"
-                      width={320}
-                      height={117}
-                      sizes="(max-width: 820px) 200px, 170px"
-                      className="alloypress-badge-image"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    className="alloypress-badge-copy-button"
-                    onClick={copyBadgeEmbedCode}
-                    aria-label={badgeCopied ? "Badge code copied" : "Copy badge code"}
-                    title={badgeCopied ? "Copied!" : "Copy badge code"}
-                  >
-                    {badgeCopied ? (
-                      <Check aria-hidden="true" />
-                    ) : (
-                      <Copy aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-
-                <p className="alloypress-badge-text">
-                  Is your tool in this article? Copy this badge to show it was independently tested by our team.
-                </p>
-              </div>
             </aside>
-            {/* Center: article */}
+                       {/* Center: article */}
             <article className="article-column">
 
               <ArticleRenderer
                 content={post?.content}
                 headingIds={headingIds}
               />
+
+              {/* Desktop-only featured badge banner (above Article tags) */}
+              <section
+                className="badge-banner"
+                aria-label="Tested by AlloyPress badge"
+              >
+                <div className="badge-banner-badge">
+                  <div className="badge-banner-label">Tested by AlloyPress</div>
+
+                  <Image
+                    src="/badges/featured.svg"
+                    alt="Featured on AlloyPress"
+                    width={320}
+                    height={117}
+                    sizes="180px"
+                    className="badge-banner-image"
+                  />
+                </div>
+
+                <span className="badge-banner-divider" aria-hidden="true" />
+
+                <p className="badge-banner-text">
+                  If your tool is included in this article, copy this badge to
+                  show it was independently tested by our team.
+                </p>
+
+                <button
+                  type="button"
+                  className="badge-banner-button"
+                  onClick={copyBadgeEmbedCode}
+                  aria-label={
+                    badgeCopied ? "Badge code copied" : "Copy badge code"
+                  }
+                >
+                  {badgeCopied ? (
+                    <Check aria-hidden="true" />
+                  ) : (
+                    <Copy aria-hidden="true" />
+                  )}
+                  <span>{badgeCopied ? "Copied!" : "Copy Badge"}</span>
+                </button>
+              </section>
 
               <div className="article-end">
                 <div className="side-label">Article tags</div>
@@ -2943,49 +2952,49 @@ export default function BlogPostView({
               </div>
             </article>
 
-            {/* Right: share / ads / AI tools (desktop only; hidden on mobile via CSS) */}
-            <aside
-              className="article-sidebar"
-              aria-label="Article tools"
-            >
-              <div className="sidebar-card">
-                <div className="side-label">Share article</div>
+              {/* Right: share / ads / AI tools (desktop only; hidden on mobile via CSS) */}
+              <aside
+                className="article-sidebar"
+                aria-label="Article tools"
+              >
+                <div className="sidebar-card">
+                  <div className="side-label">Share article</div>
 
-                <button
-                  type="button"
-                  className="share-trigger"
-                  aria-haspopup="dialog"
-                  aria-expanded={shareOpen}
-                  onClick={() => setShareOpen(true)}
-                >
-                  <span className="share-trigger-label">
-                    <Share2 aria-hidden="true" />
-                    Share
-                  </span>
-                </button>
-              </div>
-
-              {/* Ad directly below Share Article */}
-              <AdSenseSidebar />
-
-              {AI_ENABLED && (
-                <div className="sidebar-card ai-tools-card">
-                  <div className="side-label">AI tools</div>
-
-                  <div className="ai-options">
-                    <button
-                      type="button"
-                      className="ai-option"
-                      onClick={() => setAiOpen(true)}
-                    >
-                      <span>Ask AI</span>
-                      <Sparkles aria-hidden="true" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="share-trigger"
+                    aria-haspopup="dialog"
+                    aria-expanded={shareOpen}
+                    onClick={() => setShareOpen(true)}
+                  >
+                    <span className="share-trigger-label">
+                      <Share2 aria-hidden="true" />
+                      Share
+                    </span>
+                  </button>
                 </div>
-              )}
 
-            </aside>
+                {/* Ad directly below Share Article */}
+                <AdSenseSidebar />
+
+                {AI_ENABLED && (
+                  <div className="sidebar-card ai-tools-card">
+                    <div className="side-label">AI tools</div>
+
+                    <div className="ai-options">
+                      <button
+                        type="button"
+                        className="ai-option"
+                        onClick={() => setAiOpen(true)}
+                      >
+                        <span>Ask AI</span>
+                        <Sparkles aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              </aside>
           </div>
         </div >
 

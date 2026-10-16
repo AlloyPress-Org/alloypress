@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { withDefaultSocial } from "@/lib/seo/metadata";
 
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
 
-export const metadata: Metadata = {
-  title: "Do Not Sell or Share My Personal Information | AlloyPress",
-  description:
-    "Learn how AlloyPress handles personal information and how to submit a request regarding the sale or sharing of personal information.",
-  alternates: {
-    canonical: "/do-not-sell-my-info",
+export const metadata: Metadata = withDefaultSocial(
+  {
+    title: "Do Not Sell or Share My Personal Information | AlloyPress",
+    description:
+      "Learn how AlloyPress handles personal information and how to submit a request regarding the sale or sharing of personal information.",
+    alternates: { canonical: "/do-not-sell-my-info" },
+    robots: { index: true, follow: true },
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+  "/do-not-sell-my-info"
+);
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",

@@ -43,7 +43,7 @@ const resourceLinks = [
 
 const companyLinks = [
   { label: "About Us", href: "/about-us" },
-  { label: "Contact", href: "/contact-us" },
+  { label: "Contact Us", href: "/contact-us" },
   { label: "Feature Your Tool", href: "/get-featured" },
   { label: "Testing Partner", href: "/testing-partner" },
   {

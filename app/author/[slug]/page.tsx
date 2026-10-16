@@ -4,6 +4,7 @@ import Link from "next/link";
 import { cache } from "react";
 import { payloadFetch } from "@/lib/payload";
 import "./AuthorPage.css";
+import { withDefaultSocial } from "@/lib/seo/metadata";
 
 const PAYLOAD_URL =
   process.env.PAYLOAD_API_URL?.replace(/\/$/, "") ||
@@ -134,25 +135,22 @@ export async function generateMetadata(): Promise<Metadata> {
   const description =
     "Meet the AlloyPress Team — the researchers and editors testing AI tools, comparing alternatives, and explaining AI with practical, reader-first standards.";
 
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: `${SITE_URL}/author/${AUTHOR.slug}`,
-    },
-    openGraph: {
+  return withDefaultSocial(
+    {
       title,
       description,
-      type: "profile",
-      url: `${SITE_URL}/author/${AUTHOR.slug}`,
-      siteName: "AlloyPress",
+      alternates: { canonical: `${SITE_URL}/author/${AUTHOR.slug}` },
+      openGraph: {
+        title,
+        description,
+        type: "profile",
+        url: `${SITE_URL}/author/${AUTHOR.slug}`,
+        siteName: "AlloyPress",
+      },
+      twitter: { card: "summary_large_image", title, description },
     },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-    },
-  };
+    `/author/${AUTHOR.slug}`
+  );
 }
 
 export default async function AuthorPage() {

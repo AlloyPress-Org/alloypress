@@ -2,15 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
+import { withDefaultSocial } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "AI Tool Reviews — Tested Before We Recommend",
-  description:
-    "Request an AlloyPress AI tool review. We test real workflows, verify claims, explain limitations, and publish practical, reader-first reviews.",
-  alternates: {
-    canonical: "/get-reviewed",
+export const metadata: Metadata = withDefaultSocial(
+  {
+    title: "AI Tool Reviews — Tested Before We Recommend",
+    description:
+      "Request an AlloyPress AI tool review. We test real workflows, verify claims, explain limitations, and publish practical, reader-first reviews.",
+    alternates: { canonical: "/get-reviewed" },
   },
-};
+  "/get-reviewed"
+);
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",

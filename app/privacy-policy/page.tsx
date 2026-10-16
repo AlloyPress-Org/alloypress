@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { withDefaultSocial } from "@/lib/seo/metadata";
 
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy",
-  description:
-    "Learn how AlloyPress collects, uses, protects, and retains information, including cookies, analytics, affiliate links, advertising, GDPR and CCPA privacy rights.",
-  alternates: {
-    canonical: "/privacy-policy",
+export const metadata: Metadata = withDefaultSocial(
+  {
+    title: "Privacy Policy",
+    description:
+      "Learn how AlloyPress collects, uses, protects, and retains information, including cookies, analytics, affiliate links, advertising, GDPR and CCPA privacy rights.",
+    alternates: { canonical: "/privacy-policy" },
   },
-};
+  "/privacy-policy"
+);
 
 type PrivacySection = {
   number: string;

@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
+import { withDefaultSocial } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Terms and Conditions",
-  description:
-    "Read the Terms and Conditions governing use of AlloyPress, editorial coverage, sponsored content, payments, affiliate relationships, intellectual property, privacy, and website use.",
-  alternates: {
-    canonical: "/terms-and-conditions",
+export const metadata: Metadata = withDefaultSocial(
+  {
+    title: "Terms and Conditions",
+    description:
+      "Read the Terms and Conditions governing use of AlloyPress, editorial coverage, sponsored content, payments, affiliate relationships, intellectual property, privacy, and website use.",
+    alternates: { canonical: "/terms-and-conditions" },
   },
-};
+  "/terms-and-conditions"
+);
 
 type TermsSection = {
   number: string;

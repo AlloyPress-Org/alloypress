@@ -5,6 +5,7 @@ import {
   SITE_LOCALE,
   SITE_NAME,
   SITE_URL,
+  buildSiteUrl,
 } from "./constants";
 import { absoluteUrl as toAbsolute, cleanText } from "./text";
 
@@ -144,3 +145,48 @@ export const buildPageMetadata = (input: BuildPageMetadataInput): Metadata =>
 
 export const buildArticleMetadata = (input: BuildArticleMetadataInput): Metadata =>
   build(input, "article");
+
+/**
+ * Existing plain Metadata object ku og:image + twitter:image add pannum.
+ * Title/description ae reuse aagum, page la already openGraph irundha adhu win aagum.
+ */
+export function withDefaultSocial(
+  meta: Metadata,
+  path: string,
+  opts?: { imageUrl?: string | null; imageAlt?: string | null }
+): Metadata {
+  const title = typeof meta.title === "string" ? meta.title : SITE_NAME;
+  const description =
+    typeof meta.description === "string" ? meta.description : undefined;
+
+  const customImage = abs(opts?.imageUrl);
+  const image = customImage || DEFAULT_OG_IMAGE_URL;
+  const alt = cleanText(opts?.imageAlt) || title;
+
+  return {
+    ...meta,
+    openGraph: {
+      type: "website",
+      siteName: SITE_NAME,
+      locale: SITE_LOCALE,
+      title,
+      ...(description ? { description } : {}),
+      url: buildSiteUrl(path),
+      ...(meta.openGraph ?? {}),
+      images: [
+        {
+          url: image,
+          alt,
+          ...(customImage ? {} : DEFAULT_OG_IMAGE_SIZE),
+        },
+      ],
+    } as Metadata["openGraph"],
+    twitter: {
+      card: "summary_large_image",
+      title,
+      ...(description ? { description } : {}),
+      ...(meta.twitter ?? {}),
+      images: [image],
+    } as Metadata["twitter"],
+  };
+}

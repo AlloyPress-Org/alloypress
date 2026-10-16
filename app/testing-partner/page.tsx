@@ -2,17 +2,21 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import { ArrowUpRight, Check, ChevronRight } from "lucide-react";
+import { withDefaultSocial } from "@/lib/seo/metadata";
 
 import "@/components/css-style/testing-partner.css";
 
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
 
-export const metadata: Metadata = {
-  title: "AI Tool Testing Partner",
-  description:
-    "Partner with AlloyPress for structured, real-world AI tool testing, competitive benchmarking, and business/SEO input grounded in category experience.",
-  alternates: { canonical: "/testing-partner" },
-};
+export const metadata: Metadata = withDefaultSocial(
+  {
+    title: "AI Tool Testing Partner",
+    description:
+      "Partner with AlloyPress for structured, real-world AI tool testing, competitive benchmarking, and business/SEO input grounded in category experience.",
+    alternates: { canonical: "/testing-partner" },
+  },
+  "/testing-partner"
+);
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",
