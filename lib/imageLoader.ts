@@ -1,3 +1,5 @@
+const BUCKETS = [320, 480, 640, 828, 1080, 1200];
+
 export default function cfLoader({
   src,
   width,
@@ -10,8 +12,8 @@ export default function cfLoader({
   if (!src.startsWith("https://media.alloypress.com/")) return src;
   if (src.includes("/cdn-cgi/image/")) return src;
 
-  // vinext sometimes calls the loader with width 0, so never allow that
-  const w = width && width > 0 ? Math.min(width, 1200) : 640;
+  const target = width && width > 0 ? width : 640;
+  const w = BUCKETS.find((b) => b >= target) ?? 1200;
 
   const path = src.replace("https://media.alloypress.com", "");
   return `https://media.alloypress.com/cdn-cgi/image/width=${w},quality=${quality ?? 70},format=auto${path}`;
