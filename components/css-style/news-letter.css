@@ -359,3 +359,196 @@
   margin-top: 14px;
   font-size: var(--text-sm);
 }
+
+
+
+/* =========================================================
+   NEWSLETTER: interests flow additions
+   Intha poora block-ah unga newsletter css file-oda KADAISI-la paste pannunga.
+   ========================================================= */
+
+/* Form ippo column: row (input + button) + interests + error */
+.newsletter-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.newsletter-form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.newsletter-form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Honeypot: offscreen */
+.newsletter-form .nl-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- Slide-down panel ---------- */
+
+.newsletter-interests {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 280ms ease,
+    opacity 220ms ease,
+    margin-top 280ms ease;
+  margin-top: 0;
+}
+
+.newsletter-interests.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-top: 16px;
+}
+
+.newsletter-interests-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.newsletter-interests-label {
+  margin: 0 0 10px;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.newsletter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- Chips (override `.newsletter-form button`) ---------- */
+
+.newsletter-form .interest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: auto;
+  padding: 9px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  background: var(--background-base);
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: none;
+  transform: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.newsletter-form .interest-chip:hover {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--text-primary);
+  transform: none;
+  box-shadow: none;
+}
+
+.newsletter-form .interest-chip.is-selected {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.newsletter-form .interest-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+
+.interest-chip-check {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  background: transparent;
+  color: currentColor;
+}
+
+.interest-chip.is-selected .interest-chip-check {
+  background: var(--brand);
+  color: #fff;
+}
+
+/* ---------- Error + success ---------- */
+
+.newsletter-error {
+  margin: 12px 0 0;
+  color: #ef4444;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.newsletter-success {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--brand);
+  border-radius: var(--radius-md);
+  background: var(--brand-soft);
+}
+
+.newsletter-success strong {
+  display: block;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+}
+
+.newsletter-success p {
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
+/* ---------- Mobile ---------- */
+
+@media (max-width: 768px) {
+  .newsletter-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .newsletter-form .interest-chip {
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .newsletter-interests {
+    transition: none;
+  }
+}

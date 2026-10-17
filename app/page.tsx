@@ -65,6 +65,8 @@ export default function Home() {
 
       <AIToolReviews />
 
+      <NewsletterSection />
+
       <TestingPartnerPromo />
 
       <ToolSubmissionCTA />
