@@ -18,6 +18,7 @@ import {
   Settings,
   LogOut,
   ExternalLink,
+  Mail, 
 } from 'lucide-react'
 
 type UserRole = 'admin' | 'editor'
@@ -75,6 +76,11 @@ const advancedItems: NavItem[] = [
     label: 'Users',
     href: '/admin/collections/users',
     icon: Users,
+  },
+  {
+    label: 'Subscribers',                      // <-- add
+    href: '/admin/collections/subscribers',
+    icon: Mail,
   },
   {
     label: 'Redirects',

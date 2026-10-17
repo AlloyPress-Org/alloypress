@@ -75,6 +75,7 @@ export interface Config {
     pages: Page;
     'not-found-logs': NotFoundLog;
     'homepage-settings': HomepageSetting;
+    subscribers: Subscriber;
     redirects: Redirect;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -91,6 +92,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     'not-found-logs': NotFoundLogsSelect<false> | NotFoundLogsSelect<true>;
     'homepage-settings': HomepageSettingsSelect<false> | HomepageSettingsSelect<true>;
+    subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -503,6 +505,41 @@ export interface HomepageSetting {
   createdAt: string;
 }
 /**
+ * Newsletter subscribers and their interests.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscribers".
+ */
+export interface Subscriber {
+  id: number;
+  email: string;
+  /**
+   * Min 1, max 4 for website signups. Empty is allowed only for Webpushr imports.
+   */
+  interests?: ('guides-tutorials' | 'tools-recommendations' | 'reviews-comparisons' | 'news-updates')[] | null;
+  status: 'active' | 'unsubscribed';
+  /**
+   * e.g. home-newsletter, webpushr-import
+   */
+  source?: string | null;
+  /**
+   * ISO 3166-1 alpha-2 code, e.g. IN, US.
+   */
+  countryCode?: string | null;
+  /**
+   * Auto-filled from country code.
+   */
+  country?: string | null;
+  subscribedAt?: string | null;
+  unsubscribedAt?: string | null;
+  /**
+   * Used for the unsubscribe / preferences link in emails.
+   */
+  unsubscribeToken?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
@@ -581,6 +618,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'homepage-settings';
         value: number | HomepageSetting;
+      } | null)
+    | ({
+        relationTo: 'subscribers';
+        value: number | Subscriber;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -854,6 +895,23 @@ export interface NotFoundLogsSelect<T extends boolean = true> {
 export interface HomepageSettingsSelect<T extends boolean = true> {
   title?: T;
   featuredPosts?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subscribers_select".
+ */
+export interface SubscribersSelect<T extends boolean = true> {
+  email?: T;
+  interests?: T;
+  status?: T;
+  source?: T;
+  countryCode?: T;
+  country?: T;
+  subscribedAt?: T;
+  unsubscribedAt?: T;
+  unsubscribeToken?: T;
   updatedAt?: T;
   createdAt?: T;
 }

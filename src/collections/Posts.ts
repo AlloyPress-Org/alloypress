@@ -16,6 +16,7 @@ import {
 } from '@payloadcms/richtext-lexical'
 import { textStateConfig } from '@/fields/textStateConfig'
 import { PasteImagesFeature } from '@/features/pasteImages/feature.server'
+import { fixUploadIds } from '@/hooks/fixUploadIds'
 
 const isEditorOrAdmin: Access = ({ req }) => {
   const role = req.user?.role
@@ -283,9 +284,11 @@ const contentField: Field = {
   required: true,
   label: 'Content',
 
+  hooks: {                                               
+    beforeValidate: [({ value }) => fixUploadIds(value)],
+  },
+
   editor: lexicalEditor({
-    // Editor-level admin setting: hides the
-    // "Start typing, or press '/' for commands..." placeholder text.
     admin: {
       placeholder: ' ',
     },

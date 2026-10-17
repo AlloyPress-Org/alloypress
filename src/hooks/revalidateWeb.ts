@@ -3,12 +3,16 @@ import type {
   CollectionAfterDeleteHook,
 } from 'payload'
 
+import { finishRevalidation, startRevalidation } from './revalidationLog'
+
 type Logger = { warn: (m: string) => void; error: (m: string) => void }
 
 const DELAY_MS = 3000
 
 // Fire-and-forget. Payload hooks run inside the DB transaction, so wait a few
 // seconds for the commit before telling the website, and never block the admin save.
+// The result (success / failure) is also recorded in revalidationLog so the admin UI
+// can show a toast (see components/RevalidationToast.tsx).
 export function sendWebRevalidation(
   body: Record<string, unknown>,
   logger: Logger,
@@ -16,9 +20,15 @@ export function sendWebRevalidation(
 ): void {
   const webUrl = process.env.WEB_REVALIDATION_URL
   const secret = process.env.REVALIDATION_SECRET
+  const entryId = startRevalidation(label)
 
   if (!webUrl || !secret) {
     logger.warn('Revalidation skipped: WEB_REVALIDATION_URL or REVALIDATION_SECRET is missing.')
+    finishRevalidation(
+      entryId,
+      'error',
+      'WEB_REVALIDATION_URL or REVALIDATION_SECRET is missing on the CMS server.',
+    )
     return
   }
 
@@ -33,7 +43,18 @@ export function sendWebRevalidation(
             body: JSON.stringify(body),
             signal: AbortSignal.timeout(8000),
           })
-          if (response.ok) return
+          if (response.ok) {
+            const info = (await response.json().catch(() => null)) as {
+              revalidated?: unknown
+            } | null
+            const tags = Array.isArray(info?.revalidated) ? info.revalidated.length : null
+            finishRevalidation(
+              entryId,
+              'success',
+              tags === null ? 'Website cache refreshed.' : `Website cache refreshed (${tags} tags).`,
+            )
+            return
+          }
           const text = await response.text().catch(() => '')
           lastProblem = `HTTP ${response.status} ${text || response.statusText}`
           if ([400, 401, 403].includes(response.status)) break
@@ -43,6 +64,7 @@ export function sendWebRevalidation(
         if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 1000))
       }
       logger.error(`REVALIDATION FAILED for ${label} (${lastProblem}). Site updates only when cache TTL expires. Check REVALIDATION_SECRET / WEB_REVALIDATION_URL.`)
+      finishRevalidation(entryId, 'error', lastProblem || 'Unknown error')
     })()
   }, DELAY_MS)
 }

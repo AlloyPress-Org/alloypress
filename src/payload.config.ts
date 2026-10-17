@@ -33,6 +33,10 @@ import { Pages } from './collections/Pages'
 
 import { HomepageSettings } from './collections/HomepageSettings'
 
+import { Subscribers } from './collections/Subscribers'
+
+import { revalidationStatusEndpoint } from './endpoints/revalidationStatus'
+
 const filename = fileURLToPath(import.meta.url)
 
 const dirname = path.dirname(filename)
@@ -125,6 +129,8 @@ export default buildConfig({
       },
       Nav: '/components/AlloyNav',
 
+      actions: ['/components/RevalidationToast#RevalidationToast'],
+
       views: {
 
         dashboard: {
@@ -170,6 +176,7 @@ export default buildConfig({
 
   },
 
+  endpoints: [revalidationStatusEndpoint],
 
   // =========================================================
   // COLLECTIONS
@@ -192,6 +199,8 @@ export default buildConfig({
     NotFoundLogs,
 
     HomepageSettings,
+
+    Subscribers,
 
   ],
 

@@ -7,10 +7,12 @@ import { $generateNodesFromDOM } from '@payloadcms/richtext-lexical/lexical/html
 import {
   $getRoot,
   $getSelection,
+  $isElementNode,
   $isRangeSelection,
   $setSelection,
   COMMAND_PRIORITY_HIGH,
   PASTE_COMMAND,
+  type LexicalNode,
 } from '@payloadcms/richtext-lexical/lexical'
 import { toast } from '@payloadcms/ui'
 
@@ -61,6 +63,41 @@ const importImage = async (src: string, alt: string): Promise<string | number | 
     return json?.id ?? null
   } catch {
     return null
+  }
+}
+
+/**
+ * Payload's upload-node DOM import (conversions.js) copies the
+ * `data-lexical-upload-id` HTML attribute into the node as a STRING.
+ * This DB (Postgres) uses numeric media IDs, so "885" fails validation with
+ * "upload node failed to validate: This field is not a valid upload ID."
+ * After the nodes are generated we convert numeric-string IDs back to numbers.
+ * Must be called inside editor.update().
+ */
+type UploadData = { value?: unknown; [key: string]: unknown }
+type UploadLikeNode = LexicalNode & {
+  getData: () => UploadData
+  setData: (data: UploadData) => void
+}
+
+const isUploadLikeNode = (node: LexicalNode): node is UploadLikeNode => {
+  const n = node as Partial<UploadLikeNode>
+  return (
+    node.getType() === 'upload' &&
+    typeof n.getData === 'function' &&
+    typeof n.setData === 'function'
+  )
+}
+
+const fixUploadIds = (nodes: LexicalNode[]) => {
+  for (const node of nodes) {
+    if (isUploadLikeNode(node)) {
+      const data = node.getData()
+      if (typeof data?.value === 'string' && /^\d+$/.test(data.value)) {
+        node.setData({ ...data, value: Number(data.value) })
+      }
+    }
+    if ($isElementNode(node)) fixUploadIds(node.getChildren())
   }
 }
 
@@ -119,6 +156,7 @@ const PasteImagesPlugin = () => {
 
           editor.update(() => {
             const nodes = $generateNodesFromDOM(editor, doc)
+            fixUploadIds(nodes) // string "885" -> number 885
             if (savedSelection) $setSelection(savedSelection)
 
             const sel = $getSelection()
