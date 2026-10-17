@@ -25,9 +25,9 @@ export const PAYLOAD_API_URL =
 export { getApiUrl };
 
 
-const DEFAULT_REVALIDATE = 86400; // 24 hours
+const DEFAULT_REVALIDATE = 604800; // 7 days
 const MAX_ATTEMPTS = 2; // Initial request + at most 1 retry
-const STALE_MAX_AGE = 24 * 60 * 60 * 1000; // 24 hours
+const STALE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
 const MAX_STALE_ENTRIES = 200;
 const RETRYABLE = new Set([429, 500, 502, 503, 504]);
 

@@ -129,7 +129,7 @@ const getReviewsCategory = cache(async (): Promise<Category | null> => {
       `/categories?where[slug][equals]=${REVIEWS_CATEGORY_SLUG}&limit=1&depth=0&select[id]=true`,
       {
         next: {
-          revalidate: 86400,
+          revalidate: 604800,
           tags: [
             "categories",
           ],
@@ -172,7 +172,7 @@ const getLatestPosts = cache(async (): Promise<Post[]> => {
       {
 
         next: {
-          revalidate: 86400,
+          revalidate: 604800,
           tags: [
             "home:reviews",
             "category:reviews",

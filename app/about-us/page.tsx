@@ -28,7 +28,7 @@ async function getAboutPage(): Promise<PageDoc | null> {
     "/pages?where[slug][equals]=about&where[status][equals]=published&limit=1",
     {
       next: {
-        revalidate: 86400,
+        revalidate: 604800,
         tags: ["pages", "page:about"],
       },
     },

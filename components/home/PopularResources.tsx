@@ -74,7 +74,7 @@ const getAlternativesCategory = cache(
           `/categories?where[slug][equals]=${ALTERNATIVES_CATEGORY_SLUG}&limit=1&depth=0&select[id]=true`,
           {
             next: {
-              revalidate: 86400,
+              revalidate: 604800,
               tags: [
                 "categories",
               ],
@@ -130,7 +130,7 @@ const getLatestPosts = cache(
           )}&sort=-publishedAt&limit=${HOME_RESOURCE_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[publishedAt]=true&select[featuredImage]=true`,
           {
             next: {
-              revalidate: 86400,
+              revalidate: 604800,
               tags: [
                 "home:alternatives",
                 `category:${ALTERNATIVES_CATEGORY_SLUG}`,

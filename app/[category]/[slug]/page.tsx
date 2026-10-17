@@ -374,7 +374,7 @@ const getContentMedia = cache(
           `/media?${params.toString()}`,
           {
             next: {
-              revalidate: 86400,
+              revalidate: 604800,
               tags: [
                 "media",
                 ...ids.map(
@@ -745,7 +745,7 @@ const getPost = cache(
         `/posts?${params.toString()}`,
         {
           next: {
-            revalidate: 86400,
+            revalidate: 604800,
             tags: [
               `post:${category}:${slug}`, `post:${slug}`, "posts-content",
             ],
@@ -897,7 +897,7 @@ const getRelatedPosts = cache(
         `/posts?${params.toString()}`,
         {
           next: {
-            revalidate: 86400,
+            revalidate: 604800,
             tags: ["related"],
           },
         },

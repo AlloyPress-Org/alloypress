@@ -23,7 +23,7 @@ export const getHomepageSettings = cache(
       {
         strict: false, // CMS fail aanaalum crash aagaadhu, null return pannum
         next: {
-          revalidate: 86400,
+          revalidate: 604800,
           tags: ["homepage", "homepage:featured"],
         },
       },

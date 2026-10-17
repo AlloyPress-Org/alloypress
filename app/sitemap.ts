@@ -80,7 +80,7 @@ async function payloadGet<T>(path: string): Promise<T> {
   while (true) {
     try {
       const data = await payloadFetch<T>(path, {
-        next: { revalidate: 86400, tags: ["sitemap"] },
+        next: { revalidate: 604800, tags: ["sitemap"] },
       });
 
       // payloadFetch 404 na null return pannum. Sitemap-ku idhu error.
