@@ -219,7 +219,7 @@ export default function NewsletterSection() {
           )}
 
           <p className="newsletter-note">
-            Join readers who stay ahead of AI without the noise.
+            Discover the best AI tools, honest reviews and helpful comparisons.
           </p>
 
         </div>
