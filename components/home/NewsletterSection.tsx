@@ -83,7 +83,7 @@ export default function NewsletterSection() {
         <div className="newsletter-content">
 
           <div className="newsletter-eyebrow">
-            EVERY FRIDAY MORNING
+          {/* eyebrow */}
           </div>
 
           <h2>
@@ -130,7 +130,7 @@ export default function NewsletterSection() {
               <span className="benefit-check">✓</span>
               <div>
                 <strong>You’re in!</strong>
-                <p>Your first issue lands this Friday morning.</p>
+                <p>Thanks for joining the AlloyPress community. 💚</p>
               </div>
             </div>
           ) : (
