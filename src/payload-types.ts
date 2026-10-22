@@ -76,6 +76,7 @@ export interface Config {
     'not-found-logs': NotFoundLog;
     'homepage-settings': HomepageSetting;
     subscribers: Subscriber;
+    'audit-logs': AuditLog;
     redirects: Redirect;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -93,6 +94,7 @@ export interface Config {
     'not-found-logs': NotFoundLogsSelect<false> | NotFoundLogsSelect<true>;
     'homepage-settings': HomepageSettingsSelect<false> | HomepageSettingsSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
+    'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -540,6 +542,37 @@ export interface Subscriber {
   createdAt: string;
 }
 /**
+ * Who changed what, and when. Read-only. Filter by Target Collection or Doc ID to see one post's history.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs".
+ */
+export interface AuditLog {
+  id: number;
+  summary?: string | null;
+  action?: ('create' | 'update' | 'draft' | 'publish' | 'delete' | 'login') | null;
+  user?: (number | null) | User;
+  userEmail?: string | null;
+  targetCollection?: string | null;
+  docId?: string | null;
+  docTitle?: string | null;
+  changedFields?: string | null;
+  /**
+   * Short values show before/after. Long or rich-text fields (like the article content) only show the field name.
+   */
+  changes?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
@@ -622,6 +655,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'subscribers';
         value: number | Subscriber;
+      } | null)
+    | ({
+        relationTo: 'audit-logs';
+        value: number | AuditLog;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -912,6 +949,23 @@ export interface SubscribersSelect<T extends boolean = true> {
   subscribedAt?: T;
   unsubscribedAt?: T;
   unsubscribeToken?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs_select".
+ */
+export interface AuditLogsSelect<T extends boolean = true> {
+  summary?: T;
+  action?: T;
+  user?: T;
+  userEmail?: T;
+  targetCollection?: T;
+  docId?: T;
+  docTitle?: T;
+  changedFields?: T;
+  changes?: T;
   updatedAt?: T;
   createdAt?: T;
 }

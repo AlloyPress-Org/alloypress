@@ -1,4 +1,4 @@
-import type { Access, Block, CollectionConfig, Field } from 'payload'
+import type { Access, Block, CollectionConfig, Field, SelectField } from 'payload'
 import type { PayloadRequest } from 'payload'
 import { sql } from '@payloadcms/db-postgres/drizzle'
 import { sendWebRevalidation } from '@/hooks/revalidateWeb'
@@ -12,6 +12,11 @@ import {
   LinkFeature,
   UploadFeature,
   FixedToolbarFeature,
+  ParagraphFeature,
+  BoldFeature,
+  ItalicFeature,
+  UnderlineFeature,
+  InlineToolbarFeature,
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 import { textStateConfig } from '@/fields/textStateConfig'
@@ -35,6 +40,8 @@ const SEARCH_MAX_QUERY_LENGTH = 80
 const SEARCH_MAX_TERMS = 6
 const SEARCH_WORD_SIMILARITY_THRESHOLD = 0.30
 
+// Top-level "sections" of the website. A post whose category is a CHILD of one
+// of these (e.g. listicle / informative under "blogs") belongs to that section.
 const SEARCH_ALLOWED_CATEGORY_SLUGS = [
   'blogs',
   'reviews',
@@ -123,6 +130,13 @@ async function searchPostsWithSimilarity(
     SEARCH_MAX_RESULTS,
   )
 
+  // 'blogs', 'reviews', 'news', 'alternatives', 'comparisons' as a SQL list.
+  // Used twice below (section resolve + final filter).
+  const allowedList = sql.join(
+    SEARCH_ALLOWED_CATEGORY_SLUGS.map((slug) => sql`${slug}`),
+    sql`, `,
+  )
+
   const candidateConditions = terms.map((term) => {
     const partial = `%${escapeLikePattern(term)}%`
 
@@ -187,42 +201,49 @@ async function searchPostsWithSimilarity(
     END
   `
 
+  // c  = the post's own category (reviews, news, ... OR listicle / informative)
+  // sc = its SECTION: c itself when c is a section, otherwise c's parent
+  //      (listicle -> blogs). The returned `category.slug` is the section slug,
+  //      so the website builds /blogs/<post-slug> (never /listicles/<post-slug>).
+  //      `category.name` stays the post's own category name (Listicle / Informative).
   const result = await req.payload.db.drizzle.execute(sql`
     SELECT
       p.id AS "id",
       p.title AS "title",
       p.slug AS "slug",
       p.excerpt AS "excerpt",
-     p.published_at AS "publishedAt",
-CASE
-  WHEN m.id IS NULL THEN NULL
-  ELSE jsonb_build_object(
-    'id', m.id,
-    'url', m.url,
-    'alt', m.alt
-  )
-END AS "featuredImage",
-jsonb_build_object(
-  'id', c.id,
-  'name', c.name,
-  'slug', c.slug
-) AS "category",
+      p.published_at AS "publishedAt",
+      CASE
+        WHEN m.id IS NULL THEN NULL
+        ELSE jsonb_build_object(
+          'id', m.id,
+          'url', m.url,
+          'alt', m.alt
+        )
+      END AS "featuredImage",
+      jsonb_build_object(
+        'id', c.id,
+        'name', c.name,
+        'slug', sc.slug
+      ) AS "category",
       (
         ${scoreExpression}
         + ${exactPhraseBoost}
         + ${titlePrefixBoost}
       ) AS "score"
     FROM posts AS p
-INNER JOIN categories AS c
-  ON c.id = p.category_id
-LEFT JOIN media AS m
-  ON m.id = p.featured_image_id
+    INNER JOIN categories AS c
+      ON c.id = p.category_id
+    INNER JOIN categories AS sc
+      ON sc.id = CASE
+        WHEN c.slug IN (${allowedList}) THEN c.id
+        ELSE c.parent_id
+      END
+    LEFT JOIN media AS m
+      ON m.id = p.featured_image_id
     WHERE
       p._status = 'published'
-      AND c.slug IN (${sql.join(
-    SEARCH_ALLOWED_CATEGORY_SLUGS.map((slug) => sql`${slug}`),
-    sql`, `,
-  )})
+      AND sc.slug IN (${allowedList})
       AND (
         ${sql.join(candidateConditions, sql` OR `)}
       )
@@ -275,6 +296,108 @@ const CodeBlockWithPreview: Block = {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Link follow behavior (used by text links AND image links)                   */
+/*                                                                            */
+/* auto     -> frontend decides: alloypress.com / relative = dofollow,         */
+/*             any other website = nofollow                                    */
+/* dofollow -> always dofollow (manual override)                               */
+/* nofollow -> always nofollow (manual override)                               */
+/*                                                                            */
+/* This is a function so every place gets its OWN field object                */
+/* (Payload mutates field configs while sanitizing).                           */
+/* -------------------------------------------------------------------------- */
+
+const makeFollowModeField = (): SelectField => ({
+  name: 'followMode',
+  type: 'select',
+  label: 'Link follow behavior',
+  defaultValue: 'auto',
+
+  options: [
+    {
+      label: 'Auto (internal = dofollow, external = nofollow)',
+      value: 'auto',
+    },
+    {
+      label: 'Force dofollow',
+      value: 'dofollow',
+    },
+    {
+      label: 'Force nofollow',
+      value: 'nofollow',
+    },
+  ],
+
+  admin: {
+    description:
+      'Auto: links to alloypress.com are dofollow, links to other websites are nofollow. Change only when you need to override.',
+  },
+})
+
+/* -------------------------------------------------------------------------- */
+/* Shared link fields                                                          */
+/* Used by the main Content editor AND the Styled Box "Body (with links)"      */
+/* editor, so both have exactly the same link options.                         */
+/* -------------------------------------------------------------------------- */
+const buildLinkFeatureFields = ({
+  defaultFields,
+}: {
+  defaultFields: any[]
+}): any[] => [
+  ...defaultFields.filter((field) => field.name !== 'rel'),
+
+  // NEW: follow behavior dropdown (replaces the old nofollow checkbox in the UI)
+  makeFollowModeField(),
+
+  // LEGACY (hidden): keeps nofollow = true from migrated WordPress links.
+  // The frontend still reads it. Writers now use "Link follow behavior".
+  {
+    name: 'nofollow',
+    type: 'checkbox',
+    label: 'Set to nofollow (legacy)',
+    defaultValue: false,
+    admin: {
+      hidden: true,
+      description:
+        'Legacy field kept for migrated links. Use "Link follow behavior" instead.',
+    },
+  },
+
+  {
+    name: 'sponsored',
+    type: 'checkbox',
+    label: 'Set to sponsored',
+    defaultValue: false,
+    admin: {
+      description:
+        'Use this for paid, sponsored, affiliate, or advertising links.',
+    },
+  },
+
+  {
+    name: 'noopener',
+    type: 'checkbox',
+    label: 'Set to noopener',
+    defaultValue: false,
+    admin: {
+      description:
+        'Prevents the destination page from accessing the original page through window.opener.',
+    },
+  },
+
+  {
+    name: 'noreferrer',
+    type: 'checkbox',
+    label: 'Set to noreferrer',
+    defaultValue: false,
+    admin: {
+      description:
+        'Prevents the referring page URL from being sent to the destination.',
+    },
+  },
+]
+
+/* -------------------------------------------------------------------------- */
 /* Main rich-text content field (moved out so the tabs layout stays readable)  */
 /* -------------------------------------------------------------------------- */
 
@@ -284,7 +407,7 @@ const contentField: Field = {
   required: true,
   label: 'Content',
 
-  hooks: {                                               
+  hooks: {
     beforeValidate: [({ value }) => fixUploadIds(value)],
   },
 
@@ -310,65 +433,51 @@ const contentField: Field = {
       }),
 
       LinkFeature({
-        fields: ({ defaultFields }) => [
-          ...defaultFields.filter(
-            (field) => field.name !== 'rel',
-          ),
-
-          {
-            name: 'nofollow',
-            type: 'checkbox',
-            label: 'Set to nofollow',
-            defaultValue: false,
-
-            admin: {
-              description:
-                'Use this when search engines should not pass SEO authority through this link.',
-            },
-          },
-
-          {
-            name: 'sponsored',
-            type: 'checkbox',
-            label: 'Set to sponsored',
-            defaultValue: false,
-
-            admin: {
-              description:
-                'Use this for paid, sponsored, affiliate, or advertising links.',
-            },
-          },
-
-          {
-            name: 'noopener',
-            type: 'checkbox',
-            label: 'Set to noopener',
-            defaultValue: false,
-
-            admin: {
-              description:
-                'Prevents the destination page from accessing the original page through window.opener.',
-            },
-          },
-
-          {
-            name: 'noreferrer',
-            type: 'checkbox',
-            label: 'Set to noreferrer',
-            defaultValue: false,
-
-            admin: {
-              description:
-                'Prevents the referring page URL from being sent to the destination.',
-            },
-          },
-        ],
+        fields: buildLinkFeatureFields,
       }),
 
       UploadFeature({
         collections: {
           media: {
-            fields: [],
+            // NEW: per-image link options (stored inside the post, not in Media)
+            fields: [
+              {
+                name: 'linkUrl',
+                type: 'text',
+                label: 'Image link URL',
+                validate: (value: string | null | undefined) => {
+                  if (!value) return true
+                  return /^(https?:\/\/|\/|#|mailto:|tel:)/i.test(value.trim())
+                    ? true
+                    : 'Start with https:// (example: https://google.com), or / for pages on this site'
+                },
+                admin: {
+                  description:
+                    'Optional. If set, the image becomes a clickable link. The URL is also shown on hover.',
+                },
+              },
+
+              {
+                name: 'openInNewTab',
+                type: 'checkbox',
+                label: 'Open in new tab',
+                defaultValue: true,
+              },
+
+              makeFollowModeField(),
+
+              {
+                name: 'sponsored',
+                type: 'checkbox',
+                label: 'Set to sponsored',
+                defaultValue: false,
+
+                admin: {
+                  description:
+                    'Use this for paid, sponsored, affiliate, or advertising links.',
+                },
+              },
+            ],
           },
         },
       }),
@@ -517,10 +626,44 @@ const contentField: Field = {
                 label: 'Heading',
               },
 
+              // OLD plain-text body. Kept so migrated / existing boxes keep
+              // their data. Only visible when the box already has text.
               {
                 name: 'text',
                 type: 'textarea',
-                label: 'Body Text',
+                label: 'Body Text (old plain text)',
+
+                admin: {
+                  condition: (_data, siblingData) =>
+                    Boolean(siblingData?.text),
+                  description:
+                    'Old plain-text body. To add links, move this text into "Body (with links)" below and clear this field.',
+                },
+              },
+
+              // NEW rich body: select words -> add natural internal links.
+              {
+                name: 'bodyRich',
+                type: 'richText',
+                label: 'Body (with links)',
+
+                editor: lexicalEditor({
+                  features: [
+                    ParagraphFeature(),
+                    BoldFeature(),
+                    ItalicFeature(),
+                    UnderlineFeature(),
+                    LinkFeature({
+                      fields: buildLinkFeatureFields,
+                    }),
+                    InlineToolbarFeature(),
+                  ],
+                }),
+
+                admin: {
+                  description:
+                    'Select words and click the link icon to add natural links. Use "Custom URL" (example: /blogs/best-ai-image-generator).',
+                },
               },
 
               {
@@ -935,6 +1078,10 @@ const contentField: Field = {
   // ("Main article content. Add formatted text, ...") was removed on purpose.
 }
 
+/* -------------------------------------------------------------------------- */
+/* Web revalidation                                                            */
+/* -------------------------------------------------------------------------- */
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function triggerWebRevalidation(doc: any, req: any, previousDoc?: any) {
   try {
@@ -943,23 +1090,65 @@ async function triggerWebRevalidation(doc: any, req: any, previousDoc?: any) {
         ? (c as { id?: number | string }).id
         : (c as number | string | undefined)
 
-    const slugOfCategory = async (c: unknown): Promise<string | undefined> => {
-      const id = idOf(c)
-      if (id == null) return undefined
-      const found = (await req.payload.findByID({
-        collection: 'categories', id, depth: 0,
-      })) as { slug?: unknown } | null
-      return typeof found?.slug === 'string' ? found.slug : undefined
+    const SECTION_SLUGS = SEARCH_ALLOWED_CATEGORY_SLUGS as readonly string[]
+
+    // Returns:
+    //   section = website section slug (blogs / reviews / news / ...)
+    //   sub     = the post's own category slug, ONLY when it is a child of a
+    //             section (listicles / informatives). undefined otherwise.
+    //
+    // reviews / news / alternatives / comparisons -> { section: 'reviews' }  (same as before)
+    // listicle / informative (parent: Learn)      -> { section: 'blogs', sub: 'listicles' }
+    // anything else (e.g. uncategorized)          -> { section: <its own slug> }  (same as before)
+    const resolveCategory = async (
+      c: unknown,
+    ): Promise<{ section?: string; sub?: string }> => {
+      let id = idOf(c)
+      let direct: string | undefined
+
+      for (let i = 0; i < 4 && id != null; i++) {
+        const found = (await req.payload.findByID({
+          collection: 'categories',
+          id,
+          depth: 0,
+        })) as { slug?: unknown; parent?: unknown } | null
+
+        const slug = typeof found?.slug === 'string' ? found.slug : undefined
+
+        if (i === 0) direct = slug
+
+        if (slug && SECTION_SLUGS.includes(slug)) {
+          return { section: slug, sub: i > 0 ? direct : undefined }
+        }
+
+        id = idOf(found?.parent)
+      }
+
+      return { section: direct }
     }
 
-    const categorySlug = await slugOfCategory(doc.category)
-    const categoryChanged = previousDoc && idOf(previousDoc.category) !== idOf(doc.category)
-    const previousCategorySlug = categoryChanged ? await slugOfCategory(previousDoc.category) : undefined
+    const current = await resolveCategory(doc.category)
+
+    const categoryChanged =
+      previousDoc && idOf(previousDoc.category) !== idOf(doc.category)
+
+    const previous = categoryChanged
+      ? await resolveCategory(previousDoc.category)
+      : undefined
+
     const previousSlug =
       previousDoc?.slug && previousDoc.slug !== doc.slug ? previousDoc.slug : undefined
 
     await sendWebRevalidation(
-      { slug: doc.slug, previousSlug, categorySlug, previousCategorySlug, authorSlug: 'alloypress' },
+      {
+        slug: doc.slug,
+        previousSlug,
+        categorySlug: current.section,
+        subCategorySlug: current.sub,
+        previousCategorySlug: previous?.section,
+        previousSubCategorySlug: previous?.sub,
+        authorSlug: 'alloypress',
+      },
       req.payload.logger,
       `post "${doc.slug}"`,
     )
@@ -1340,6 +1529,13 @@ export const Posts: CollectionConfig = {
           required: true,
           hasMany: false,
           label: 'Category',
+
+          // PHASE 2: uncomment ONLY after every "Learn" post has been moved to
+          // Listicle / Informative. It hides the "Learn" parent from the picker
+          // (and blocks saving a post that is still in Learn).
+          // Other categories (reviews, news, ...) are not affected.
+          //
+          // filterOptions: { slug: { not_equals: 'blogs' } },
         },
 
         {

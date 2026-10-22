@@ -1577,3 +1577,29 @@ html[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
   min-height: 0 !important;
   max-height: 300px !important;
 }
+
+
+
+/* =========================================================
+   NO SIDEBAR FLASH ON REFRESH
+   Payload renders the sidebar "open" on the server, then closes it
+   on the client. Hide the admin shell until Payload marks the nav
+   as hydrated, so only the final layout is ever visible.
+   Fallback: if the class never appears, show the page after 1.5s.
+========================================================= */
+
+.template-default:not(:has(.nav--nav-hydrated)) {
+  opacity: 0;
+  animation: alloy-admin-reveal 0s linear 1.5s forwards;
+}
+
+.template-default:not(:has(.nav--nav-hydrated)) .nav,
+.template-default:not(:has(.nav--nav-hydrated)) .nav * {
+  transition: none !important;
+}
+
+@keyframes alloy-admin-reveal {
+  to {
+    opacity: 1;
+  }
+}

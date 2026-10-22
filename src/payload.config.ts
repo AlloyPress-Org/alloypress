@@ -37,6 +37,9 @@ import { Subscribers } from './collections/Subscribers'
 
 import { revalidationStatusEndpoint } from './endpoints/revalidationStatus'
 
+import { AuditLogs } from './collections/AuditLogs'
+import { auditLogPlugin } from './plugins/auditLog'
+
 const filename = fileURLToPath(import.meta.url)
 
 const dirname = path.dirname(filename)
@@ -201,6 +204,8 @@ export default buildConfig({
     HomepageSettings,
 
     Subscribers,
+
+    AuditLogs,
 
   ],
 
@@ -677,6 +682,19 @@ export default buildConfig({
 
       },
 
+    }),
+
+    auditLogPlugin({
+      collections: [
+        'posts',
+        'pages',
+        'media',
+        'categories',
+        'tags',
+        'users',
+        'redirects',
+        'homepage-settings',
+      ],
     }),
 
   ],

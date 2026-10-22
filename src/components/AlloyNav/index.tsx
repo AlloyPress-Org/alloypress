@@ -18,7 +18,8 @@ import {
   Settings,
   LogOut,
   ExternalLink,
-  Mail, 
+  Mail,
+  History,
 } from 'lucide-react'
 
 type UserRole = 'admin' | 'editor'
@@ -78,7 +79,7 @@ const advancedItems: NavItem[] = [
     icon: Users,
   },
   {
-    label: 'Subscribers',                      // <-- add
+    label: 'Subscribers',
     href: '/admin/collections/subscribers',
     icon: Mail,
   },
@@ -91,6 +92,11 @@ const advancedItems: NavItem[] = [
     label: 'Not Found Logs',
     href: '/admin/collections/not-found-logs',
     icon: AlertTriangle,
+  },
+  {
+    label: 'Activity Log',
+    href: '/admin/collections/audit-logs',
+    icon: History,
   },
 ]
 
@@ -129,11 +135,10 @@ function NavItemLink({
   return (
     <Link
       href={item.href}
-      className={`alloy-nav__item ${
-        active
-          ? 'alloy-nav__item--active'
-          : ''
-      }`}
+      className={`alloy-nav__item ${active
+        ? 'alloy-nav__item--active'
+        : ''
+        }`}
       aria-current={
         active ? 'page' : undefined
       }

@@ -73,8 +73,15 @@ type EditorFilterKey =
 
 type EditorStats = Record<EditorFilterKey, number>
 
-type DashboardData = {
+/** Changes often (publish/edit) -> short cache. */
+type PostsGroup = {
   posts: number
+  recentPosts: RecentPost[]
+  editorStats: EditorStats
+}
+
+/** Changes rarely -> long cache. */
+type TotalsGroup = {
   pages: number
   users: number
   media: number
@@ -82,9 +89,9 @@ type DashboardData = {
   tags: number
   notFoundLogs: number
   redirects: number
-  recentPosts: RecentPost[]
-  editorStats: EditorStats
 }
+
+type DashboardData = PostsGroup & TotalsGroup
 
 type DateRanges = { now: string; weekStart: string; monthStart: string }
 
@@ -108,8 +115,13 @@ const EMPTY_EDITOR_STATS: EditorStats = {
   draftPosts: 0,
 }
 
-const EMPTY_DATA: DashboardData = {
+const EMPTY_POSTS: PostsGroup = {
   posts: 0,
+  recentPosts: [],
+  editorStats: EMPTY_EDITOR_STATS,
+}
+
+const EMPTY_TOTALS: TotalsGroup = {
   pages: 0,
   users: 0,
   media: 0,
@@ -117,8 +129,6 @@ const EMPTY_DATA: DashboardData = {
   tags: 0,
   notFoundLogs: 0,
   redirects: 0,
-  recentPosts: [],
-  editorStats: EMPTY_EDITOR_STATS,
 }
 
 const DEFAULT_POSTS_URL = '/admin/collections/posts'
@@ -132,20 +142,23 @@ const DEFAULT_EDITOR_URLS: Record<EditorFilterKey, string> = {
 }
 
 /**
- * - younger than CACHE_FRESH_MS -> zero network calls
- * - older                       -> cached data shows instantly,
- *                                  then refreshes in the background
+ * Two cache groups, each with its own freshness window:
+ *  - posts group  (recent + 5 stats)  -> 2 min   (you publish/edit often)
+ *  - totals group (7 collection counts) -> 30 min (rarely changes)
+ *
+ * Younger than the window -> ZERO network calls for that group.
+ * Older                   -> cached data shows instantly, refreshes behind.
  */
-const CACHE_FRESH_MS = 10 * 60_000
+const POSTS_FRESH_MS = 2 * 60_000
+const TOTALS_FRESH_MS = 30 * 60_000
 const CACHE_MAX_AGE_MS = 24 * 60 * 60_000
-const CACHE_VERSION = 'v7'
+const CACHE_VERSION = 'v8'
 
 /**
- * Max requests in flight at once. Kept at 2 on purpose: Hostinger serves
- * HTTP/1.1 and Neon runs on a tiny compute, so a gentle trickle avoids
- * queueing, 429s and DB spikes. Raise to 3-4 only if measured fast.
+ * Max requests in flight at once. Small on purpose so Neon (tiny compute)
+ * and the HTTP/1.1 host never get a burst.
  */
-const MAX_CONCURRENCY = 2
+const MAX_CONCURRENCY = 3
 
 /* =========================================================
    SPARKLINES (static, module level)
@@ -310,7 +323,7 @@ const JSON_HEADERS = { Accept: 'application/json' }
 
 /**
  * GET /api/{slug}/count?where[...]  ->  { totalDocs }
- * Never loads documents (unlike `?limit=1`).
+ * Never loads documents.
  */
 const fetchCollectionCount = async (
   slug: string,
@@ -340,9 +353,8 @@ type RecentPostsResult = {
 }
 
 /**
- * Only the fields the dashboard shows (`id` always included).
- * `find` already returns `totalDocs`, so this one request also gives us
- * the total posts count (no separate /posts/count query needed).
+ * Only the fields the dashboard shows. `find` already returns
+ * `totalDocs`, so this one request also gives the total posts count.
  */
 const fetchRecentPosts = async (
   signal: AbortSignal,
@@ -369,8 +381,7 @@ const fetchRecentPosts = async (
 }
 
 /**
- * Tiny promise pool: runs tasks with at most `limit` in flight and
- * keeps order, so important requests go first.
+ * Tiny promise pool: at most `limit` requests in flight, in order.
  */
 const runPool = async (
   tasks: Array<() => Promise<void>>,
@@ -427,14 +438,30 @@ const serializeWhere = (where: WhereClause): string => {
 /* =========================================================
    EDITOR FILTERS
    =========================================================
+   Every field used here is already indexed (publishedAt,
+   legacy.wordpressModifiedAt, _status, createdAt, updatedAt).
+   No schema change needed.
+
    Published This Week / Month
-     _status = published AND publishedAt in range
+     _status = published
+     AND publishedAt in [start, now]
 
-   Updated This Week / Month
-     migrated post -> legacy.wordpressModifiedAt
-     native post   -> updatedAt fallback
+   Updated This Week / Month  (an EDIT to an existing post)
+     _status = published                    -> drafts never count
+     AND publishedAt < start                -> a post first published in
+                                               the range is "Published",
+                                               not "Updated"
+     AND updatedAt in [start, now]          -> main-table updatedAt only
+                                               moves on publish / real
+                                               update (draft + autosave
+                                               saves live in versions)
+     AND ( native post (no legacy date)
+           OR imported before the range )   -> posts that the WordPress
+                                               migration created inside
+                                               the range are not "edits"
 
-   Draft Posts      draft + draft workflow
+   Draft Posts
+     _status = draft
    ========================================================= */
 
 const buildEditorFilters = (
@@ -449,19 +476,15 @@ const buildEditorFilters = (
   })
 
   const updatedFilter = (start: string): WhereClause => ({
-    or: [
+    and: [
+      { _status: { equals: 'published' } },
+      { publishedAt: { less_than: start } },
+      { updatedAt: { greater_than_equal: start } },
+      { updatedAt: { less_than_equal: ranges.now } },
       {
-        and: [
-          { 'legacy.wordpressModifiedAt': { exists: true } },
-          { 'legacy.wordpressModifiedAt': { greater_than_equal: start } },
-          { 'legacy.wordpressModifiedAt': { less_than_equal: ranges.now } },
-        ],
-      },
-      {
-        and: [
+        or: [
           { 'legacy.wordpressModifiedAt': { exists: false } },
-          { updatedAt: { greater_than_equal: start } },
-          { updatedAt: { less_than_equal: ranges.now } },
+          { createdAt: { less_than: start } },
         ],
       },
     ],
@@ -472,13 +495,7 @@ const buildEditorFilters = (
     publishedThisMonth: publishedFilter(ranges.monthStart),
     updatedThisWeek: updatedFilter(ranges.weekStart),
     updatedThisMonth: updatedFilter(ranges.monthStart),
-
-    draftPosts: {
-      and: [
-        { _status: { equals: 'draft' } },
-        { workflowStatus: { equals: 'draft' } },
-      ],
-    },
+    draftPosts: { _status: { equals: 'draft' } },
   }
 }
 
@@ -492,17 +509,21 @@ const buildEditorPostUrl = (where: WhereClause): string => {
    LOCAL CACHE (localStorage, survives tab close)
    ========================================================= */
 
-type CachePayload = { ts: number; data: DashboardData }
+type CachePayload<T> = { ts: number; data: T }
 
-const cacheKey = (userId: string | number, role: string) =>
-  `alloy-dashboard:${CACHE_VERSION}:${userId}:${role}`
+const cacheKey = (
+  userId: string | number,
+  role: string,
+  group: 'posts' | 'totals',
+  scope: string,
+) => `alloy-dashboard:${CACHE_VERSION}:${userId}:${role}:${group}:${scope}`
 
-const readCache = (key: string): CachePayload | null => {
+const readCache = <T,>(key: string): CachePayload<T> | null => {
   try {
     const raw = window.localStorage.getItem(key)
     if (!raw) return null
 
-    const parsed = JSON.parse(raw) as CachePayload
+    const parsed = JSON.parse(raw) as CachePayload<T>
 
     if (
       !parsed ||
@@ -519,11 +540,11 @@ const readCache = (key: string): CachePayload | null => {
   }
 }
 
-const writeCache = (key: string, data: DashboardData) => {
+const writeCache = <T,>(key: string, data: T) => {
   try {
     window.localStorage.setItem(
       key,
-      JSON.stringify({ ts: Date.now(), data } satisfies CachePayload),
+      JSON.stringify({ ts: Date.now(), data } satisfies CachePayload<T>),
     )
   } catch {
     // storage full / blocked: caching is optional
@@ -546,10 +567,10 @@ export default function AlloyDashboard() {
   const isAdmin = userRole === 'admin'
   const displayName = getDisplayName(user)
 
-  const [data, setData] = useState<DashboardData>(EMPTY_DATA)
-  // Per-item readiness: cards fill in one by one as results arrive.
-  const [ready, setReady] = useState<Record<string, boolean>>({})
-  const [allReady, setAllReady] = useState(false)
+  const [postsData, setPostsData] = useState<PostsGroup>(EMPTY_POSTS)
+  const [totalsData, setTotalsData] = useState<TotalsGroup>(EMPTY_TOTALS)
+  const [postsReady, setPostsReady] = useState(false)
+  const [totalsReady, setTotalsReady] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [today, setToday] = useState('')
   const [currentYear, setCurrentYear] = useState<number | null>(null)
@@ -558,15 +579,20 @@ export default function AlloyDashboard() {
   const [editorStatUrls, setEditorStatUrls] =
     useState<Record<EditorFilterKey, string>>(DEFAULT_EDITOR_URLS)
 
-  const isReady = (id: string) => allReady || Boolean(ready[id])
+  const data = useMemo<DashboardData>(
+    () => ({ ...totalsData, ...postsData }),
+    [totalsData, postsData],
+  )
 
   /* ---------------------------------------------------------
      DATA LOADING
      - keyed on userId + role (primitives), not the `user` object
-     - /count + select  -> tiny responses
-     - concurrency pool -> no 15-request burst on a small host / DB
-     - results stream into the UI as they arrive
-     - session cache    -> repeat visits cost zero requests
+     - two cache groups with separate freshness windows
+       (posts 2 min / totals 30 min): most visits = 0 requests
+     - cache key includes weekStart -> no stale numbers after
+       the Monday rollover
+     - /count + select -> tiny responses, indexed fields only
+     - small concurrency pool -> no request burst on Neon
      --------------------------------------------------------- */
 
   useEffect(() => {
@@ -576,7 +602,6 @@ export default function AlloyDashboard() {
 
     const controller = new AbortController()
     const { signal } = controller
-    const key = cacheKey(userId, userRole)
 
     const ranges = getDateRanges()
     const filters = buildEditorFilters(ranges)
@@ -588,124 +613,157 @@ export default function AlloyDashboard() {
       ) as Record<EditorFilterKey, string>,
     )
 
-    // Show cached data instantly if present.
-    const cached = readCache(key)
+    const postsKey = cacheKey(userId, userRole, 'posts', ranges.weekStart)
+    const totalsKey = cacheKey(userId, userRole, 'totals', 'all')
 
-    if (cached) {
-      setData(cached.data)
-      setAllReady(true)
+    const cachedPosts = readCache<PostsGroup>(postsKey)
+    const cachedTotals = readCache<TotalsGroup>(totalsKey)
 
-      if (Date.now() - cached.ts < CACHE_FRESH_MS) {
-        return () => controller.abort()
-      }
+    // Show whatever is cached instantly.
+    if (cachedPosts) {
+      setPostsData(cachedPosts.data)
+      setPostsReady(true)
     } else {
-      setAllReady(false)
-      setReady({})
+      setPostsReady(false)
+    }
+
+    if (cachedTotals) {
+      setTotalsData(cachedTotals.data)
+      setTotalsReady(true)
+    } else {
+      setTotalsReady(false)
+    }
+
+    const needPosts =
+      !cachedPosts || Date.now() - cachedPosts.ts >= POSTS_FRESH_MS
+    const needTotals =
+      !cachedTotals || Date.now() - cachedTotals.ts >= TOTALS_FRESH_MS
+
+    if (!needPosts && !needTotals) {
+      return () => controller.abort()
     }
 
     setLoadError(false)
 
-    // Working copy that tasks write into; snapshotted into state.
-    const result: DashboardData = {
-      ...EMPTY_DATA,
-      editorStats: { ...EMPTY_EDITOR_STATS },
-      recentPosts: [],
-    }
+    const queue: Array<() => Promise<void>> = []
 
-    const doneIds: Record<string, boolean> = {}
-    let failed = false
+    /**
+     * Wraps a group of requests: runs them through the shared queue and
+     * calls `onDone` once the whole group finished (even if some failed).
+     */
+    const addGroup = (
+      label: string,
+      tasks: Array<() => Promise<void>>,
+      onDone: (failed: boolean) => void,
+    ) => {
+      let pending = tasks.length
+      let failed = false
 
-    const flush = (id: string) => {
-      if (signal.aborted) return
+      tasks.forEach((run) => {
+        queue.push(async () => {
+          try {
+            await run()
+          } catch (error) {
+            if (!signal.aborted) {
+              failed = true
+              console.error(`AlloyPress dashboard: ${label} failed`, error)
+            }
+          } finally {
+            pending -= 1
 
-      doneIds[id] = true
-      setData({
-        ...result,
-        editorStats: { ...result.editorStats },
-        recentPosts: [...result.recentPosts],
-      })
-      setReady({ ...doneIds })
-    }
-
-    const task =
-      (id: string, run: () => Promise<void>) => async () => {
-        try {
-          await run()
-        } catch (error) {
-          if (signal.aborted) return
-          failed = true
-          console.error(`AlloyPress dashboard: "${id}" failed`, error)
-        } finally {
-          flush(id)
-        }
-      }
-
-    const countSlugs: Array<[string, keyof DashboardData]> =
-      userRole === 'editor'
-        ? [
-          ['pages', 'pages'],
-          ['media', 'media'],
-          ['categories', 'categories'],
-          ['tags', 'tags'],
-        ]
-        : [
-          ['pages', 'pages'],
-          ['users', 'users'],
-          ['media', 'media'],
-          ['categories', 'categories'],
-          ['tags', 'tags'],
-          ['not-found-logs', 'notFoundLogs'],
-          ['redirects', 'redirects'],
-        ]
-
-    // Order = priority: cheap collection counts + recent activity first,
-    // heavier filtered stats after.
-    const tasks: Array<() => Promise<void>> = [
-      // Recent posts first: also supplies the total posts count.
-      task('recent', async () => {
-        const recent = await fetchRecentPosts(signal)
-
-        result.recentPosts = recent.posts
-        result.posts = recent.totalDocs
-      }),
-
-      ...countSlugs.map(([slug, field]) =>
-        task(`c:${slug}`, async () => {
-          const value = await fetchCollectionCount(slug, '', signal)
-          ;(result as unknown as Record<string, number>)[field] = value
-        }),
-      ),
-
-      ...EDITOR_FILTER_KEYS.map((k) =>
-        task(`s:${k}`, async () => {
-          result.editorStats[k] = await fetchCollectionCount(
-            'posts',
-            serializeWhere(filters[k]),
-            signal,
-          )
-        }),
-      ),
-    ]
-
-    const load = async () => {
-      await runPool(tasks, MAX_CONCURRENCY, signal)
-
-      if (signal.aborted) return
-
-      setAllReady(true)
-
-      if (failed) {
-        // Show what loaded, don't cache a partial result.
-        setLoadError(true)
-      } else {
-        writeCache(key, {
-          ...result,
-          editorStats: { ...result.editorStats },
+            if (pending === 0 && !signal.aborted) onDone(failed)
+          }
         })
-      }
+      })
     }
 
-    void load()
+    /* ---------- posts group: recent + 5 editor stats ---------- */
+
+    if (needPosts) {
+      const out: PostsGroup = {
+        posts: 0,
+        recentPosts: [],
+        editorStats: { ...EMPTY_EDITOR_STATS },
+      }
+
+      addGroup(
+        'posts group',
+        [
+          async () => {
+            const recent = await fetchRecentPosts(signal)
+
+            out.recentPosts = recent.posts
+            out.posts = recent.totalDocs
+          },
+
+          ...EDITOR_FILTER_KEYS.map((k) => async () => {
+            out.editorStats[k] = await fetchCollectionCount(
+              'posts',
+              serializeWhere(filters[k]),
+              signal,
+            )
+          }),
+        ],
+        (failed) => {
+          setPostsData({
+            ...out,
+            editorStats: { ...out.editorStats },
+            recentPosts: [...out.recentPosts],
+          })
+          setPostsReady(true)
+
+          if (failed) {
+            // Show what loaded, never cache a partial result.
+            setLoadError(true)
+          } else {
+            writeCache<PostsGroup>(postsKey, out)
+          }
+        },
+      )
+    }
+
+    /* ---------- totals group: collection counts ---------- */
+
+    if (needTotals) {
+      const out: TotalsGroup = { ...EMPTY_TOTALS }
+
+      const countSlugs: Array<[string, keyof TotalsGroup]> =
+        userRole === 'editor'
+          ? [
+            ['pages', 'pages'],
+            ['media', 'media'],
+            ['categories', 'categories'],
+            ['tags', 'tags'],
+          ]
+          : [
+            ['pages', 'pages'],
+            ['users', 'users'],
+            ['media', 'media'],
+            ['categories', 'categories'],
+            ['tags', 'tags'],
+            ['not-found-logs', 'notFoundLogs'],
+            ['redirects', 'redirects'],
+          ]
+
+      addGroup(
+        'totals group',
+        countSlugs.map(([slug, field]) => async () => {
+          out[field] = await fetchCollectionCount(slug, '', signal)
+        }),
+        (failed) => {
+          setTotalsData({ ...out })
+          setTotalsReady(true)
+
+          if (failed) {
+            setLoadError(true)
+          } else {
+            writeCache<TotalsGroup>(totalsKey, out)
+          }
+        },
+      )
+    }
+
+    void runPool(queue, MAX_CONCURRENCY, signal)
 
     return () => controller.abort()
   }, [authResolved, userId, userRole])
@@ -935,7 +993,7 @@ export default function AlloyDashboard() {
       {
         id: 'updatedThisWeek' as EditorFilterKey,
         title: 'Updated This Week',
-        description: 'Posts updated since Monday',
+        description: 'Published posts edited since Monday',
         value: data.editorStats.updatedThisWeek,
         icon: <PenLine />,
         accent: 'blue' as Accent,
@@ -943,7 +1001,7 @@ export default function AlloyDashboard() {
       {
         id: 'updatedThisMonth' as EditorFilterKey,
         title: 'Updated This Month',
-        description: 'Posts updated this month',
+        description: 'Published posts edited this month',
         value: data.editorStats.updatedThisMonth,
         icon: <Clock3 />,
         accent: 'orange' as Accent,
@@ -1014,7 +1072,7 @@ export default function AlloyDashboard() {
     )
   }
 
-  const recentLoading = !isReady('recent')
+  const recentLoading = !postsReady
 
   return (
     <main className="alloy-dashboard">
@@ -1176,9 +1234,7 @@ export default function AlloyDashboard() {
                   </span>
 
                   <strong>
-                    {isReady(`s:${stat.id}`)
-                      ? stat.value.toLocaleString()
-                      : '—'}
+                    {postsReady ? stat.value.toLocaleString() : '—'}
                   </strong>
 
                   <span className="alloy-editor-stat__description">
@@ -1248,11 +1304,7 @@ export default function AlloyDashboard() {
 
             <div className="alloy-collection-card__bottom">
               <strong>
-                {isReady(
-                  collection.slug === 'posts'
-                    ? 'recent'
-                    : `c:${collection.slug}`,
-                )
+                {(collection.slug === 'posts' ? postsReady : totalsReady)
                   ? collection.count.toLocaleString()
                   : '—'}
               </strong>

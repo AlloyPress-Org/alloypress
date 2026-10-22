@@ -18,6 +18,61 @@ type Snapshot = Record<string, unknown>
 const MAX_HISTORY = 50
 const SAVE_DELAY = 500
 
+// ============================================================
+// HELPERS
+// ============================================================
+
+// True when the user is typing inside the rich text editor, a text input,
+// a textarea or a select. In those places we must NOT hijack Ctrl+Z:
+// the Lexical editor / browser already has its own (line-level) undo.
+const isEditableTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof HTMLElement)) return false
+
+  if (target.isContentEditable) return true
+
+  const tag = target.tagName
+
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+}
+
+// Remember scroll position of the window and every scrolled container,
+// so we can put it back after the form restore re-renders the editor.
+const captureScroll = () => {
+  const items: Array<{ el: Element; top: number; left: number }> = []
+
+  document.querySelectorAll('*').forEach((el) => {
+    if (el.scrollTop > 0 || el.scrollLeft > 0) {
+      items.push({ el, top: el.scrollTop, left: el.scrollLeft })
+    }
+  })
+
+  return {
+    windowX: window.scrollX,
+    windowY: window.scrollY,
+    items,
+  }
+}
+
+const restoreScroll = (saved: ReturnType<typeof captureScroll>) => {
+  const apply = () => {
+    window.scrollTo(saved.windowX, saved.windowY)
+
+    saved.items.forEach(({ el, top, left }) => {
+      el.scrollTop = top
+      el.scrollLeft = left
+    })
+  }
+
+  // run a few times: the editor re-renders asynchronously
+  requestAnimationFrame(() => {
+    apply()
+    requestAnimationFrame(apply)
+  })
+
+  setTimeout(apply, 60)
+  setTimeout(apply, 150)
+}
+
 export const DocumentUndoRedo = (
   _props: BeforeDocumentControlsClientProps,
 ) => {
@@ -167,24 +222,43 @@ export const DocumentUndoRedo = (
 
   // ============================================================
   // RESTORE SNAPSHOT
+  // Only fields that really changed are dispatched (so the rest of the
+  // form, e.g. the big content editor, is NOT re-rendered / reset),
+  // and the scroll position is put back afterwards.
   // ============================================================
 
   const restoreSnapshot = useCallback(
     (snapshot: Snapshot) => {
+      const current = getSnapshot()
+
+      const changed = Object.entries(snapshot).filter(
+        ([path, value]) =>
+          JSON.stringify(current[path]) !==
+          JSON.stringify(value),
+      )
+
+      // Nothing to restore. Do NOT set restoringRef, otherwise the next
+      // real edit would be swallowed.
+      if (changed.length === 0) {
+        return
+      }
+
+      const savedScroll = captureScroll()
+
       restoringRef.current = true
 
-      Object.entries(snapshot).forEach(
-        ([path, value]) => {
-          dispatchFields({
-            type: 'UPDATE',
-            path,
-            value,
-            initialValue: value,
-          })
-        },
-      )
+      changed.forEach(([path, value]) => {
+        dispatchFields({
+          type: 'UPDATE',
+          path,
+          value,
+          initialValue: value,
+        })
+      })
+
+      restoreScroll(savedScroll)
     },
-    [dispatchFields],
+    [dispatchFields, getSnapshot],
   )
 
   // ============================================================
@@ -250,6 +324,8 @@ export const DocumentUndoRedo = (
 
   // ============================================================
   // KEYBOARD SHORTCUTS
+  // Skipped while typing in the editor / inputs: Lexical's own
+  // undo handles it (only the line you edited changes, no shake).
   // ============================================================
 
   useEffect(() => {
@@ -260,6 +336,11 @@ export const DocumentUndoRedo = (
         event.ctrlKey || event.metaKey
 
       if (!modifier) {
+        return
+      }
+
+      // Let the editor / input use its own native undo & redo
+      if (isEditableTarget(event.target)) {
         return
       }
 
