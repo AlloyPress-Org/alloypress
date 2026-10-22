@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import cfLoader from "@/lib/imageLoader";
+import { postHref } from "@/lib/post-href";
 
 type Media = {
   url?: string | null;
@@ -172,7 +173,7 @@ export default function FeaturedCarousel({
           return (
             <Link
               key={post.id}
-              href={`/${category.slug}/${post.slug}`}
+              href={postHref(category.slug, post.slug)}
               className={`alloy-featured-card${isActive ? " is-active" : ""
                 }`}
               aria-hidden={!isActive}

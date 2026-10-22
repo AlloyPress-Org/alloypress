@@ -5,6 +5,7 @@ import { cache } from "react";
 import { payloadFetch } from "@/lib/payload";
 import "./AuthorPage.css";
 import { withDefaultSocial } from "@/lib/seo/metadata";
+import { postHref } from "@/lib/post-href";
 
 const PAYLOAD_URL =
   process.env.PAYLOAD_API_URL?.replace(/\/$/, "") ||
@@ -588,7 +589,7 @@ export default async function AuthorPage() {
             {featured ? (
               <div className="articles-layout">
                 <Link
-                  href={`/${getCategory(featured).slug}/${featured.slug}`}
+                  href={postHref(getCategory(featured).slug, featured.slug)}
                   className="featured-article"
                 >
                   <div className="featured-image">
@@ -633,7 +634,7 @@ export default async function AuthorPage() {
 
                     return (
                       <Link
-                        href={`/${category.slug}/${post.slug}`}
+                        href={postHref(category.slug, post.slug)}
                         className="article-row"
                         key={post.id}
                       >

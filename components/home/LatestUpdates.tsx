@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
+import { postHref } from "@/lib/post-href";
 
 type Media = {
   url?: string | null;
@@ -239,7 +240,7 @@ export default async function LatestUpdates() {
             return (
               <Link
                 key={post.id}
-                href={`/${category.slug}/${post.slug}`}
+                href={postHref(category.slug, post.slug)}
                 className="latest-update-item"
                 aria-label={`Read ${post.title}`}
               >

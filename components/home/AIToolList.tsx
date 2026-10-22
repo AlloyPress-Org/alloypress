@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { payloadFetch } from "@/lib/payload";
 import { cleanEditorialText } from "@/lib/content/cleanEditorialText";
+import { postHref } from "@/lib/post-href";
 
 // ============================================================
 // CONFIG
@@ -10,18 +11,25 @@ const PAYLOAD_URL =
   process.env.PAYLOAD_API_URL ||
   "http://localhost:3001/api";
 
-const CATEGORY_SLUG = "reviews";
-const CATEGORY_TAG = "category:reviews";
-const HOME_TAG = "home:reviews";
+// Listicle = child category of Learn (slug "blogs").
+// Posts open at /blogs/<post-slug> (see lib/post-href.ts).
+const CATEGORY_SLUG = "listicles";
 
-const HOME_REVIEW_LIMIT = 6;
-const HOME_REVIEW_COUNT = 4;
+// Tags: MUST match what app/api/revalidate/route.ts invalidates.
+//   home:listicles   -> added when a listicle post is published/edited
+//   category:listicles / category:blogs -> category + section level
+const HOME_TAG = "home:listicles";
+const CATEGORY_TAG = `category:${CATEGORY_SLUG}`;
+const SECTION_TAG = "category:blogs";
+
+const HOME_LIST_LIMIT = 6;
+const HOME_LIST_COUNT = 4;
 
 // ============================================================
 // TYPES
 // ============================================================
 
-export type ReviewPost = {
+export type ListPost = {
   id: number | string;
   title: string;
   slug: string;
@@ -51,14 +59,14 @@ type CategoryResponse = {
 };
 
 type PostsResponse = {
-  docs?: ReviewPost[];
+  docs?: ListPost[];
 };
 
 // ============================================================
-// GET REVIEWS CATEGORY
+// GET LISTICLES CATEGORY
 // ============================================================
 
-const getReviewsCategory = cache(
+const getListiclesCategory = cache(
   async (): Promise<
     number | string | null
   > => {
@@ -71,7 +79,7 @@ const getReviewsCategory = cache(
           {
             next: {
               revalidate: 604800,
-              tags: [CATEGORY_TAG],
+              tags: [CATEGORY_TAG, "categories"],
             },
           },
         );
@@ -79,7 +87,7 @@ const getReviewsCategory = cache(
       return data?.docs?.[0]?.id ?? null;
     } catch (error) {
       console.error(
-        "[AIToolReviews] Category fetch failed:",
+        "[AIToolList] Category fetch failed:",
         error,
       );
 
@@ -89,14 +97,14 @@ const getReviewsCategory = cache(
 );
 
 // ============================================================
-// GET REVIEW POSTS
+// GET LISTICLE POSTS
 // ============================================================
 
-const getReviewPosts = cache(
-  async (): Promise<ReviewPost[]> => {
+const getListPosts = cache(
+  async (): Promise<ListPost[]> => {
     try {
       const categoryId =
-        await getReviewsCategory();
+        await getListiclesCategory();
 
       if (!categoryId) {
         return [];
@@ -121,7 +129,7 @@ const getReviewPosts = cache(
 
       params.set(
         "limit",
-        String(HOME_REVIEW_LIMIT),
+        String(HOME_LIST_LIMIT),
       );
 
       params.set(
@@ -171,7 +179,11 @@ const getReviewPosts = cache(
           {
             next: {
               revalidate: 604800,
-              tags: [HOME_TAG],
+              tags: [
+                HOME_TAG,
+                CATEGORY_TAG,
+                SECTION_TAG,
+              ],
             },
           },
         );
@@ -192,10 +204,10 @@ const getReviewPosts = cache(
               post.title,
             ),
         )
-        .slice(0, HOME_REVIEW_COUNT);
+        .slice(0, HOME_LIST_COUNT);
     } catch (error) {
       console.error(
-        "[AIToolReviews] Posts fetch failed:",
+        "[AIToolList] Posts fetch failed:",
         error,
       );
 
@@ -209,7 +221,7 @@ const getReviewPosts = cache(
 // ============================================================
 
 function getImageUrl(
-  featuredImage: ReviewPost["featuredImage"],
+  featuredImage: ListPost["featuredImage"],
 ): string | null {
   if (
     typeof featuredImage === "object" &&
@@ -228,28 +240,6 @@ function getImageUrl(
   }
 
   return null;
-}
-
-// ============================================================
-// AUTHOR
-// ============================================================
-
-function getAuthor(
-  author: ReviewPost["author"],
-): string {
-  if (typeof author === "string") {
-    return author;
-  }
-
-  if (
-    author &&
-    typeof author === "object" &&
-    typeof author.name === "string"
-  ) {
-    return author.name;
-  }
-
-  return "";
 }
 
 // ============================================================
@@ -283,8 +273,8 @@ function formatDate(
 // COMPONENT
 // ============================================================
 
-export default async function AIToolReviews() {
-  const posts = await getReviewPosts();
+export default async function AIToolList() {
+  const posts = await getListPosts();
 
   if (!posts.length) {
     return null;
@@ -309,7 +299,6 @@ export default async function AIToolReviews() {
       publishedAt: formatDate(
         post.publishedAt,
       ),
-      author: getAuthor(post.author),
       image,
       imageAlt,
     };
@@ -318,18 +307,18 @@ export default async function AIToolReviews() {
   return (
     <section
       className="ai-tool-reviews"
-      aria-labelledby="ai-tool-reviews-heading"
+      aria-labelledby="ai-tool-list-heading"
     >
       <div className="container">
         <div className="ai-tool-reviews-header">
-          <h2 id="ai-tool-reviews-heading">
+          <h2 id="ai-tool-list-heading">
             Best AI tools list by hands on testing
           </h2>
 
           <a
-            href="/reviews"
+            href="/blogs/listicles"
             className="learn-ai-view-all"
-            aria-label="View all AI tool reviews"
+            aria-label="View all AI tool lists"
           >
             View all
             <span aria-hidden="true">
@@ -342,7 +331,7 @@ export default async function AIToolReviews() {
           {cards.map((card) => (
             <a
               key={card.id}
-              href={`/reviews/${card.slug}`}
+              href={postHref(CATEGORY_SLUG, card.slug)}
               className="ai-tool-review-card"
             >
               <div className="ai-tool-review-image">
@@ -360,7 +349,7 @@ export default async function AIToolReviews() {
               <div className="ai-tool-review-content">
                 <div className="ai-tool-review-meta">
                   <span>
-                    AI TOOL REVIEW
+                    AI TOOLS LIST
                   </span>
 
                   {card.publishedAt && (
@@ -383,7 +372,7 @@ export default async function AIToolReviews() {
                 )}
 
                 <span className="ai-tool-review-read">
-                  Read review{" "}
+                  Read list{" "}
                   <span>↗</span>
                 </span>
               </div>

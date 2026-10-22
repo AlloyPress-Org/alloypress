@@ -3,6 +3,7 @@ import "./CategoryListing.css";
 import ArticleGrid from "./ArticleGrid";
 import Link from "next/link";
 import { cache } from "react";
+import { notFound } from "next/navigation";
 
 import {
   payloadFetch,
@@ -18,9 +19,12 @@ import type {
 // ============================================================
 
 type CategoryListingProps = {
+  /** Section slug, e.g. "blogs" (URLs always stay /blogs/<post-slug>) */
   slug: string;
   title: string;
   description: string;
+  /** Optional subcategory slug, e.g. "listicles" -> lists only that subcategory */
+  subSlug?: string;
 };
 
 // ============================================================
@@ -41,6 +45,15 @@ type ListingCategory = {
   slug: string;
 };
 
+type ChildCategory = {
+  id: number | string;
+  name: string;
+  slug: string;
+};
+
+const capitalize = (value: string): string =>
+  value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+
 type Post = {
   id: number | string;
   title?: string | null;
@@ -60,26 +73,45 @@ type Post = {
 // NAVIGATION CATEGORIES
 // ============================================================
 
-const NAV_CATEGORIES = [
+// "Blogs" tab is replaced by two tabs. Both live under the "blogs"
+// section slug, so their posts still open at /blogs/<post-slug>.
+const NAV_CATEGORIES: Array<{
+  label: string;
+  slug: string;
+  href: string;
+  subSlug?: string;
+}> = [
   {
-    label: "Blogs",
+    label: "Listicles",
     slug: "blogs",
+    subSlug: "listicles",
+    href: "/blogs/listicles",
+  },
+  {
+    label: "Informatives",
+    slug: "blogs",
+    subSlug: "informatives",
+    href: "/blogs/informatives",
   },
   {
     label: "Reviews",
     slug: "reviews",
+    href: "/reviews",
   },
   {
     label: "News",
     slug: "news",
+    href: "/news",
   },
   {
     label: "Alternatives",
     slug: "alternatives",
+    href: "/alternatives",
   },
   {
     label: "Comparisons",
     slug: "comparisons",
+    href: "/comparisons",
   },
 ];
 
@@ -255,13 +287,16 @@ function getAuthor(post: Post): string {
 const getCategoryPosts = cache(
   async (
     slug: string,
+    subSlug?: string,
   ): Promise<{
     category: ListingCategory | null;
+    children: ChildCategory[];
+    activeChild: ChildCategory | null;
     posts: Post[];
   }> => {
     try {
       // ========================================================
-      // 1. GET CATEGORY
+      // 1. GET SECTION CATEGORY (e.g. Learn / slug "blogs")
       // ========================================================
 
       const categoryData =
@@ -287,12 +322,66 @@ const getCategoryPosts = cache(
       if (!category) {
         return {
           category: null,
+          children: [],
+          activeChild: null,
           posts: [],
         };
       }
 
       // ========================================================
-      // 2. GET LATEST 12 PUBLISHED POSTS (NO PAGINATION)
+      // 2. GET SUBCATEGORIES (listicle, informative, ...)
+      // ========================================================
+
+      const childData =
+        await payloadFetch<
+          PayloadResponse<ChildCategory>
+        >(
+          `/categories` +
+          `?where[parent][equals]=${encodeURIComponent(
+            String(category.id),
+          )}` +
+          `&limit=100&depth=0&sort=name` +
+          `&select[name]=true&select[slug]=true`,
+          {
+            next: {
+              revalidate: 604800,
+              tags: [
+                `category:${slug}`,
+                "categories",
+              ],
+            },
+          },
+        );
+
+      const children = childData?.docs ?? [];
+
+      // Section page  -> section + all its subcategories
+      // Sub page      -> only that subcategory
+      let categoryIds: Array<number | string> = [
+        category.id,
+        ...children.map((child) => child.id),
+      ];
+
+      let activeChild: ChildCategory | null = null;
+
+      if (subSlug) {
+        activeChild =
+          children.find((child) => child.slug === subSlug) ?? null;
+
+        if (!activeChild) {
+          return {
+            category: null,
+            children,
+            activeChild: null,
+            posts: [],
+          };
+        }
+
+        categoryIds = [activeChild.id];
+      }
+
+      // ========================================================
+      // 3. GET LATEST PUBLISHED POSTS
       // ========================================================
 
       const postsData =
@@ -301,8 +390,8 @@ const getCategoryPosts = cache(
         >(
           `/posts` +
           `?where[workflowStatus][equals]=published` +
-          `&where[category][equals]=${encodeURIComponent(
-            String(category.id),
+          `&where[category][in]=${encodeURIComponent(
+            categoryIds.join(","),
           )}` +
           `&sort=-updatedAt` +
           `&limit=100` +
@@ -314,12 +403,14 @@ const getCategoryPosts = cache(
           `&select[publishedAt]=true` +
           `&select[updatedAt]=true` +
           `&select[featuredImage]=true` +
+          `&select[category]=true` +
           `&select[author]=true`,
           {
             next: {
               revalidate: 604800,
               tags: [
                 `category:${slug}`,
+                ...(subSlug ? [`category:${subSlug}`] : []),
                 "posts",
               ],
             },
@@ -331,11 +422,15 @@ const getCategoryPosts = cache(
 
       return {
         category,
+        children,
+        activeChild,
         posts,
       };
     } catch (error) {
       console.error(
-        `CategoryListing fetch error for "${slug}":`,
+        `CategoryListing fetch error for "${slug}${
+          subSlug ? `/${subSlug}` : ""
+        }":`,
         error,
       );
 
@@ -352,9 +447,33 @@ export default async function CategoryListing({
   slug,
   title,
   description,
+  subSlug,
 }: CategoryListingProps) {
-  const { posts } =
-    await getCategoryPosts(slug);
+  const { posts, children, activeChild } =
+    await getCategoryPosts(slug, subSlug);
+
+  // /blogs/<unknown-subcategory> -> real 404
+  if (subSlug && !activeChild) {
+    notFound();
+  }
+
+  // Label shown on cards: subcategory name (Listicle / Informative)
+  // for posts that belong to a subcategory, otherwise the section title.
+  const labelFor = (post: Post): string => {
+    const cat = post.category;
+
+    if (
+      typeof cat === "object" &&
+      cat !== null &&
+      cat.slug &&
+      cat.slug !== slug &&
+      cat.name
+    ) {
+      return capitalize(cat.name);
+    }
+
+    return title;
+  };
 
   // 1 featured + remaining 11 = 12 articles
   const featuredPost = posts[0] || null;
@@ -367,7 +486,9 @@ export default async function CategoryListing({
 
   const sectionIndex =
     NAV_CATEGORIES.findIndex(
-      (item) => item.slug === slug,
+      (item) =>
+        item.slug === slug &&
+        item.subSlug === subSlug,
     ) + 1;
 
   const sectionNumber =
@@ -393,6 +514,12 @@ export default async function CategoryListing({
             <span />
             ALLOYPRESS /{" "}
             {slug.toUpperCase()}
+            {activeChild && (
+              <>
+                {" "}/{" "}
+                {activeChild.name.toUpperCase()}
+              </>
+            )}
           </div>
 
           <div className="category-hero-main">
@@ -422,25 +549,31 @@ export default async function CategoryListing({
             aria-label="Article categories"
           >
             {NAV_CATEGORIES.map(
-              (item) => (
-                <Link
-                  key={item.slug}
-                  href={`/${item.slug}`}
-                  className={
-                    item.slug === slug
-                      ? "category-filter-link active"
-                      : "category-filter-link"
-                  }
-                >
-                  {item.label}
+              (item) => {
+                const active =
+                  item.slug === slug &&
+                  item.subSlug === subSlug;
 
-                  {item.slug === slug && (
-                    <span>
-                      •
-                    </span>
-                  )}
-                </Link>
-              ),
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={
+                      active
+                        ? "category-filter-link active"
+                        : "category-filter-link"
+                    }
+                  >
+                    {item.label}
+
+                    {active && (
+                      <span>
+                        •
+                      </span>
+                    )}
+                  </Link>
+                );
+              },
             )}
           </nav>
         </div>
@@ -501,7 +634,7 @@ export default async function CategoryListing({
                   <div className="featured-image-overlay" />
 
                   <span className="featured-image-label">
-                    {title.toUpperCase()}
+                    {labelFor(featuredPost).toUpperCase()}
                   </span>
 
                   <span
@@ -641,7 +774,7 @@ export default async function CategoryListing({
                         <div className="article-card-body">
                           <div className="article-card-meta">
                             <span>
-                              {title.toUpperCase()}
+                              {labelFor(post).toUpperCase()}
                             </span>
 
                             <i />

@@ -12,7 +12,8 @@ import {
 
 const navigateLinks = [
   { label: "Home", href: "/" },
-  { label: "Blogs", href: "/blogs" },
+  { label: "Listicles", href: "/blogs/listicles" },
+  { label: "Informatives", href: "/blogs/informatives" },
   { label: "Reviews", href: "/reviews" },
   { label: "News", href: "/news" },
   { label: "Alternatives", href: "/alternatives" },
@@ -352,17 +353,17 @@ export default function Footer() {
 
       {/* Source */}
       <div className="footer-source">
-  <div className="container">
-    <a
-      href="https://www.google.com/preferences/source?q=alloypress.com"
-      className="footer-source-link"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Set AlloyPress as the preferred source for AI on Google
-    </a>
-  </div>
-</div>
+        <div className="container">
+          <a
+            href="https://www.google.com/preferences/source?q=alloypress.com"
+            className="footer-source-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Set AlloyPress as the preferred source for AI on Google
+          </a>
+        </div>
+      </div>
 
       {/* Brand Wordmark */}
       <div

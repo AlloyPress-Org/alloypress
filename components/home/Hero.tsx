@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense, cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
+import { postHref } from "@/lib/post-href";
 
 type HeroPost = {
   id: number | string;
@@ -128,7 +129,7 @@ async function HeroDynamicCards() {
           card.post && (
             <Link
               key={card.post.id}
-              href={`/${card.categorySlug}/${card.post.slug}`}
+              href={postHref(card.categorySlug, card.post.slug)}
               className={`hero-floating-card ${card.className}`}
               aria-label={`Read ${card.label.toLowerCase()}: ${card.post.title}`}
             >

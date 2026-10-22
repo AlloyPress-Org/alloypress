@@ -6,6 +6,8 @@ import { buildSiteUrl } from "@/lib/seo/constants";
 // 1 hour cache. Publish hook /api/revalidate call pannina udane refresh aagum.
 export const revalidate = 3600;
 
+// Website sections. A post belongs to a section when its category IS the
+// section, or is a CHILD of it (listicles / informatives -> blogs).
 const ALLOWED_CATEGORIES = new Set([
   "blogs",
   "reviews",
@@ -14,9 +16,16 @@ const ALLOWED_CATEGORIES = new Set([
   "comparisons",
 ]);
 
+// Subcategory listing pages that exist as routes:
+//   /blogs/listicles   (app/blogs/listicles/page.tsx)
+//   /blogs/informatives (app/blogs/informatives/page.tsx)
+const SUB_CATEGORY_PAGES = new Set(["listicles", "informatives"]);
+
 const STATIC_PAGES = [
   "/",
   "/blogs",
+  "/blogs/listicles",
+  "/blogs/informatives",
   "/reviews",
   "/news",
   "/alternatives",
@@ -34,6 +43,7 @@ const STATIC_PAGES = [
 type Category = {
   id: number | string;
   slug?: string | null;
+  parent?: Category | number | string | null;
   updatedAt?: string | null;
 };
 
@@ -144,28 +154,54 @@ const getPages = () =>
     500,
   );
 
+// parent is needed to know that listicles / informatives belong to "blogs"
 const getCategories = () =>
   fetchAll<Category>(
-    "/categories?select[slug]=true&select[updatedAt]=true",
+    "/categories?depth=0" +
+      "&select[slug]=true" +
+      "&select[parent]=true" +
+      "&select[updatedAt]=true",
     100,
   );
 
 // ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
-function resolveCategorySlug(
+
+// Returns the website SECTION slug of a category:
+//   reviews / news / ...        -> itself
+//   listicles / informatives    -> "blogs" (their parent is Learn = blogs)
+//   uncategorized, tutorial ... -> undefined (post is skipped until moved)
+function resolveSection(
   category: Post["category"],
-  categories: Category[],
+  byId: Map<string, Category>,
 ): string | undefined {
-  let slug: string | null | undefined;
+  let current: Category | undefined;
 
   if (typeof category === "object" && category !== null) {
-    slug = category.slug;
-  } else if (typeof category === "number" || typeof category === "string") {
-    slug = categories.find((c) => String(c.id) === String(category))?.slug;
+    current = byId.get(String(category.id)) ?? category;
+  } else if (category !== null && category !== undefined) {
+    current = byId.get(String(category));
   }
 
-  return slug && ALLOWED_CATEGORIES.has(slug) ? slug : undefined;
+  // walk up the parents (max 4 levels)
+  for (let i = 0; i < 4 && current; i++) {
+    if (current.slug && ALLOWED_CATEGORIES.has(current.slug)) {
+      return current.slug;
+    }
+
+    const parent: Category | number | string | null | undefined = current.parent;
+
+    const parentId =
+      typeof parent === "object" && parent !== null ? parent.id : parent;
+
+    current =
+      parentId !== null && parentId !== undefined
+        ? byId.get(String(parentId))
+        : undefined;
+  }
+
+  return undefined;
 }
 
 // ------------------------------------------------------------
@@ -176,6 +212,8 @@ async function buildSitemap(): Promise<MetadataRoute.Sitemap> {
   const categories = await getCategories();
   const pages = await getPages();
   const posts = await getPosts();
+
+  const byId = new Map(categories.map((c) => [String(c.id), c]));
 
   const entries = new Map<string, MetadataRoute.Sitemap[number]>();
 
@@ -200,10 +238,24 @@ async function buildSitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // Category listing pages
+  //   sections:      /blogs, /reviews, /news, ...
+  //   subcategories: /blogs/listicles, /blogs/informatives
   for (const category of categories) {
-    if (!category.slug || !ALLOWED_CATEGORIES.has(category.slug)) continue;
+    if (!category.slug) continue;
 
-    const path = `/${category.slug}`;
+    let path: string | null = null;
+
+    if (ALLOWED_CATEGORIES.has(category.slug)) {
+      path = `/${category.slug}`;
+    } else if (
+      SUB_CATEGORY_PAGES.has(category.slug) &&
+      resolveSection(category, byId) === "blogs"
+    ) {
+      path = `/blogs/${category.slug}`;
+    }
+
+    if (!path) continue;
+
     entries.set(path, {
       url: buildSiteUrl(path),
       ...(category.updatedAt ? { lastModified: category.updatedAt } : {}),
@@ -211,20 +263,24 @@ async function buildSitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   // Posts
+  // listicle / informative posts -> /blogs/<post-slug>
+  // reviews / news / ... posts   -> /<section>/<post-slug> (unchanged)
   let skipped = 0;
 
   for (const post of posts) {
     if (!post.slug || post.includeInSitemap === false) continue;
 
-    const categorySlug = resolveCategorySlug(post.category, categories);
+    const section = resolveSection(post.category, byId);
 
-    if (!categorySlug) {
+    if (!section) {
       skipped++;
-      console.warn(`[Sitemap] Skipping "${post.slug}" - category not resolved`);
+      console.warn(
+        `[Sitemap] Skipping "${post.slug}" - category not resolved (move it to Listicle / Informative or a section)`,
+      );
       continue;
     }
 
-    const path = `/${categorySlug}/${post.slug}`;
+    const path = `/${section}/${post.slug}`;
     const lastModified =
       post.updatedAt ||
       post.publishedAt ||

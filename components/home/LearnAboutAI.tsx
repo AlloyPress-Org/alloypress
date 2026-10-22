@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
+import { postHref } from "@/lib/post-href";
 
 type Media = {
   url?: string | null;
@@ -43,26 +44,26 @@ const HOME_BLOG_LIMIT = 6;
 const HOME_BLOG_COUNT = 4;
 
 /* =========================================================
-   FETCH BLOG CATEGORY
+   FETCH SUB-CATEGORY (informatives / listicles)
 
    Tiny cached request:
    - depth=0
    - id only
-   - ISR: 5 minutes
+   - cached per slug
 ========================================================= */
 
-const getBlogsCategory = cache(
-  async (): Promise<Category | null> => {
+const getSubCategory = cache(
+  async (slug: string): Promise<Category | null> => {
     try {
       const categoryData =
         await payloadFetch<CategoryResponse>(
-          `/categories?where[slug][equals]=${BLOGS_CATEGORY_SLUG}&limit=1&depth=0&select[id]=true`,
+          `/categories?where[slug][equals]=${encodeURIComponent(
+            slug,
+          )}&limit=1&depth=0&select[id]=true`,
           {
             next: {
               revalidate: 604800,
-              tags: [
-                "categories",
-              ],
+              tags: ["categories"],
             },
           },
         );
@@ -70,7 +71,7 @@ const getBlogsCategory = cache(
       return categoryData?.docs?.[0] ?? null;
     } catch (error) {
       console.error(
-        "AI Informative Blogs category fetch error:",
+        `Home section category fetch error (${slug}):`,
         error,
       );
 
@@ -80,20 +81,19 @@ const getBlogsCategory = cache(
 );
 
 /* =========================================================
-   FETCH LATEST BLOGS
+   FETCH LATEST POSTS FOR THE SUB-CATEGORY
 
    Only request fields actually used by this component.
 ========================================================= */
 
-const getLearnPosts = cache(
-  async (): Promise<Post[]> => {
+const getSectionPosts = cache(
+  async (slug: string, homeTag: string): Promise<Post[]> => {
     try {
-      const blogsCategory =
-        await getBlogsCategory();
+      const category = await getSubCategory(slug);
 
-      if (!blogsCategory?.id) {
+      if (!category?.id) {
         console.error(
-          "AI Informative Blogs: Blogs category not found.",
+          `Home section: category "${slug}" not found.`,
         );
 
         return [];
@@ -102,14 +102,15 @@ const getLearnPosts = cache(
       const postsData =
         await payloadFetch<PostsResponse>(
           `/posts?where[workflowStatus][equals]=published&where[category][equals]=${encodeURIComponent(
-            String(blogsCategory.id),
+            String(category.id),
           )}&sort=-publishedAt&limit=${HOME_BLOG_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[excerpt]=true&select[publishedAt]=true&select[author]=true&select[category]=true&select[featuredImage]=true`,
           {
             next: {
               revalidate: 604800,
               tags: [
-                "home:latest-blogs",
+                homeTag,
                 `category:${BLOGS_CATEGORY_SLUG}`,
+                `category:${slug}`,
               ],
             },
           },
@@ -130,9 +131,7 @@ const getLearnPosts = cache(
             return false;
           }
 
-          const title = post.title
-            .trim()
-            .toLowerCase();
+          const title = post.title.trim().toLowerCase();
 
           if (
             title.includes("untitled wordpress") ||
@@ -149,7 +148,7 @@ const getLearnPosts = cache(
         .slice(0, HOME_BLOG_COUNT);
     } catch (error) {
       console.error(
-        "AI Informative Blogs fetch error:",
+        `Home section posts fetch error (${slug}):`,
         error,
       );
 
@@ -198,9 +197,7 @@ function getImageUrl(
    DATE
 ========================================================= */
 
-function formatDate(
-  date?: string | null,
-): string {
+function formatDate(date?: string | null): string {
   if (!date) {
     return "";
   }
@@ -222,9 +219,7 @@ function formatDate(
    EXCERPT
 ========================================================= */
 
-function getExcerpt(
-  excerpt?: string | null,
-): string {
+function getExcerpt(excerpt?: string | null): string {
   if (!excerpt) {
     return "";
   }
@@ -247,22 +242,33 @@ function getExcerpt(
 
 /* =========================================================
    COMPONENT
+
+   Reusable for both home sections:
+     <LearnAboutAI />                                  -> informatives (default)
+     <LearnAboutAI slug="listicles" heading="..." ... />
 ========================================================= */
 
-export default async function LearnAboutAI() {
-  const posts = await getLearnPosts();
+type LearnAboutAIProps = {
+  slug?: string;
+  heading?: string;
+  viewAllHref?: string;
+  homeTag?: string;
+};
+
+export default async function LearnAboutAI({
+  slug = "informatives",
+  heading = "AI informative blogs",
+  viewAllHref = "/blogs/informatives",
+  homeTag = "home:informatives",
+}: LearnAboutAIProps = {}) {
+  const posts = await getSectionPosts(slug, homeTag);
 
   if (!posts.length) {
     return null;
   }
 
   const cards = posts
-    .filter(
-      (post) =>
-        post?.id &&
-        post?.slug &&
-        post?.title,
-    )
+    .filter((post) => post?.id && post?.slug && post?.title)
     .slice(0, HOME_BLOG_COUNT)
     .map((post) => {
       const category =
@@ -291,18 +297,11 @@ export default async function LearnAboutAI() {
           .replace(/^TL;DR\s*:\s*/i, "")
           .trim(),
         date: formatDate(post.publishedAt),
-        author:
-          author?.name || "AlloyPress Team",
-        image: getImageUrl(
-          post.featuredImage,
-        ),
-        imageAlt:
-          featuredImage?.alt ||
-          post.title,
-        category:
-          category?.name || "Learn",
-        categorySlug:
-          category?.slug || BLOGS_CATEGORY_SLUG,
+        author: author?.name || "AlloyPress Team",
+        image: getImageUrl(post.featuredImage),
+        imageAlt: featuredImage?.alt || post.title,
+        category: category?.name || heading,
+        categorySlug: category?.slug || BLOGS_CATEGORY_SLUG,
       };
     });
 
@@ -313,7 +312,7 @@ export default async function LearnAboutAI() {
   return (
     <section
       className="learn-ai-section"
-      aria-labelledby="learn-ai-title"
+      aria-labelledby={`learn-ai-title-${slug}`}
     >
       <div className="container">
         <div className="learn-ai-header">
@@ -323,19 +322,15 @@ export default async function LearnAboutAI() {
               aria-hidden="true"
             />
 
-            <h2 id="learn-ai-title">
-              AI informative blogs
-            </h2>
+            <h2 id={`learn-ai-title-${slug}`}>{heading}</h2>
           </div>
 
           <Link
-            href="/blogs"
+            href={viewAllHref}
             className="learn-ai-view-all"
           >
             View all
-            <span aria-hidden="true">
-              →
-            </span>
+            <span aria-hidden="true">→</span>
           </Link>
         </div>
 
@@ -346,7 +341,7 @@ export default async function LearnAboutAI() {
               className="learn-ai-card"
             >
               <Link
-                href={`/${card.categorySlug}/${card.slug}`}
+                href={postHref(card.categorySlug, card.slug)}
                 className="learn-ai-card-link"
                 aria-label={`Read ${card.title}`}
               >
@@ -376,31 +371,23 @@ export default async function LearnAboutAI() {
 
                 <div className="learn-ai-card-content">
                   <div className="learn-ai-meta">
-                    <span>
-                      {card.category}
-                    </span>
+                    <span>{card.category}</span>
 
                     {card.date && (
                       <>
                         <i aria-hidden="true" />
 
-                        <time>
-                          {card.date}
-                        </time>
+                        <time>{card.date}</time>
                       </>
                     )}
                   </div>
 
                   <h3>{card.title}</h3>
 
-                  {card.excerpt && (
-                    <p>{card.excerpt}</p>
-                  )}
+                  {card.excerpt && <p>{card.excerpt}</p>}
 
                   <div className="learn-ai-card-footer">
-                    <span>
-                      {card.author}
-                    </span>
+                    <span>{card.author}</span>
 
                     <span
                       className="learn-ai-card-arrow"

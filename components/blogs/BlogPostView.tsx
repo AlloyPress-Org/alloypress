@@ -28,6 +28,7 @@ import {
 import AdSenseSidebar from "@/components/ads/AdSenseSidebar";
 import AdSenseInArticle from "@/components/ads/AdSenseInArticle";
 import BackToTop from "@/components/BackToTop";
+import { buildLinkAttrs, isInternalUrl } from "@/lib/linkRel";
 
 import "./BlogPostView.css";
 type Props = {
@@ -36,6 +37,7 @@ type Props = {
   articleImage: string | null;
   category?: string;
   categoryLabel?: string;
+  subcategory?: { slug: string; label: string } | null;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -724,7 +726,14 @@ function extractSummary(
       const heading = node.fields.heading || "";
 
       if (/t[lI];?dr/i.test(heading)) {
-        return node.fields.text || excerpt;
+        const richText = Array.isArray(node.fields.bodyRich?.root?.children)
+          ? node.fields.bodyRich.root.children
+            .map((p: any) => textFromNodes(p?.children || []))
+            .join(" ")
+            .trim()
+          : "";
+
+        return richText || node.fields.text || excerpt;
       }
     }
 
@@ -834,12 +843,10 @@ function InlineText({ node }: { node: any }) {
   if (!node) return null;
 
   if (node.type === "link") {
-    const url = node.fields?.url || node.url || "#";
+    const f = node.fields || {};
+    const url: string = f.url || node.url || "#";
 
-    const internal =
-      url.startsWith("/") ||
-      url.includes("staging1.alloypress.com/blogs/") ||
-      url.includes("alloypress.com/blogs/");
+    const internal = isInternalUrl(url);
 
     let href = url;
 
@@ -854,13 +861,19 @@ function InlineText({ node }: { node: any }) {
       // Keep original URL if parsing fails.
     }
 
+    const attrs = buildLinkAttrs({
+      url: href,
+      linkType: f.linkType,
+      newTab: Boolean(f.newTab) || !internal,
+      followMode: f.followMode,
+      legacyNofollow: f.nofollow,
+      sponsored: f.sponsored,
+      noopener: f.noopener,
+      noreferrer: Boolean(f.noreferrer) || !internal,
+    });
+
     return (
-      <a
-        href={href}
-        target={internal ? undefined : "_blank"}
-        rel={internal ? undefined : "noopener noreferrer"}
-        className="post-link"
-      >
+      <a {...attrs} className="post-link">
         {(node.children || []).map((child: any, i: number) => (
           <InlineText key={i} node={child} />
         ))}
@@ -909,6 +922,35 @@ function InlineText({ node }: { node: any }) {
   }
 
   return null;
+}
+
+function hasRichBody(value: any): boolean {
+  return (
+    Array.isArray(value?.root?.children) &&
+    textFromNodes(value.root.children).trim().length > 0
+  );
+}
+
+function StyledBoxRichBody({ value }: { value: any }) {
+  const paragraphs = Array.isArray(value?.root?.children)
+    ? value.root.children
+    : [];
+
+  return (
+    <>
+      {paragraphs.map((p: any, i: number) => (
+        <p key={i}>
+          {(p.children || []).map((child: any, j: number) =>
+            child?.type === "linebreak" ? (
+              <br key={j} />
+            ) : (
+              <InlineText key={j} node={child} />
+            )
+          )}
+        </p>
+      ))}
+    </>
+  );
 }
 
 /* -------------------------------------------------------------------------- */
@@ -1242,20 +1284,41 @@ function RenderNode({
 
     if (!url) return null;
 
+    const f = node.fields || {};
+
+    const imageEl = (
+      <SmartImage
+        src={url}
+        alt={
+          media?.alt ||
+          media?.title ||
+          "AlloyPress article image"
+        }
+        width={media?.width || 1200}
+        height={media?.height || 800}
+        sizes="(max-width: 820px) 100vw, 720px"
+      />
+    );
+
     return (
       <figure className="post-figure">
         <div className="post-image-frame">
-          <SmartImage
-            src={url}
-            alt={
-              media?.alt ||
-              media?.title ||
-              "AlloyPress article image"
-            }
-            width={media?.width || 1200}
-            height={media?.height || 800}
-            sizes="(max-width: 820px) 100vw, 720px"
-          />
+          {f.linkUrl ? (
+            <a
+              {...buildLinkAttrs({
+                url: f.linkUrl,
+                newTab: f.openInNewTab !== false,
+                followMode: f.followMode,
+                sponsored: f.sponsored,
+              })}
+              title={f.linkUrl}
+              className="post-image-link"
+            >
+              {imageEl}
+            </a>
+          ) : (
+            imageEl
+          )}
         </div>
 
         {media?.caption ? (
@@ -1477,6 +1540,8 @@ function RenderNode({
       const body =
         fields.text || "";
 
+      const richBody = hasRichBody(fields.bodyRich);
+
       return (
         <aside className="styled-box">
           {heading ? (
@@ -1485,7 +1550,11 @@ function RenderNode({
             </div>
           ) : null}
 
-          {body ? (
+          {richBody ? (
+            <div className="styled-box-body">
+              <StyledBoxRichBody value={fields.bodyRich} />
+            </div>
+          ) : body ? (
             <div className="styled-box-body">
               {body}
             </div>
@@ -2275,7 +2344,8 @@ export default function BlogPostView({
   related,
   articleImage,
   category = "blogs",
-  categoryLabel = "Blogs"
+  categoryLabel = "Blogs",
+  subcategory = null,
 }: Props) {
   const [aiOpen, setAiOpen] =
     useState(false);
@@ -2573,6 +2643,12 @@ export default function BlogPostView({
           <a href="/">Home</a>
           <span className="post-breadcrumb-sep">/</span>
           <a href={`/${category}`}>{categoryLabel}</a>
+          {subcategory && (
+            <>
+              <span className="post-breadcrumb-sep">/</span>
+              <a href={`/${category}/${subcategory.slug}`}>{subcategory.label}</a>
+            </>
+          )}
           <span className="post-breadcrumb-sep">/</span>
           <span className="post-breadcrumb-current">{post?.title}</span>
         </nav>
@@ -2587,7 +2663,7 @@ export default function BlogPostView({
 
                   <div className="post-hero-badges">
                     <span className="post-hero-badge post-hero-badge-primary">
-                      {categoryLabel}
+                      {subcategory?.label ?? categoryLabel}
                     </span>
 
                     {Array.isArray(post?.tags) &&
@@ -2849,7 +2925,7 @@ export default function BlogPostView({
               </div>
 
             </aside>
-                       {/* Center: article */}
+            {/* Center: article */}
             <article className="article-column">
 
               <ArticleRenderer
@@ -2952,49 +3028,49 @@ export default function BlogPostView({
               </div>
             </article>
 
-              {/* Right: share / ads / AI tools (desktop only; hidden on mobile via CSS) */}
-              <aside
-                className="article-sidebar"
-                aria-label="Article tools"
-              >
-                <div className="sidebar-card">
-                  <div className="side-label">Share article</div>
+            {/* Right: share / ads / AI tools (desktop only; hidden on mobile via CSS) */}
+            <aside
+              className="article-sidebar"
+              aria-label="Article tools"
+            >
+              <div className="sidebar-card">
+                <div className="side-label">Share article</div>
 
-                  <button
-                    type="button"
-                    className="share-trigger"
-                    aria-haspopup="dialog"
-                    aria-expanded={shareOpen}
-                    onClick={() => setShareOpen(true)}
-                  >
-                    <span className="share-trigger-label">
-                      <Share2 aria-hidden="true" />
-                      Share
-                    </span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className="share-trigger"
+                  aria-haspopup="dialog"
+                  aria-expanded={shareOpen}
+                  onClick={() => setShareOpen(true)}
+                >
+                  <span className="share-trigger-label">
+                    <Share2 aria-hidden="true" />
+                    Share
+                  </span>
+                </button>
+              </div>
 
-                {/* Ad directly below Share Article */}
-                <AdSenseSidebar />
+              {/* Ad directly below Share Article */}
+              <AdSenseSidebar />
 
-                {AI_ENABLED && (
-                  <div className="sidebar-card ai-tools-card">
-                    <div className="side-label">AI tools</div>
+              {AI_ENABLED && (
+                <div className="sidebar-card ai-tools-card">
+                  <div className="side-label">AI tools</div>
 
-                    <div className="ai-options">
-                      <button
-                        type="button"
-                        className="ai-option"
-                        onClick={() => setAiOpen(true)}
-                      >
-                        <span>Ask AI</span>
-                        <Sparkles aria-hidden="true" />
-                      </button>
-                    </div>
+                  <div className="ai-options">
+                    <button
+                      type="button"
+                      className="ai-option"
+                      onClick={() => setAiOpen(true)}
+                    >
+                      <span>Ask AI</span>
+                      <Sparkles aria-hidden="true" />
+                    </button>
                   </div>
-                )}
+                </div>
+              )}
 
-              </aside>
+            </aside>
           </div>
         </div >
 
@@ -3028,7 +3104,7 @@ export default function BlogPostView({
                     return (
                       <a
                         className="related-card"
-                        href={`/${typeof item.category === "object" ? item.category?.slug || category : category}/${item.slug}`}
+                        href={`/${category}/${item.slug}`}
                         key={item.id}
                       >
                         {relatedImage ? (

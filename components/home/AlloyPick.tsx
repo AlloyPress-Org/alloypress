@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
-
+import { postHref } from "@/lib/post-href";
 import FeaturedCarousel from "./FeaturedCarousel";
 
 // ============================================================
@@ -441,7 +441,7 @@ export default async function AlloyPick() {
                       <Link
                         prefetch={false}
                         key={post.id}
-                        href={`/${category.slug}/${post.slug}`}
+                        href={postHref(category.slug, post.slug)}
                         className="alloy-trending-card"
                         aria-label={`Read ${post.title}`}
                       >

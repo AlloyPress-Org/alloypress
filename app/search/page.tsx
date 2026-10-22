@@ -4,6 +4,7 @@ import { cache } from "react";
 import { payloadFetch } from "@/lib/payload";
 import "./search.css";
 import { buildPageMetadata } from "@/lib/seo/metadata";
+import { postHref } from "@/lib/post-href";
 
 /*
  * PRODUCTION FIX
@@ -552,7 +553,7 @@ export default async function SearchPage({
                     return (
                       <Link
                         key={post.id}
-                        href={`/${category.slug}/${post.slug}`}
+                        href={postHref(category.slug, post.slug)}
                         className="search-suggested-card"
                       >
                         {imageUrl ? (
@@ -646,7 +647,7 @@ export default async function SearchPage({
                   return (
                     <Link
                       key={post.id}
-                      href={`/${category.slug}/${post.slug}`}
+                      href={postHref(category.slug, post.slug)}
                       className="search-result-card"
                     >
                       {imageUrl ? (

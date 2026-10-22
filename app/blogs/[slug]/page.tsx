@@ -331,7 +331,7 @@ const getPost = cache(
     }
 
     params.set("limit", "1");
-    params.set("depth", "1");
+    params.set("depth", "2");
 
     params.set("select[id]", "true");
     params.set("select[title]", "true");
@@ -576,17 +576,40 @@ export default async function BlogPostPage({
       ? post.category?.id
       : post.category;
 
-  const categoryName =
-    typeof post.category === "object" &&
-      post.category?.name
-      ? post.category.name
-      : CATEGORY_LABEL;
+  const SECTION_SLUGS = ["blogs", "reviews", "news", "alternatives", "comparisons"];
 
-  const categorySlugValue =
-    typeof post.category === "object" &&
-      post.category?.slug
-      ? post.category.slug
-      : CATEGORY_SLUG;
+  type CatLite = { slug?: string; name?: string; parent?: unknown } | null;
+
+  const cat = (
+    typeof post.category === "object" && post.category ? post.category : null
+  ) as CatLite;
+
+  const parentCat = (
+    cat && typeof cat.parent === "object" && cat.parent ? cat.parent : null
+  ) as CatLite;
+
+  const isSection = !!cat?.slug && SECTION_SLUGS.includes(cat.slug);
+
+  const section = isSection
+    ? cat
+    : parentCat?.slug && SECTION_SLUGS.includes(parentCat.slug)
+      ? parentCat
+      : null;
+
+  // listicle / informative (child of the section)
+  const sub = !isSection && section && cat?.slug && cat?.name ? cat : null;
+
+  const categoryName = section?.name ?? cat?.name ?? CATEGORY_LABEL;
+  const categorySlugValue = section?.slug ?? CATEGORY_SLUG;
+
+  const subcategory = sub
+    ? {
+      slug: sub.slug as string,
+      label:
+        (sub.name as string).charAt(0).toUpperCase() +
+        (sub.name as string).slice(1),
+    }
+    : null;
 
   // ==========================================================
   // RELATED POSTS
@@ -618,6 +641,9 @@ export default async function BlogPostPage({
     [
       { name: "Home", url: SITE_URL },
       { name: categoryName, url: `${SITE_URL}/${categorySlugValue}` },
+      ...(subcategory
+        ? [{ name: subcategory.label, url: `${SITE_URL}/${categorySlugValue}/${subcategory.slug}` }]
+        : []),
       { name: post.title || "", url: articleUrl },
     ],
     articleUrl,
@@ -689,6 +715,7 @@ export default async function BlogPostPage({
           articleImage={articleImage}
           category={categorySlugValue}
           categoryLabel={categoryName}
+          subcategory={subcategory}
         />
       )}
     </>

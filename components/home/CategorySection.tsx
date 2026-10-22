@@ -20,10 +20,10 @@ type CategoryDefinition = {
 const categoryDefinitions: CategoryDefinition[] = [
   {
     number: "01",
-    slug: "blogs",
-    title: "Blogs",
-    description: "AI Guides and explainers, in plain English.",
-    href: "/blogs",
+    slug: "listicles",
+    title: "Listicles",
+    description: "Tested & ranked lists of the best AI tools for every use case.",
+    href: "/blogs/listicles",
     icon: (
       <svg
         width="24"
@@ -33,14 +33,21 @@ const categoryDefinitions: CategoryDefinition[] = [
         aria-hidden="true"
       >
         <path
-          d="M6 4.5h12a1.5 1.5 0 0 1 1.5 1.5v12A1.5 1.5 0 0 1 18 19.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z"
+          d="M8 4h12v16H4V8L8 4Z"
           stroke="currentColor"
           strokeWidth="1.5"
+          strokeLinejoin="round"
         />
         <path
-          d="M8 8h8M8 11.5h8M8 15h5"
+          d="M8 4v4H4M9 12h7M9 16h7"
           stroke="currentColor"
           strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <path
+          d="M6.5 12h.01M6.5 16h.01"
+          stroke="currentColor"
+          strokeWidth="2"
           strokeLinecap="round"
         />
       </svg>
@@ -49,6 +56,38 @@ const categoryDefinitions: CategoryDefinition[] = [
 
   {
     number: "02",
+    slug: "informatives",
+    title: "Informatives",
+    description: "Detailed guides on AI, tools and concepts.",
+    href: "/blogs/informatives",
+    icon: (
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <circle
+          cx="12"
+          cy="12"
+          r="9"
+          stroke="currentColor"
+          strokeWidth="1.5"
+        />
+        <path
+          d="M12 11v5"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
+        <circle cx="12" cy="7.5" r="0.9" fill="currentColor" />
+      </svg>
+    ),
+  },
+
+  {
+    number: "03",
     slug: "reviews",
     title: "Reviews",
     description: "Real testing, Honest verdicts, No sponsored rankings.",
@@ -79,7 +118,7 @@ const categoryDefinitions: CategoryDefinition[] = [
   },
 
   {
-    number: "03",
+    number: "04",
     slug: "news",
     title: "News",
     description: "AI updates filtered for what actually matters.",
@@ -93,26 +132,27 @@ const categoryDefinitions: CategoryDefinition[] = [
         aria-hidden="true"
       >
         <rect
-          x="4.5"
-          y="4.5"
-          width="15"
-          height="15"
+          x="4"
+          y="5"
+          width="16"
+          height="14"
           rx="1.5"
           stroke="currentColor"
           strokeWidth="1.5"
         />
         <path
-          d="M8 8h8M8 11.5h5M8 15h8"
+          d="m7 9 2 2 3-3M14 10h3M7 15h10"
           stroke="currentColor"
           strokeWidth="1.5"
           strokeLinecap="round"
+          strokeLinejoin="round"
         />
       </svg>
     ),
   },
 
   {
-    number: "04",
+    number: "05",
     slug: "alternatives",
     title: "Alternatives",
     description:
@@ -140,7 +180,7 @@ const categoryDefinitions: CategoryDefinition[] = [
   },
 
   {
-    number: "05",
+    number: "06",
     slug: "comparisons",
     title: "Comparisons",
     description: "Head-to-head AI tool testing so you don't have to.",
