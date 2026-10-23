@@ -1411,6 +1411,9 @@ export const Posts: CollectionConfig = {
       'Create, edit and manage AlloyPress blog posts.',
 
     components: {
+      // WordPress-style tabs above the list: All (n) | Published (n) | Draft (n)
+      beforeList: ['/components/admin/PostStatusTabs#PostStatusTabs'],
+
       edit: {
         beforeDocumentControls: [
           '/components/DocumentUndoRedo#DocumentUndoRedo',
@@ -1562,6 +1565,12 @@ export const Posts: CollectionConfig = {
           label: 'Published Date',
 
           admin: {
+            // Set automatically on the first publish (see collection beforeChange
+            // hook). Not editable from the admin panel. Scripts / migrations that
+            // use the Local API can still set it.
+            readOnly: true,
+            description:
+              'Set automatically when the post is first published. Cannot be edited manually.',
             date: {
               pickerAppearance: 'dayAndTime',
             },

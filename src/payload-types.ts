@@ -329,6 +329,9 @@ export interface Post {
   category: number | Category;
   tags?: (number | Tag)[] | null;
   author: number | User;
+  /**
+   * Set automatically when the post is first published. Cannot be edited manually.
+   */
   publishedAt?: string | null;
   /**
    * Editorial workflow: Draft → Review → Published.

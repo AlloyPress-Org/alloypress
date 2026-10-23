@@ -38,6 +38,7 @@ import { MetaTitleComponent as MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c08
 import { MetaDescriptionComponent as MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { MetaImageComponent as MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
+import { PostStatusTabs as PostStatusTabs_074228c95b1e9da00c8158e262e00067 } from '../../../components/admin/PostStatusTabs'
 import { DocumentUndoRedo as DocumentUndoRedo_381dd7ba0e9342c70e27ab2eba3cff1e } from '../../../components/DocumentUndoRedo'
 import { default as default_28d410bf1390e07c24502980ebc287c5 } from '../../../components/SubscribersStats'
 import { default as default_7884af63ab855c86b7110d0ec65aefe1 } from '../../../components/AlloyNav'
@@ -90,6 +91,7 @@ export const importMap = {
   "@payloadcms/plugin-seo/client#MetaDescriptionComponent": MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#MetaImageComponent": MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
+  "/components/admin/PostStatusTabs#PostStatusTabs": PostStatusTabs_074228c95b1e9da00c8158e262e00067,
   "/components/DocumentUndoRedo#DocumentUndoRedo": DocumentUndoRedo_381dd7ba0e9342c70e27ab2eba3cff1e,
   "/components/SubscribersStats#default": default_28d410bf1390e07c24502980ebc287c5,
   "/components/AlloyNav#default": default_7884af63ab855c86b7110d0ec65aefe1,
