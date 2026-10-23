@@ -4,7 +4,7 @@ import { cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
 
-function cleanNewsExcerpt(value?: string | null): string {
+function cleanNewsDescription(value?: string | null): string {
   if (!value) return "";
 
   return value
@@ -47,8 +47,11 @@ type NewsPost = {
   id: number | string;
   title: string;
   slug: string;
-  excerpt?: string | null;
+  meta?: {
+    description?: string | null;
+  } | null;
   publishedAt?: string | null;
+  updatedAt?: string | null;
   featuredImage?:
   | {
     url?: string | null;
@@ -76,7 +79,6 @@ type PostsResponse = {
    Small cached request:
    - depth=0
    - ID only
-   - ISR: 5 minutes
 ========================================================= */
 
 const getNewsCategory = cache(
@@ -88,9 +90,7 @@ const getNewsCategory = cache(
           {
             next: {
               revalidate: 604800,
-              tags: [
-                "categories",
-              ],
+              tags: ["categories"],
             },
           },
         );
@@ -108,9 +108,10 @@ const getNewsCategory = cache(
 );
 
 /* =========================================================
-   GET LATEST PUBLISHED NEWS
+   GET LATEST PUBLISHED / UPDATED NEWS
 
-   Only fields actually rendered by this component.
+   Sorted by updatedAt so BOTH newly published posts
+   AND updated/republished posts appear at the top.
 ========================================================= */
 
 const getRecentAINews = cache(
@@ -130,7 +131,7 @@ const getRecentAINews = cache(
         await payloadFetch<PostsResponse>(
           `/posts?where[workflowStatus][equals]=published&where[category][equals]=${encodeURIComponent(
             String(category.id),
-          )}&sort=-publishedAt&limit=${HOME_NEWS_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[excerpt]=true&select[publishedAt]=true&select[featuredImage]=true`,
+          )}&sort=-updatedAt&limit=${HOME_NEWS_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[meta][description]=true&select[publishedAt]=true&select[updatedAt]=true&select[featuredImage]=true`,
           {
             next: {
               revalidate: 604800,
@@ -150,11 +151,13 @@ const getRecentAINews = cache(
 
       return posts
         .filter((post) => {
+          // publishedAt is no longer required: posts are ordered
+          // by updatedAt, so a published/updated post must never
+          // be dropped just because publishedAt is missing.
           if (
             !post?.id ||
             !post?.title?.trim() ||
-            !post?.slug?.trim() ||
-            !post?.publishedAt
+            !post?.slug?.trim()
           ) {
             return false;
           }
@@ -264,6 +267,14 @@ export default async function RecentAINews() {
     featured.featuredImage,
   );
 
+  const featuredDescription = cleanNewsDescription(
+    featured.meta?.description,
+  );
+
+  // Most recent activity date (publish or update).
+  const featuredDate =
+    featured.updatedAt || featured.publishedAt;
+
   return (
     <section
       className="recent-ai-news"
@@ -352,20 +363,17 @@ export default async function RecentAINews() {
 
                   <time
                     dateTime={
-                      featured.publishedAt ||
-                      undefined
+                      featuredDate || undefined
                     }
                   >
-                    {formatDate(
-                      featured.publishedAt,
-                    )}
+                    {formatDate(featuredDate)}
                   </time>
                 </div>
 
                 <h3>{featured.title}</h3>
 
-                {featured.excerpt && (
-                  <p>{cleanNewsExcerpt(featured.excerpt)}</p>
+                {featuredDescription && (
+                  <p>{featuredDescription}</p>
                 )}
 
                 <span className="recent-news-read">
@@ -388,6 +396,9 @@ export default async function RecentAINews() {
               const image = getImageUrl(
                 post.featuredImage,
               );
+
+              const displayDate =
+                post.updatedAt || post.publishedAt;
 
               return (
                 <article
@@ -430,13 +441,10 @@ export default async function RecentAINews() {
 
                         <time
                           dateTime={
-                            post.publishedAt ||
-                            undefined
+                            displayDate || undefined
                           }
                         >
-                          {formatDate(
-                            post.publishedAt,
-                          )}
+                          {formatDate(displayDate)}
                         </time>
                       </div>
 

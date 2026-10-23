@@ -26,6 +26,7 @@ type Post = {
   slug: string;
   excerpt?: string | null;
   publishedAt?: string | null;
+  updatedAt?: string | null;
   author?: Author | number | string | null;
   category?: Category | number | string | null;
   featuredImage?: Media | number | string | null;
@@ -103,7 +104,7 @@ const getSectionPosts = cache(
         await payloadFetch<PostsResponse>(
           `/posts?where[workflowStatus][equals]=published&where[category][equals]=${encodeURIComponent(
             String(category.id),
-          )}&sort=-publishedAt&limit=${HOME_BLOG_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[excerpt]=true&select[publishedAt]=true&select[author]=true&select[category]=true&select[featuredImage]=true`,
+          )}&sort=-updatedAt&limit=${HOME_BLOG_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[excerpt]=true&select[publishedAt]=true&select[updatedAt]=true&select[author]=true&select[category]=true&select[featuredImage]=true`,
           {
             next: {
               revalidate: 604800,
@@ -293,10 +294,7 @@ export default async function LearnAboutAI({
         id: String(post.id),
         title: post.title,
         slug: post.slug,
-        excerpt: getExcerpt(post.excerpt || "")
-          .replace(/^TL;DR\s*:\s*/i, "")
-          .trim(),
-        date: formatDate(post.publishedAt),
+        date: formatDate(post.updatedAt || post.publishedAt),
         author: author?.name || "AlloyPress Team",
         image: getImageUrl(post.featuredImage),
         imageAlt: featuredImage?.alt || post.title,
@@ -383,8 +381,6 @@ export default async function LearnAboutAI({
                   </div>
 
                   <h3>{card.title}</h3>
-
-                  {card.excerpt && <p>{card.excerpt}</p>}
 
                   <div className="learn-ai-card-footer">
                     <span>{card.author}</span>

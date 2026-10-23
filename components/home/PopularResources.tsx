@@ -18,6 +18,7 @@ type Post = {
   title?: string | null;
   slug?: string | null;
   publishedAt?: string | null;
+  updatedAt?: string | null;
   featuredImage?: Media | number | null;
 };
 
@@ -63,7 +64,6 @@ const RESOURCE_DEFINITIONS = [
    Small cached request:
    - depth=0
    - ID only
-   - ISR: 5 minutes
 ========================================================= */
 
 const getAlternativesCategory = cache(
@@ -75,9 +75,7 @@ const getAlternativesCategory = cache(
           {
             next: {
               revalidate: 604800,
-              tags: [
-                "categories",
-              ],
+              tags: ["categories"],
             },
           },
         );
@@ -97,13 +95,8 @@ const getAlternativesCategory = cache(
 /* =========================================================
    GET LATEST ALTERNATIVES POSTS
 
-   Only request fields actually used by this component.
-
-   Required:
-   - id
-   - title
-   - slug
-   - featuredImage
+   Sorted by updatedAt so BOTH newly published posts
+   AND updated/republished posts appear at the top.
 
    depth=1 is intentionally kept because the component
    needs the populated media URL/alt information.
@@ -127,7 +120,7 @@ const getLatestPosts = cache(
         await payloadFetch<PayloadResponse>(
           `/posts?where[workflowStatus][equals]=published&where[category][equals]=${encodeURIComponent(
             String(alternativesCategory.id),
-          )}&sort=-publishedAt&limit=${HOME_RESOURCE_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[publishedAt]=true&select[featuredImage]=true`,
+          )}&sort=-updatedAt&limit=${HOME_RESOURCE_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[publishedAt]=true&select[updatedAt]=true&select[featuredImage]=true`,
           {
             next: {
               revalidate: 604800,
@@ -145,11 +138,13 @@ const getLatestPosts = cache(
 
       return postsData.docs
         .filter((post) => {
+          // publishedAt is no longer required, so a
+          // published/updated post is never dropped
+          // just because publishedAt is missing.
           if (
             !post?.id ||
             !post?.title?.trim() ||
-            !post?.slug?.trim() ||
-            !post?.publishedAt
+            !post?.slug?.trim()
           ) {
             return false;
           }
@@ -217,9 +212,6 @@ function getMediaUrl(
    * populated. We cannot safely use /api/media/:id directly
    * as an <Image src>, because Payload's media API returns
    * media JSON rather than the actual image binary.
-   *
-   * Therefore the normal production path is the populated
-   * Media object above.
    */
   return null;
 }

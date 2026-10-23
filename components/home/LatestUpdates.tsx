@@ -21,6 +21,7 @@ type Post = {
   title?: string | null;
   slug?: string | null;
   publishedAt?: string | null;
+  updatedAt?: string | null;
   featuredImage?: Media | number | null;
   category?: Category | number | null;
 };
@@ -95,7 +96,10 @@ function formatDate(date?: string | null): string {
 }
 
 function isValidPost(post: Post): boolean {
-  if (!post.id || !post.title || !post.slug || !post.publishedAt) {
+  // publishedAt is no longer required: posts are ordered by
+  // updatedAt, so a published/updated post must never be dropped
+  // just because publishedAt is missing.
+  if (!post.id || !post.title || !post.slug) {
     return false;
   }
 
@@ -122,7 +126,6 @@ function isValidPost(post: Post): boolean {
  * This request is tiny:
  * - depth=0
  * - only id selected
- * - revalidated every 5 minutes
  */
 const getReviewsCategory = cache(async (): Promise<Category | null> => {
   try {
@@ -131,9 +134,7 @@ const getReviewsCategory = cache(async (): Promise<Category | null> => {
       {
         next: {
           revalidate: 604800,
-          tags: [
-            "categories",
-          ],
+          tags: ["categories"],
         },
       },
     );
@@ -152,6 +153,9 @@ const getReviewsCategory = cache(async (): Promise<Category | null> => {
 /**
  * Cached latest Reviews posts.
  *
+ * Sorted by updatedAt so BOTH newly published posts
+ * AND updated/republished posts appear at the top.
+ *
  * Only fields actually rendered by this component are selected.
  */
 const getLatestPosts = cache(async (): Promise<Post[]> => {
@@ -169,9 +173,8 @@ const getLatestPosts = cache(async (): Promise<Post[]> => {
     const postsData = await payloadFetch<PayloadResponse>(
       `/posts?where[workflowStatus][equals]=published&where[category][equals]=${encodeURIComponent(
         String(reviewsCategory.id),
-      )}&sort=-publishedAt&limit=${HOME_REVIEW_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[publishedAt]=true&select[featuredImage]=true&select[category]=true`,
+      )}&sort=-updatedAt&limit=${HOME_REVIEW_LIMIT}&depth=1&select[id]=true&select[title]=true&select[slug]=true&select[publishedAt]=true&select[updatedAt]=true&select[featuredImage]=true&select[category]=true`,
       {
-
         next: {
           revalidate: 604800,
           tags: [
@@ -179,7 +182,6 @@ const getLatestPosts = cache(async (): Promise<Post[]> => {
             "category:reviews",
           ],
         },
-
       },
     );
 
@@ -237,6 +239,10 @@ export default async function LatestUpdates() {
               post.category,
             );
 
+            // Most recent activity date (publish or update).
+            const displayDate =
+              post.updatedAt || post.publishedAt;
+
             return (
               <Link
                 key={post.id}
@@ -253,13 +259,9 @@ export default async function LatestUpdates() {
                     <span>{category.name}</span>
 
                     <time
-                      dateTime={
-                        post.publishedAt || undefined
-                      }
+                      dateTime={displayDate || undefined}
                     >
-                      {formatDate(
-                        post.publishedAt,
-                      )}
+                      {formatDate(displayDate)}
                     </time>
                   </div>
 

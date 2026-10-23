@@ -33,8 +33,11 @@ export type ListPost = {
   id: number | string;
   title: string;
   slug: string;
-  excerpt?: string | null;
+  meta?: {
+    description?: string | null;
+  } | null;
   publishedAt?: string | null;
+  updatedAt?: string | null;
 
   author?:
   | string
@@ -154,7 +157,7 @@ const getListPosts = cache(
       );
 
       params.set(
-        "select[excerpt]",
+        "select[meta]",
         "true",
       );
 
@@ -162,6 +165,8 @@ const getListPosts = cache(
         "select[publishedAt]",
         "true",
       );
+
+      params.set("select[updatedAt]", "true");
 
       params.set(
         "select[author]",
@@ -295,10 +300,10 @@ export default async function AIToolList() {
       id: post.id,
       title: post.title,
       slug: post.slug,
-      excerpt: cleanEditorialText(post.excerpt || ""),
-      publishedAt: formatDate(
-        post.publishedAt,
+      description: cleanEditorialText(
+        post.meta?.description?.trim() || "",
       ),
+      publishedAt: formatDate(post.updatedAt || post.publishedAt),
       image,
       imageAlt,
     };
@@ -367,8 +372,8 @@ export default async function AIToolList() {
 
                 <h3>{card.title}</h3>
 
-                {card.excerpt && (
-                  <p>{card.excerpt}</p>
+                {card.description && (
+                  <p>{card.description}</p>
                 )}
 
                 <span className="ai-tool-review-read">

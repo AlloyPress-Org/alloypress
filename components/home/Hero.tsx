@@ -34,7 +34,7 @@ const getLatestPostByCategory = cache(
       }>(
         `/posts?where[workflowStatus][equals]=published&where[category][equals]=${encodeURIComponent(
           String(categoryId)
-        )}&sort=-publishedAt&limit=1&depth=0&select[id]=true&select[title]=true&select[slug]=true&select[publishedAt]=true`,
+        )}&sort=-updatedAt&limit=1&depth=0&select[id]=true&select[title]=true&select[slug]=true&select[publishedAt]=true&select[updatedAt]=true`,
         {
           next: {
             revalidate: 604800,

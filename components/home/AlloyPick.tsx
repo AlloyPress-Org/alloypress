@@ -10,7 +10,7 @@ import FeaturedCarousel from "./FeaturedCarousel";
 // ============================================================
 
 const HOME_POST_LIMIT = 12;
-const FEATURED_POST_COUNT = 5; 
+const FEATURED_POST_COUNT = 5;
 const TRENDING_POST_COUNT = 4;
 
 // ============================================================
@@ -33,6 +33,7 @@ type Post = {
   title?: string | null;
   slug?: string | null;
   publishedAt?: string | null;
+  updatedAt?: string | null;
   workflowStatus?: string | null;
   featuredImage?: Media | number | null;
   category?: Category | number | null;
@@ -126,10 +127,13 @@ function isPublishedPost(post: Post): boolean {
 }
 
 // ============================================================
-// FETCH LATEST PUBLISHED POSTS
+// FETCH LATEST PUBLISHED / UPDATED POSTS
 // ============================================================
 //
 // Used only for the "Recently Published" column.
+//
+// Sorted by updatedAt so that BOTH newly published posts
+// AND updated/republished posts appear at the top.
 //
 // Featured posts are NOT selected from this request.
 // Featured posts come exclusively from HomepageSettings.
@@ -145,7 +149,8 @@ const getPublishedPosts = cache(
         "published",
       );
 
-      params.set("sort", "-publishedAt");
+      // Newly published + updated posts both come first.
+      params.set("sort", "-updatedAt");
       params.set("limit", String(HOME_POST_LIMIT));
       params.set("depth", "1");
 
@@ -154,6 +159,7 @@ const getPublishedPosts = cache(
       params.set("select[title]", "true");
       params.set("select[slug]", "true");
       params.set("select[publishedAt]", "true");
+      params.set("select[updatedAt]", "true");
       params.set("select[workflowStatus]", "true");
       params.set("select[featuredImage]", "true");
       params.set("select[category]", "true");
@@ -162,12 +168,10 @@ const getPublishedPosts = cache(
         await payloadFetch<PayloadPostsResponse>(
           `/posts?${params.toString()}`,
           {
-
             next: {
               revalidate: 604800,
               tags: ["home:latest-posts"],
             },
-
           },
         );
 
@@ -186,7 +190,7 @@ const getPublishedPosts = cache(
         error,
       );
 
-        return [];
+      return [];
     }
   },
 );
@@ -245,7 +249,7 @@ const getHomepageSettings = cache(
         error,
       );
 
-        return null;
+      return null;
     }
   },
 );
@@ -413,7 +417,7 @@ export default async function AlloyPick() {
           />
 
           {/* ==================================================
-              RECENTLY PUBLISHED
+              RECENTLY PUBLISHED / UPDATED
           ================================================== */}
 
           {trendingPosts.length > 0 && (
@@ -437,6 +441,12 @@ export default async function AlloyPick() {
                         post.category,
                       );
 
+                    // Show the most recent activity date
+                    // (update/republish) for each post.
+                    const displayDate =
+                      post.updatedAt ||
+                      post.publishedAt;
+
                     return (
                       <Link
                         prefetch={false}
@@ -459,12 +469,12 @@ export default async function AlloyPick() {
 
                             <time
                               dateTime={
-                                post.publishedAt ||
+                                displayDate ||
                                 undefined
                               }
                             >
                               {formatDate(
-                                post.publishedAt,
+                                displayDate,
                               )}
                             </time>
                           </div>
