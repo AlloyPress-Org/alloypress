@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { payloadFetch } from "@/lib/payload";
+import { getCategoryBySlug } from "@/lib/api/categories";
 import { cleanEditorialText } from "@/lib/content/cleanEditorialText";
 import { postHref } from "@/lib/post-href";
 
@@ -55,12 +56,6 @@ export type ListPost = {
   | null;
 };
 
-type CategoryResponse = {
-  docs?: Array<{
-    id: number | string;
-  }>;
-};
-
 type PostsResponse = {
   docs?: ListPost[];
 };
@@ -74,20 +69,12 @@ const getListiclesCategory = cache(
     number | string | null
   > => {
     try {
-      const data =
-        await payloadFetch<CategoryResponse>(
-          `/categories?where[slug][equals]=${encodeURIComponent(
-            CATEGORY_SLUG,
-          )}&limit=1&depth=0&select[id]=true`,
-          {
-            next: {
-              revalidate: 604800,
-              tags: [CATEGORY_TAG, "categories"],
-            },
-          },
-        );
+      // One shared /categories request for all home sections
+      const category = await getCategoryBySlug(CATEGORY_SLUG, [
+        CATEGORY_TAG,
+      ]);
 
-      return data?.docs?.[0]?.id ?? null;
+      return category?.id ?? null;
     } catch (error) {
       console.error(
         "[AIToolList] Category fetch failed:",

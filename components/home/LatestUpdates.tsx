@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
+import { getCategoryBySlug } from "@/lib/api/categories";
 import { postHref } from "@/lib/post-href";
 
 type Media = {
@@ -28,10 +29,6 @@ type Post = {
 
 type PayloadResponse = {
   docs?: Post[];
-};
-
-type CategoryResponse = {
-  docs?: Category[];
 };
 
 const REVIEWS_CATEGORY_SLUG = "reviews";
@@ -129,17 +126,8 @@ function isValidPost(post: Post): boolean {
  */
 const getReviewsCategory = cache(async (): Promise<Category | null> => {
   try {
-    const categoryData = await payloadFetch<CategoryResponse>(
-      `/categories?where[slug][equals]=${REVIEWS_CATEGORY_SLUG}&limit=1&depth=0&select[id]=true`,
-      {
-        next: {
-          revalidate: 604800,
-          tags: ["categories"],
-        },
-      },
-    );
-
-    return categoryData?.docs?.[0] ?? null;
+    // One shared /categories request for all home sections
+    return await getCategoryBySlug(REVIEWS_CATEGORY_SLUG);
   } catch (error) {
     console.error(
       "Latest Updates category fetch error:",

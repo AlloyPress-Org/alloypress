@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
+import { getCategoryBySlug } from "@/lib/api/categories";
 
 function cleanNewsDescription(value?: string | null): string {
   if (!value) return "";
@@ -65,10 +66,6 @@ type NewsCategory = {
   id: number | string;
 };
 
-type CategoryResponse = {
-  docs?: NewsCategory[];
-};
-
 type PostsResponse = {
   docs?: NewsPost[];
 };
@@ -84,18 +81,8 @@ type PostsResponse = {
 const getNewsCategory = cache(
   async (): Promise<NewsCategory | null> => {
     try {
-      const categoryData =
-        await payloadFetch<CategoryResponse>(
-          `/categories?where[slug][equals]=${NEWS_CATEGORY_SLUG}&limit=1&depth=0&select[id]=true`,
-          {
-            next: {
-              revalidate: 604800,
-              tags: ["categories"],
-            },
-          },
-        );
-
-      return categoryData?.docs?.[0] ?? null;
+      // One shared /categories request for all home sections
+      return await getCategoryBySlug(NEWS_CATEGORY_SLUG);
     } catch (error) {
       console.error(
         "Recent AI News category fetch error:",

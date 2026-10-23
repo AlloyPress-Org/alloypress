@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
+import { getCategoryBySlug } from "@/lib/api/categories";
 import { postHref } from "@/lib/post-href";
 
 type Media = {
@@ -32,10 +33,6 @@ type Post = {
   featuredImage?: Media | number | string | null;
 };
 
-type CategoryResponse = {
-  docs?: Category[];
-};
-
 type PostsResponse = {
   docs?: Post[];
 };
@@ -56,20 +53,8 @@ const HOME_BLOG_COUNT = 4;
 const getSubCategory = cache(
   async (slug: string): Promise<Category | null> => {
     try {
-      const categoryData =
-        await payloadFetch<CategoryResponse>(
-          `/categories?where[slug][equals]=${encodeURIComponent(
-            slug,
-          )}&limit=1&depth=0&select[id]=true`,
-          {
-            next: {
-              revalidate: 604800,
-              tags: ["categories"],
-            },
-          },
-        );
-
-      return categoryData?.docs?.[0] ?? null;
+      // One shared /categories request for all home sections
+      return await getCategoryBySlug(slug);
     } catch (error) {
       console.error(
         `Home section category fetch error (${slug}):`,

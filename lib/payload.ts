@@ -1,3 +1,5 @@
+import { unstable_noStore as noStore } from "next/cache";
+
 type NextOpts = { revalidate?: number | false; tags?: string[] };
 
 type PayloadFetchOptions = RequestInit & {
@@ -5,11 +7,6 @@ type PayloadFetchOptions = RequestInit & {
   /** true = throw on failure (only 404 returns null) */
   strict?: boolean;
 };
-
-/**
- * Resolved lazily at request time (not module load), so a missing env
- * var never crashes the build or a Worker cold start.
- */
 function getApiUrl(): string {
   const url = process.env.PAYLOAD_API_URL;
   if (url) return url;
@@ -26,21 +23,26 @@ export { getApiUrl };
 
 
 const DEFAULT_REVALIDATE = 604800; // 7 days
-const MAX_ATTEMPTS = 2; // Initial request + at most 1 retry
-const STALE_MAX_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
-const MAX_STALE_ENTRIES = 200;
+const MAX_ATTEMPTS = 3; // Initial request + at most 2 retries (spread out by jitter)
 const RETRYABLE = new Set([429, 500, 502, 503, 504]);
 
-
-// Last successful responses (plain data only, safe on Workers)
-const lastGood = new Map<string, { data: unknown; at: number }>();
+// NOTE: there is intentionally NO "last good response" fallback here.
+// It used to return a per-isolate, up-to-7-day-old copy when Payload failed
+// (e.g. 429). That ignored revalidateTag(), so right after a publish a failed
+// refetch rendered OLD blogs, and that page was then cached as if fresh
+// ("refresh -> new blogs, refresh -> old blogs").
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function retryDelay(res: Response | null, attempt: number): number {
   const ra = Number(res?.headers.get("retry-after"));
-  if (Number.isFinite(ra) && ra > 0) return Math.min(ra * 1000, 2000);
-  return 300 * 2 ** attempt + Math.random() * 200;
+  // Honour Retry-After (capped), plus jitter so the parallel home-page
+  // requests do not all retry at the same instant and trip the limit again.
+  if (Number.isFinite(ra) && ra > 0) {
+    return Math.min(ra * 1000, 3000) + Math.random() * 400;
+  }
+  const base = res?.status === 429 ? 600 : 300;
+  return base * 2 ** attempt + Math.random() * 500;
 }
 
 function isAbort(e: unknown) {
@@ -101,13 +103,7 @@ export async function payloadFetch<T>(
           break;
         }
 
-        const data = (await res.json()) as T;
-        if (lastGood.size >= MAX_STALE_ENTRIES) {
-          const first = lastGood.keys().next().value;
-          if (first) lastGood.delete(first);
-        }
-        lastGood.set(url, { data, at: Date.now() });
-        return data;
+        return (await res.json()) as T;
       }
 
       // Free the connection before retrying / returning
@@ -117,8 +113,8 @@ export async function payloadFetch<T>(
 
       lastError = new Error(`Payload ${res.status} ${res.statusText}`);
       if (!RETRYABLE.has(res.status)) break;
-      // Rate limited: hammering again only makes it worse. One retry max.
-      if (res.status === 429 && attempt >= 1) break;
+      // 429 is retried with a longer, jittered backoff (see retryDelay)
+      // instead of giving up after a single quick retry.
     } catch (e) {
       lastError = e;
       // Same signal is already aborted; retrying is pointless
@@ -131,10 +127,10 @@ export async function payloadFetch<T>(
   }
 
   console.error(`[Payload] failed after retries - ${path}`, lastError);
-
-  const stale = lastGood.get(url);
-  if (stale && Date.now() - stale.at < STALE_MAX_AGE) {
-    return stale.data as T;
+  try {
+    noStore();
+  } catch {
+    // outside a request scope (e.g. build) - nothing to opt out of
   }
 
   if (strict) {

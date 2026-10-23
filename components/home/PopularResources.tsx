@@ -3,6 +3,7 @@ import { cache } from "react";
 import Image from "@/components/CfImage";
 
 import { payloadFetch } from "@/lib/payload";
+import { getCategoryBySlug } from "@/lib/api/categories";
 
 type Media = {
   url?: string | null;
@@ -24,10 +25,6 @@ type Post = {
 
 type PayloadResponse = {
   docs?: Post[];
-};
-
-type CategoryResponse = {
-  docs?: Category[];
 };
 
 const ALTERNATIVES_CATEGORY_SLUG = "alternatives";
@@ -69,18 +66,8 @@ const RESOURCE_DEFINITIONS = [
 const getAlternativesCategory = cache(
   async (): Promise<Category | null> => {
     try {
-      const categoryData =
-        await payloadFetch<CategoryResponse>(
-          `/categories?where[slug][equals]=${ALTERNATIVES_CATEGORY_SLUG}&limit=1&depth=0&select[id]=true`,
-          {
-            next: {
-              revalidate: 604800,
-              tags: ["categories"],
-            },
-          },
-        );
-
-      return categoryData?.docs?.[0] ?? null;
+      // One shared /categories request for all home sections
+      return await getCategoryBySlug(ALTERNATIVES_CATEGORY_SLUG);
     } catch (error) {
       console.error(
         "Popular Resources category fetch error:",
