@@ -31,6 +31,7 @@ export default {
       });
     }
 
-    return handler.fetch(request, env, ctx);
+    const h: any = handler;
+    return typeof h === "function" ? h(request, env, ctx) : h.fetch(request, env, ctx);
   },
 };

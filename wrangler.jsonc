@@ -1,27 +1,20 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-
   "name": "alloypress",
   "account_id": "43e8e534581434d4296afcdb1b88e3e8",
-
   "compatibility_date": "2026-09-15",
-
   "compatibility_flags": [
     "nodejs_compat"
   ],
-
-  "main": "vinext/server/fetch-handler",
-
+  "main": "./worker/index.ts",
   "assets": {
     "directory": "dist/client",
     "not_found_handling": "none",
     "binding": "ASSETS"
   },
-
   "cache": {
     "enabled": true
   },
-
   "observability": {
     "logs": {
       "enabled": true,
@@ -30,22 +23,18 @@
       "persist": true
     }
   },
-
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
   },
-
   "images": {
     "binding": "IMAGES"
   },
-
   "vars": {
     "NEXT_PUBLIC_PAYLOAD_URL": "https://api.alloypress.com/api",
     "PAYLOAD_API_URL": "https://api.alloypress.com/api",
     "NEXT_PUBLIC_SITE_URL": "https://alloypress.com",
-    "WEB_REVALIDATION_URL":"https://alloypress.com/api/revalidate"
+    "WEB_REVALIDATION_URL": "https://alloypress.com/api/revalidate"
   },
-
   "kv_namespaces": [
     {
       "binding": "VINEXT_KV_CACHE",
