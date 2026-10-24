@@ -1,16 +1,15 @@
 import handler from "vinext/server/fetch-handler";
 
 const GONE_PREFIXES = [
-  "/hosting",
-  "/health",
-  "/technology",
-  "/marketing",
-  "/social-media",
-  "/person",
-  "/wp-content",
+  "/hosting", "/health", "/technology", "/marketing",
+  "/social-media", "/person",
+  "/uncategorized", "/web-stories", "/sports",
+  "/cryptocurrency", "/company",
+  "/write-for-us", "/contribute",
 ];
 
 function isGone(pathname: string) {
+  if (pathname.startsWith("/wp-")) return true; // wp-content, wp-admin, wp-login.php, wp-json
   return GONE_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(p + "/")
   );
