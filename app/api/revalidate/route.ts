@@ -9,13 +9,6 @@ const SUB_CATEGORIES = ["listicles", "informatives"];
 
 const PAGE_PATHS: Record<string, string> = { about: "/about-us" };
 
-// Home section tag for each category.
-// These MUST match the tags used in the home components:
-//   LatestUpdates   -> "home:reviews"
-//   LearnAboutAI    -> "home:informatives"   (informative posts)
-//   AIToolList      -> "home:listicles"      (listicle posts)
-//   RecentAINews    -> "home:latest-news"
-//   PopularResources-> "home:alternatives"
 const HOME_TAG_BY_CATEGORY: Record<string, string> = {
   blogs: "home:latest-blogs",
   listicles: "home:listicles",
@@ -32,15 +25,6 @@ const clean = (v: unknown): string | null => {
   return /^[\w.\-]{1,200}$/.test(s) ? s : null;
 };
 
-// ------------------------------------------------------------
-// 1) Next cache: expire tags IMMEDIATELY
-//
-// "max" = stale-while-revalidate: the first visitor still gets the OLD page.
-// { expire: 0 } = the very next request renders fresh data.
-// (Required together with the Cloudflare purge below: if the edge re-fetched
-//  a page while Next still served the stale copy, the edge would cache the
-//  OLD page again.)
-// ------------------------------------------------------------
 function expireTag(tag: string) {
   try {
     revalidateTag(tag, { expire: 0 });
@@ -50,16 +34,23 @@ function expireTag(tag: string) {
   }
 }
 
-// ------------------------------------------------------------
-// 2) Cloudflare edge cache: purge the website hostname
-//
-// Next revalidation cannot clear Cloudflare's own copies (that was the reason
-// /blogs showed a 41h old page). Purging by hostname also clears the
-// ?_rsc=... variants used by client-side navigation.
-// Needs Worker secrets: CF_ZONE_ID, CF_API_TOKEN (Zone > Cache Purge > Purge).
-// If they are missing the purge is skipped (revalidation still works).
-// ------------------------------------------------------------
 type PurgeResult = "ok" | "skipped" | "failed";
+
+async function purgeWorkerCache(): Promise<PurgeResult> {
+  try {
+    // @ts-ignore - types for "cloudflare:workers" may not be installed
+    const mod: any = await import("cloudflare:workers");
+
+    if (typeof mod?.cache?.purge !== "function") return "skipped";
+
+    await mod.cache.purge({ purgeEverything: true });
+
+    return "ok";
+  } catch (error) {
+    console.error("[revalidate] Worker cache purge error", error);
+    return "failed";
+  }
+}
 
 async function purgeCloudflareEdge(): Promise<PurgeResult> {
   const zone = process.env.CF_ZONE_ID;
@@ -118,6 +109,15 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
+
+    // Second pass sent by the CMS ~75s after a publish: only clear the Worker
+    // cache again, once Workers KV has caught up with the expired tags.
+    if (body?.purgeOnly === true) {
+      const edgePurge = await purgeWorkerCache();
+      console.log("[revalidate] purge-only", { edgePurge });
+      return NextResponse.json({ success: true, purgeOnly: true, edgePurge });
+    }
+
     const scope = typeof body?.scope === "string" ? body.scope : "post";
     const tags = new Set<string>();
     const paths = new Set<string>();
@@ -264,16 +264,19 @@ export async function POST(request: NextRequest) {
     for (const p of paths) revalidatePath(p);
     for (const t of tags) expireTag(t);
 
-    // 2) Cloudflare edge: clear AFTER Next is expired, so the edge cannot
-    //    re-cache the old page. Pass { "skipEdgePurge": true } in the body
-    //    for bulk jobs (Cloudflare Free allows only ~5 purges / minute).
-    const edgePurge: PurgeResult =
-      body?.skipEdgePurge === true ? "skipped" : await purgeCloudflareEdge();
+    // 2) Clear the cached HTML AFTER Next is expired, so the cache cannot
+    //    re-store the old page. Pass { "skipEdgePurge": true } in the body
+    //    for bulk jobs.
+    const skipEdge = body?.skipEdgePurge === true;
+
+    const edgePurge: PurgeResult = skipEdge ? "skipped" : await purgeWorkerCache();
+    const zonePurge: PurgeResult = skipEdge ? "skipped" : await purgeCloudflareEdge();
 
     console.log("[revalidate]", scope, {
       paths: [...paths],
       tags: [...tags],
       edgePurge,
+      zonePurge,
     });
 
     return NextResponse.json({
@@ -282,6 +285,7 @@ export async function POST(request: NextRequest) {
       paths: [...paths],
       revalidated: [...tags],
       edgePurge,
+      zonePurge,
     });
   } catch (error) {
     console.error("Revalidation error:", error);
