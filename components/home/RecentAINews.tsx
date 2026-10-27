@@ -213,24 +213,46 @@ function getImageUrl(
    DATE
 ========================================================= */
 
-function formatDate(
-  date?: string | null,
-): string {
-  if (!date) {
-    return "";
-  }
+function getDisplayDate(post: NewsPost): {
+  label: "Published" | "Updated";
+  date: string;
+  dateTime: string;
+} | null {
+  const published = post.publishedAt
+    ? new Date(post.publishedAt).getTime()
+    : 0;
 
-  const parsedDate = new Date(date);
+  const updated = post.updatedAt
+    ? new Date(post.updatedAt).getTime()
+    : 0;
+
+  const DAY = 24 * 60 * 60 * 1000;
+
+  const isUpdated =
+    published > 0 &&
+    updated - published > DAY;
+
+  const rawDate = isUpdated
+    ? post.updatedAt
+    : post.publishedAt;
+
+  if (!rawDate) return null;
+
+  const parsedDate = new Date(rawDate);
 
   if (Number.isNaN(parsedDate.getTime())) {
-    return "";
+    return null;
   }
 
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(parsedDate);
+  return {
+    label: isUpdated ? "Updated" : "Published",
+    date: new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(parsedDate),
+    dateTime: parsedDate.toISOString(),
+  };
 }
 
 /* =========================================================
@@ -259,8 +281,7 @@ export default async function RecentAINews() {
   );
 
   // Most recent activity date (publish or update).
-  const featuredDate =
-    featured.updatedAt || featured.publishedAt;
+  const featuredDate = getDisplayDate(featured);
 
   return (
     <section
@@ -348,13 +369,11 @@ export default async function RecentAINews() {
                     •
                   </span>
 
-                  <time
-                    dateTime={
-                      featuredDate || undefined
-                    }
-                  >
-                    {formatDate(featuredDate)}
-                  </time>
+                  {featuredDate && (
+                    <time dateTime={featuredDate.dateTime}>
+                      {featuredDate.label} {featuredDate.date}
+                    </time>
+                  )}
                 </div>
 
                 <h3>{featured.title}</h3>
@@ -384,8 +403,7 @@ export default async function RecentAINews() {
                 post.featuredImage,
               );
 
-              const displayDate =
-                post.updatedAt || post.publishedAt;
+              const displayDate = getDisplayDate(post);
 
               return (
                 <article
@@ -425,14 +443,11 @@ export default async function RecentAINews() {
                     <div className="recent-news-item-content">
                       <div className="recent-news-item-meta">
                         <span>AI NEWS</span>
-
-                        <time
-                          dateTime={
-                            displayDate || undefined
-                          }
-                        >
-                          {formatDate(displayDate)}
-                        </time>
+                        {displayDate && (
+                          <time dateTime={displayDate.dateTime}>
+                            {displayDate.label} {displayDate.date}
+                          </time>
+                        )}
                       </div>
 
                       <h3>{post.title}</h3>

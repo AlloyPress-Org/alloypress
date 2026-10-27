@@ -183,22 +183,46 @@ function getImageUrl(
    DATE
 ========================================================= */
 
-function formatDate(date?: string | null): string {
-  if (!date) {
-    return "";
-  }
+function getDisplayDate(post: Post): {
+  label: "Published" | "Updated";
+  date: string;
+  dateTime: string;
+} | null {
+  const published = post.publishedAt
+    ? new Date(post.publishedAt).getTime()
+    : 0;
 
-  const parsedDate = new Date(date);
+  const updated = post.updatedAt
+    ? new Date(post.updatedAt).getTime()
+    : 0;
+
+  const DAY = 24 * 60 * 60 * 1000;
+
+  const isUpdated =
+    published > 0 &&
+    updated - published > DAY;
+
+  const rawDate = isUpdated
+    ? post.updatedAt
+    : post.publishedAt;
+
+  if (!rawDate) return null;
+
+  const parsedDate = new Date(rawDate);
 
   if (Number.isNaN(parsedDate.getTime())) {
-    return "";
+    return null;
   }
 
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(parsedDate);
+  return {
+    label: isUpdated ? "Updated" : "Published",
+    date: new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(parsedDate),
+    dateTime: parsedDate.toISOString(),
+  };
 }
 
 /* =========================================================
@@ -279,7 +303,7 @@ export default async function LearnAboutAI({
         id: String(post.id),
         title: post.title,
         slug: post.slug,
-        date: formatDate(post.updatedAt || post.publishedAt),
+        date: getDisplayDate(post),
         author: author?.name || "AlloyPress Team",
         image: getImageUrl(post.featuredImage),
         imageAlt: featuredImage?.alt || post.title,
@@ -359,8 +383,9 @@ export default async function LearnAboutAI({
                     {card.date && (
                       <>
                         <i aria-hidden="true" />
-
-                        <time>{card.date}</time>
+                        <time dateTime={card.date.dateTime}>
+                          {card.date.label} {card.date.date}
+                        </time>
                       </>
                     )}
                   </div>

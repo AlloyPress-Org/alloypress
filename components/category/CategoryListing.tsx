@@ -81,39 +81,39 @@ const NAV_CATEGORIES: Array<{
   href: string;
   subSlug?: string;
 }> = [
-  {
-    label: "Listicles",
-    slug: "blogs",
-    subSlug: "listicles",
-    href: "/blogs/listicles",
-  },
-  {
-    label: "Informatives",
-    slug: "blogs",
-    subSlug: "informatives",
-    href: "/blogs/informatives",
-  },
-  {
-    label: "Reviews",
-    slug: "reviews",
-    href: "/reviews",
-  },
-  {
-    label: "News",
-    slug: "news",
-    href: "/news",
-  },
-  {
-    label: "Alternatives",
-    slug: "alternatives",
-    href: "/alternatives",
-  },
-  {
-    label: "Comparisons",
-    slug: "comparisons",
-    href: "/comparisons",
-  },
-];
+    {
+      label: "Listicles",
+      slug: "blogs",
+      subSlug: "listicles",
+      href: "/blogs/listicles",
+    },
+    {
+      label: "Informatives",
+      slug: "blogs",
+      subSlug: "informatives",
+      href: "/blogs/informatives",
+    },
+    {
+      label: "Reviews",
+      slug: "reviews",
+      href: "/reviews",
+    },
+    {
+      label: "News",
+      slug: "news",
+      href: "/news",
+    },
+    {
+      label: "Alternatives",
+      slug: "alternatives",
+      href: "/alternatives",
+    },
+    {
+      label: "Comparisons",
+      slug: "comparisons",
+      href: "/comparisons",
+    },
+  ];
 
 // ============================================================
 // FALLBACK IMAGES
@@ -213,18 +213,33 @@ function isUsefulPost(post: Post): boolean {
 // DATE
 // ============================================================
 function getDisplayDate(post: Post): string {
-  const published = post.publishedAt ? new Date(post.publishedAt).getTime() : 0;
-  const updated = post.updatedAt ? new Date(post.updatedAt).getTime() : 0;
+  const published = post.publishedAt
+    ? new Date(post.publishedAt).getTime()
+    : 0;
+
+  const updated = post.updatedAt
+    ? new Date(post.updatedAt).getTime()
+    : 0;
+
   const DAY = 24 * 60 * 60 * 1000;
 
-  const raw = updated - published > DAY ? post.updatedAt : post.publishedAt;
+  const isUpdated =
+    published > 0 &&
+    updated - published > DAY;
+
+  const raw = isUpdated
+    ? post.updatedAt
+    : post.publishedAt;
 
   if (!raw) return "Recently";
 
-  return new Intl.DateTimeFormat("en-US", {
+  const formattedDate = new Intl.DateTimeFormat("en-US", {
     month: "short",
+    day: "numeric",
     year: "numeric",
   }).format(new Date(raw));
+
+  return `${isUpdated ? "Updated" : "Published"} ${formattedDate}`;
 }
 
 function formatDate(
@@ -428,8 +443,7 @@ const getCategoryPosts = cache(
       };
     } catch (error) {
       console.error(
-        `CategoryListing fetch error for "${slug}${
-          subSlug ? `/${subSlug}` : ""
+        `CategoryListing fetch error for "${slug}${subSlug ? `/${subSlug}` : ""
         }":`,
         error,
       );
@@ -654,7 +668,7 @@ export default async function CategoryListing({
                     <i />
 
                     <span>
-                     {getDisplayDate(featuredPost)}
+                      {getDisplayDate(featuredPost)}
                     </span>
                   </div>
 
@@ -780,7 +794,7 @@ export default async function CategoryListing({
                             <i />
 
                             <span>
-                             {getDisplayDate(post)}
+                              {getDisplayDate(post)}
                             </span>
                           </div>
 

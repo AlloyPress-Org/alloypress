@@ -164,6 +164,46 @@ const getLatestPosts = cache(
   },
 );
 
+function getDisplayDate(post: Post): {
+  label: "Published" | "Updated";
+  date: string;
+  dateTime: string;
+} | null {
+  const published = post.publishedAt
+    ? new Date(post.publishedAt).getTime()
+    : 0;
+
+  const updated = post.updatedAt
+    ? new Date(post.updatedAt).getTime()
+    : 0;
+
+  const DAY = 24 * 60 * 60 * 1000;
+
+  const isUpdated =
+    published > 0 &&
+    updated - published > DAY;
+
+  const rawDate = isUpdated
+    ? post.updatedAt
+    : post.publishedAt;
+
+  if (!rawDate) return null;
+
+  const parsed = new Date(rawDate);
+
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return {
+    label: isUpdated ? "Updated" : "Published",
+    date: new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(parsed),
+    dateTime: parsed.toISOString(),
+  };
+}
+
 /* =========================================================
    IMAGE URL
 ========================================================= */
@@ -289,9 +329,26 @@ export default async function PopularResources() {
                 ) : null}
 
                 <div className="resource-card-top">
-                  <span className="resource-number">
-                    {resource.number}
-                  </span>
+                  <div className="resource-meta-row">
+                    <span className="resource-number">
+                      {resource.number}
+                    </span>
+
+                    {(() => {
+                      const displayDate = getDisplayDate(resource.post);
+
+                      if (!displayDate) return null;
+
+                      return (
+                        <time
+                          dateTime={displayDate.dateTime}
+                          className="post-date"
+                        >
+                          {displayDate.label} {displayDate.date}
+                        </time>
+                      );
+                    })()}
+                  </div>
 
                   <span className="resource-icon">
                     {resource.icon}

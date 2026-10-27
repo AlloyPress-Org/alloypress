@@ -76,22 +76,48 @@ function getCategory(
   };
 }
 
-function formatDate(date?: string | null): string {
-  if (!date) {
-    return "";
+function getDisplayDate(post: Post): {
+  label: "Published" | "Updated";
+  date: string;
+  dateTime: string;
+} | null {
+  const published = post.publishedAt
+    ? new Date(post.publishedAt).getTime()
+    : 0;
+
+  const updated = post.updatedAt
+    ? new Date(post.updatedAt).getTime()
+    : 0;
+
+  const DAY = 24 * 60 * 60 * 1000;
+
+  const isUpdated =
+    published > 0 &&
+    updated - published > DAY;
+
+  const rawDate = isUpdated
+    ? post.updatedAt
+    : post.publishedAt;
+
+  if (!rawDate) {
+    return null;
   }
 
-  const parsed = new Date(date);
+  const parsed = new Date(rawDate);
 
   if (Number.isNaN(parsed.getTime())) {
-    return "";
+    return null;
   }
 
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(parsed);
+  return {
+    label: isUpdated ? "Updated" : "Published",
+    date: new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(parsed),
+    dateTime: parsed.toISOString(),
+  };
 }
 
 // ============================================================
@@ -443,9 +469,7 @@ export default async function AlloyPick() {
 
                     // Show the most recent activity date
                     // (update/republish) for each post.
-                    const displayDate =
-                      post.updatedAt ||
-                      post.publishedAt;
+                    const displayDate = getDisplayDate(post);
 
                     return (
                       <Link
@@ -467,16 +491,11 @@ export default async function AlloyPick() {
                               {category.name}
                             </span>
 
-                            <time
-                              dateTime={
-                                displayDate ||
-                                undefined
-                              }
-                            >
-                              {formatDate(
-                                displayDate,
-                              )}
-                            </time>
+                            {displayDate && (
+                              <time dateTime={displayDate.dateTime}>
+                                {displayDate.label} {displayDate.date}
+                              </time>
+                            )}
                           </div>
 
                           <h3>

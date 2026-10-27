@@ -238,27 +238,46 @@ function getImageUrl(
 // DATE
 // ============================================================
 
-function formatDate(
-  date?: string | null,
-): string {
-  if (!date) {
-    return "";
+function getDisplayDate(post: ListPost): {
+  label: "Published" | "Updated";
+  date: string;
+  dateTime: string;
+} | null {
+  const published = post.publishedAt
+    ? new Date(post.publishedAt).getTime()
+    : 0;
+
+  const updated = post.updatedAt
+    ? new Date(post.updatedAt).getTime()
+    : 0;
+
+  const DAY = 24 * 60 * 60 * 1000;
+
+  const isUpdated =
+    published > 0 &&
+    updated - published > DAY;
+
+  const rawDate = isUpdated
+    ? post.updatedAt
+    : post.publishedAt;
+
+  if (!rawDate) return null;
+
+  const parsedDate = new Date(rawDate);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null;
   }
 
-  const timestamp = Date.parse(date);
-
-  if (Number.isNaN(timestamp)) {
-    return "";
-  }
-
-  return new Intl.DateTimeFormat(
-    "en-US",
-    {
+  return {
+    label: isUpdated ? "Updated" : "Published",
+    date: new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    },
-  ).format(timestamp);
+    }).format(parsedDate),
+    dateTime: parsedDate.toISOString(),
+  };
 }
 
 // ============================================================
@@ -290,7 +309,7 @@ export default async function AIToolList() {
       description: cleanEditorialText(
         post.meta?.description?.trim() || "",
       ),
-      publishedAt: formatDate(post.updatedAt || post.publishedAt),
+      displayDate: getDisplayDate(post),
       image,
       imageAlt,
     };
@@ -344,14 +363,14 @@ export default async function AIToolList() {
                     AI TOOLS LIST
                   </span>
 
-                  {card.publishedAt && (
+                  {card.displayDate && (
                     <>
                       <span aria-hidden="true">
                         ·
                       </span>
 
-                      <time>
-                        {card.publishedAt}
+                      <time dateTime={card.displayDate.dateTime}>
+                        {card.displayDate.label} {card.displayDate.date}
                       </time>
                     </>
                   )}
