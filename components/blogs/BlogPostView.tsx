@@ -29,6 +29,7 @@ import AdSenseSidebar from "@/components/ads/AdSenseSidebar";
 import AdSenseInArticle from "@/components/ads/AdSenseInArticle";
 import BackToTop from "@/components/BackToTop";
 import { buildLinkAttrs, isInternalUrl } from "@/lib/linkRel";
+import { addUtm, addUtmToHtml } from "@/lib/utm";
 
 import "./BlogPostView.css";
 type Props = {
@@ -862,7 +863,7 @@ function InlineText({ node }: { node: any }) {
     }
 
     const attrs = buildLinkAttrs({
-      url: href,
+      url: addUtm(href),
       linkType: f.linkType,
       newTab: Boolean(f.newTab) || !internal,
       followMode: f.followMode,
@@ -981,7 +982,7 @@ function isArticleHtml(code: string): boolean {
   return matches >= 2 || /<table\b/i.test(html);
 }
 
-function cleanArticleHtml(code: string): string {
+function cleanArticleHtmlBase(code: string): string {
   return code
     // Never allow executable JavaScript from migrated article HTML.
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
@@ -992,6 +993,10 @@ function cleanArticleHtml(code: string): string {
     .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, "")
     .replace(/javascript\s*:/gi, "")
     .replace(/<img\b(?![^>]*\sloading\s*=)/gi, '<img loading="lazy" decoding="async"');
+}
+
+function cleanArticleHtml(code: string): string {
+  return addUtmToHtml(cleanArticleHtmlBase(code));
 }
 
 /*
@@ -1306,7 +1311,7 @@ function RenderNode({
           {f.linkUrl ? (
             <a
               {...buildLinkAttrs({
-                url: f.linkUrl,
+                url: addUtm(f.linkUrl),
                 newTab: f.openInNewTab !== false,
                 followMode: f.followMode,
                 sponsored: f.sponsored,
@@ -1646,7 +1651,7 @@ function RenderNode({
 
     /* CTA */
     if (blockType === "ctaButton") {
-      const href = fields.url || "#";
+      const href = addUtm(fields.url || "#");
 
       const external = /^https?:\/\//i.test(href);
 
