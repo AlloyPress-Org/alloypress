@@ -45,9 +45,9 @@ import { default as default_7884af63ab855c86b7110d0ec65aefe1 } from '../../../co
 import { default as default_fc910c8e7dbfd59b05b7671d832450bc } from '../../../components/AlloyPressIcon'
 import { default as default_40dd80e744acbad46820a4ebfa7b6353 } from '../../../components/AlloyPressLogo'
 import { RevalidationToast as RevalidationToast_a33e993b1055d77936d52899a6befed3 } from '../../../components/RevalidationToast'
-import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { default as default_6cf2b6b93afa341fc20f5b46502998b7 } from '../../../components/AlloyDashboard'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
+import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 
 /** @type import('payload').ImportMap */
 export const importMap = {
@@ -98,7 +98,7 @@ export const importMap = {
   "/components/AlloyPressIcon#default": default_fc910c8e7dbfd59b05b7671d832450bc,
   "/components/AlloyPressLogo#default": default_40dd80e744acbad46820a4ebfa7b6353,
   "/components/RevalidationToast#RevalidationToast": RevalidationToast_a33e993b1055d77936d52899a6befed3,
-  "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "/components/AlloyDashboard#default": default_6cf2b6b93afa341fc20f5b46502998b7,
-  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
+  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1,
+  "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24
 }

@@ -39,6 +39,7 @@ import { revalidationStatusEndpoint } from './endpoints/revalidationStatus'
 
 import { AuditLogs } from './collections/AuditLogs'
 import { auditLogPlugin } from './plugins/auditLog'
+import { ImageSlots } from './collections/ImageSlots'
 
 const filename = fileURLToPath(import.meta.url)
 
@@ -202,6 +203,8 @@ export default buildConfig({
     NotFoundLogs,
 
     HomepageSettings,
+
+    ImageSlots,
 
     Subscribers,
 
@@ -693,7 +696,7 @@ export default buildConfig({
         'tags',
         'users',
         'redirects',
-        'homepage-settings',
+        'homepage-settings'
       ],
     }),
 

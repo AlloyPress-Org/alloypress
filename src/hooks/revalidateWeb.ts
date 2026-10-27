@@ -87,7 +87,7 @@ export function sendWebRevalidation(
             const base =
               tags === null ? 'Website cache refreshed.' : `Website cache refreshed (${tags} tags).`
 
-            if (edge === 'skipped') {
+            if (edge === 'skipped' && process.env.NODE_ENV === 'production') {
               logger.error(
                 `Cloudflare edge purge SKIPPED for ${label}: CF_ZONE_ID / CF_API_TOKEN are missing on the website Worker.`,
               )
@@ -183,4 +183,12 @@ export const mediaAfterChange: CollectionAfterChangeHook = async ({ doc, operati
 export const mediaAfterDelete: CollectionAfterDeleteHook = async ({ doc, req }) => {
   if (doc?.id == null) return
   await sendWebRevalidation({ scope: 'media', mediaId: String(doc.id) }, req.payload.logger, `deleted media ${doc.id}`)
+}
+
+/* Image slots (own ads) */
+export const imageSlotAfterChange: CollectionAfterChangeHook = async ({ req }) => {
+  await sendWebRevalidation({ scope: 'image-slots' }, req.payload.logger, 'image slots')
+}
+export const imageSlotAfterDelete: CollectionAfterDeleteHook = async ({ req }) => {
+  await sendWebRevalidation({ scope: 'image-slots' }, req.payload.logger, 'deleted image slot')
 }

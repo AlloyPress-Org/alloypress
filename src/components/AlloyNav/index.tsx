@@ -74,6 +74,11 @@ const advancedItems: NavItem[] = [
     icon: Settings,
   },
   {
+    label: 'Image Slots',
+    href: '/admin/collections/image-slots',
+    icon: ImageIcon,
+  },
+  {
     label: 'Users',
     href: '/admin/collections/users',
     icon: Users,

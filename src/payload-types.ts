@@ -75,6 +75,7 @@ export interface Config {
     pages: Page;
     'not-found-logs': NotFoundLog;
     'homepage-settings': HomepageSetting;
+    'image-slots': ImageSlot;
     subscribers: Subscriber;
     'audit-logs': AuditLog;
     redirects: Redirect;
@@ -93,6 +94,7 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     'not-found-logs': NotFoundLogsSelect<false> | NotFoundLogsSelect<true>;
     'homepage-settings': HomepageSettingsSelect<false> | HomepageSettingsSelect<true>;
+    'image-slots': ImageSlotsSelect<false> | ImageSlotsSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
@@ -512,6 +514,35 @@ export interface HomepageSetting {
   createdAt: string;
 }
 /**
+ * Own poster images shown on all blog posts (below TOC on desktop, above the badge on mobile).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "image-slots".
+ */
+export interface ImageSlot {
+  id: number;
+  /**
+   * Image name. Also used as alt text.
+   */
+  name: string;
+  /**
+   * Untick to hide without deleting.
+   */
+  enabled?: boolean | null;
+  image: number | Media;
+  /**
+   * Optional. Click opens this URL in a new tab.
+   */
+  linkUrl?: string | null;
+  followMode?: ('nofollow' | 'dofollow') | null;
+  /**
+   * Adds rel="sponsored" to the link (use for paid / partner posters).
+   */
+  sponsored?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Newsletter subscribers and their interests.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -656,6 +687,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'homepage-settings';
         value: number | HomepageSetting;
+      } | null)
+    | ({
+        relationTo: 'image-slots';
+        value: number | ImageSlot;
       } | null)
     | ({
         relationTo: 'subscribers';
@@ -939,6 +974,20 @@ export interface NotFoundLogsSelect<T extends boolean = true> {
 export interface HomepageSettingsSelect<T extends boolean = true> {
   title?: T;
   featuredPosts?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "image-slots_select".
+ */
+export interface ImageSlotsSelect<T extends boolean = true> {
+  name?: T;
+  enabled?: T;
+  image?: T;
+  linkUrl?: T;
+  followMode?: T;
+  sponsored?: T;
   updatedAt?: T;
   createdAt?: T;
 }
