@@ -37,10 +37,18 @@ function expireTag(tag: string) {
 type PurgeResult = "ok" | "skipped" | "failed";
 
 async function purgeWorkerCache(): Promise<PurgeResult> {
+  let mod: any;
+
   try {
     // @ts-ignore - types for "cloudflare:workers" may not be installed
-    const mod: any = await import("cloudflare:workers");
+    mod = await import("cloudflare:workers");
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") return "skipped";
+    console.error("[revalidate] Worker cache purge error", error);
+    return "failed";
+  }
 
+  try {
     if (typeof mod?.cache?.purge !== "function") return "skipped";
 
     await mod.cache.purge({ purgeEverything: true });
@@ -240,6 +248,8 @@ export async function POST(request: NextRequest) {
     } else if (scope === "homepage") {
       ["homepage", "homepage:featured"].forEach((t) => tags.add(t));
       paths.add("/");
+    } else if (scope === "image-slots") {
+      tags.add("image-slots");
     } else if (scope === "media") {
       const id = clean(body.mediaId);
       if (!id) return bad("mediaId is required");
@@ -251,6 +261,7 @@ export async function POST(request: NextRequest) {
         "home:latest-posts",
         "homepage",
         "homepage:featured",
+        "image-slots",
       ].forEach((t) => tags.add(t));
       ALL_HOME_CATEGORY_TAGS.forEach((t) => tags.add(t));
       tags.add(`media:${id}`);

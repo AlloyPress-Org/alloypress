@@ -6052,3 +6052,18 @@ html[data-theme="dark"] .single-post .ai-panel {
 
 .styled-box-body p { margin: 0 0 0.75em; }
 .styled-box-body p:last-child { margin-bottom: 0; }
+
+
+
+.single-post .post-image-slot { display: none; width: 100%; margin: 14px 0; }
+.single-post .post-image-slot-link { display: block; }
+.single-post .post-image-slot-img { display: block; width: 100%; height: auto; border-radius: 12px; }
+
+/* Desktop: below TOC, rail width (210px) */
+@media (min-width: 1181px) { .single-post .post-image-slot--desktop { display: block; max-width: 210px; } }
+
+/* Tablet: right sidebar (280px) */
+@media (max-width: 1180px) and (min-width: 821px) { .single-post .post-image-slot--tablet { display: block; max-width: 280px; } }
+
+/* Mobile: above badge */
+@media (max-width: 820px) { .single-post .post-image-slot--mobile { display: block; max-width: 336px; margin: 18px auto 8px; } }

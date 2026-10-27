@@ -22,6 +22,7 @@ import {
 } from "@/lib/seo/schema";
 import { CATEGORY_PATHS } from "@/lib/seo/constants";
 import { collectFaqs } from "@/lib/faq-from-content";
+import { getImageSlot } from "@/lib/api/imageSlots";
 
 // ============================================================
 // SITE
@@ -1138,6 +1139,7 @@ export default async function CategoryPostPage({
         categoryLabel={
           categoryLabel
         }
+        imageSlot={await getImageSlot()}
       />
     </>
   );

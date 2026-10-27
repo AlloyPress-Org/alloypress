@@ -19,6 +19,7 @@ import {
 } from "@/lib/seo/schema";
 import { SITE_URL } from "@/lib/seo/constants";
 import { collectFaqs } from "@/lib/faq-from-content";
+import { getImageSlot } from "@/lib/api/imageSlots";
 
 // ============================================================
 // BREADCRUMB CONSTANTS
@@ -716,6 +717,7 @@ export default async function BlogPostPage({
           category={categorySlugValue}
           categoryLabel={categoryName}
           subcategory={subcategory}
+          imageSlot={await getImageSlot()}
         />
       )}
     </>

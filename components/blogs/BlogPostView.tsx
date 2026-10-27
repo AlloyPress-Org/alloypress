@@ -30,6 +30,8 @@ import AdSenseInArticle from "@/components/ads/AdSenseInArticle";
 import BackToTop from "@/components/BackToTop";
 import { buildLinkAttrs, isInternalUrl } from "@/lib/linkRel";
 import { addUtm, addUtmToHtml } from "@/lib/utm";
+import PostImageSlot from "@/components/blogs/PostImageSlot";
+import type { ImageSlot } from "@/lib/api/imageSlots";
 
 import "./BlogPostView.css";
 type Props = {
@@ -39,6 +41,7 @@ type Props = {
   category?: string;
   categoryLabel?: string;
   subcategory?: { slug: string; label: string } | null;
+  imageSlot?: ImageSlot | null;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -2351,6 +2354,7 @@ export default function BlogPostView({
   category = "blogs",
   categoryLabel = "Blogs",
   subcategory = null,
+  imageSlot = null,
 }: Props) {
   const [aiOpen, setAiOpen] =
     useState(false);
@@ -2929,6 +2933,8 @@ export default function BlogPostView({
                 )}
               </div>
 
+              <PostImageSlot slot={imageSlot} device="desktop" />
+
             </aside>
             {/* Center: article */}
             <article className="article-column">
@@ -2996,6 +3002,8 @@ export default function BlogPostView({
                       </span>
                     ))}
                 </div>
+
+                <PostImageSlot slot={imageSlot} device="mobile" />
 
                 {/* Mobile AlloyPress Badge */}
                 <div className="mobile-alloypress-badge">
