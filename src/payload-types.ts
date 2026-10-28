@@ -416,6 +416,12 @@ export interface Post {
    * Short summary used in blog listings and RSS-style outputs.
    */
   excerpt?: string | null;
+  /**
+   * Publish pannumbodhu browser push anuppum. Anuppina piragu auto-OFF aagidum.
+   */
+  sendPush?: boolean | null;
+  pushAudience?: ('all' | 'test') | null;
+  lastPushAt?: string | null;
   legacy?: {
     wordpressId?: number | null;
     /**
@@ -914,6 +920,9 @@ export interface PostsSelect<T extends boolean = true> {
             };
       };
   excerpt?: T;
+  sendPush?: T;
+  pushAudience?: T;
+  lastPushAt?: T;
   legacy?:
     | T
     | {

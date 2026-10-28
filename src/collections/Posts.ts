@@ -22,6 +22,7 @@ import {
 import { textStateConfig } from '@/fields/textStateConfig'
 import { PasteImagesFeature } from '@/features/pasteImages/feature.server'
 import { fixUploadIds } from '@/hooks/fixUploadIds'
+import { sendWebPush } from '@/hooks/sendWebPush'
 
 const isEditorOrAdmin: Access = ({ req }) => {
   const role = req.user?.role
@@ -344,58 +345,58 @@ const buildLinkFeatureFields = ({
 }: {
   defaultFields: any[]
 }): any[] => [
-  ...defaultFields.filter((field) => field.name !== 'rel'),
+    ...defaultFields.filter((field) => field.name !== 'rel'),
 
-  // NEW: follow behavior dropdown (replaces the old nofollow checkbox in the UI)
-  makeFollowModeField(),
+    // NEW: follow behavior dropdown (replaces the old nofollow checkbox in the UI)
+    makeFollowModeField(),
 
-  // LEGACY (hidden): keeps nofollow = true from migrated WordPress links.
-  // The frontend still reads it. Writers now use "Link follow behavior".
-  {
-    name: 'nofollow',
-    type: 'checkbox',
-    label: 'Set to nofollow (legacy)',
-    defaultValue: false,
-    admin: {
-      hidden: true,
-      description:
-        'Legacy field kept for migrated links. Use "Link follow behavior" instead.',
+    // LEGACY (hidden): keeps nofollow = true from migrated WordPress links.
+    // The frontend still reads it. Writers now use "Link follow behavior".
+    {
+      name: 'nofollow',
+      type: 'checkbox',
+      label: 'Set to nofollow (legacy)',
+      defaultValue: false,
+      admin: {
+        hidden: true,
+        description:
+          'Legacy field kept for migrated links. Use "Link follow behavior" instead.',
+      },
     },
-  },
 
-  {
-    name: 'sponsored',
-    type: 'checkbox',
-    label: 'Set to sponsored',
-    defaultValue: false,
-    admin: {
-      description:
-        'Use this for paid, sponsored, affiliate, or advertising links.',
+    {
+      name: 'sponsored',
+      type: 'checkbox',
+      label: 'Set to sponsored',
+      defaultValue: false,
+      admin: {
+        description:
+          'Use this for paid, sponsored, affiliate, or advertising links.',
+      },
     },
-  },
 
-  {
-    name: 'noopener',
-    type: 'checkbox',
-    label: 'Set to noopener',
-    defaultValue: false,
-    admin: {
-      description:
-        'Prevents the destination page from accessing the original page through window.opener.',
+    {
+      name: 'noopener',
+      type: 'checkbox',
+      label: 'Set to noopener',
+      defaultValue: false,
+      admin: {
+        description:
+          'Prevents the destination page from accessing the original page through window.opener.',
+      },
     },
-  },
 
-  {
-    name: 'noreferrer',
-    type: 'checkbox',
-    label: 'Set to noreferrer',
-    defaultValue: false,
-    admin: {
-      description:
-        'Prevents the referring page URL from being sent to the destination.',
+    {
+      name: 'noreferrer',
+      type: 'checkbox',
+      label: 'Set to noreferrer',
+      defaultValue: false,
+      admin: {
+        description:
+          'Prevents the referring page URL from being sent to the destination.',
+      },
     },
-  },
-]
+  ]
 
 /* -------------------------------------------------------------------------- */
 /* Main rich-text content field (moved out so the tabs layout stays readable)  */
@@ -1152,10 +1153,13 @@ async function triggerWebRevalidation(doc: any, req: any, previousDoc?: any) {
       req.payload.logger,
       `post "${doc.slug}"`,
     )
+
+    return current // <-- ADD
   } catch (error) {
     req.payload.logger.error(
       `Failed to trigger web revalidation for post: ${doc.slug} - ${error instanceof Error ? error.message : String(error)}`,
     )
+    return undefined // <-- ADD
   }
 }
 
@@ -1184,31 +1188,47 @@ export const Posts: CollectionConfig = {
 
   hooks: {
     beforeChange: [
-      async ({ data }) => {
+      async ({ data, req }) => {
         if (data._status === 'published') {
-          if (!data.publishedAt) {
-            data.publishedAt = new Date().toISOString()
-          }
-
+          if (!data.publishedAt) data.publishedAt = new Date().toISOString()
           data.workflowStatus = 'published'
-        }
 
+          // Push: decide here so the saved version already has sendPush=false
+          if (data.sendPush && !req.context?.skipPush) {
+            req.context.pushNow = true
+            req.context.pushAudience = data.pushAudience === 'test' ? 'test' : 'all'
+            data.sendPush = false
+            data.lastPushAt = new Date().toISOString()
+          }
+        }
         return data
       },
     ],
 
-    afterChange: [
+       afterChange: [
       async ({ doc, previousDoc, req }) => {
-        // Publish / "Publish changes" only. Draft saves and autosave never change the public site.
         if (doc._status !== 'published' || !doc.slug) return
-        await triggerWebRevalidation(doc, req, previousDoc)
-      },
-    ],
 
-    afterDelete: [
-      async ({ doc, req }) => {
-        if (!doc?.slug) return
-        await triggerWebRevalidation(doc, req)
+        const cat = await triggerWebRevalidation(doc, req, previousDoc)
+
+        if (req.context?.pushNow) {
+          const img =
+            typeof doc.featuredImage === 'object' ? doc.featuredImage?.url : undefined
+          const section = cat?.section ?? 'blogs'
+
+          sendWebPush(
+            {
+              title: doc.title,
+              message: doc.excerpt || '',
+              url: `${process.env.SITE_URL}/${section}/${doc.slug}`,
+              image: img
+                ? new URL(img, process.env.CMS_PUBLIC_URL).toString()
+                : undefined,
+              audience: (req.context.pushAudience as 'all' | 'test') ?? 'all',
+            },
+            req.payload.logger,
+          )
+        }
       },
     ],
   },
@@ -1695,6 +1715,47 @@ export const Posts: CollectionConfig = {
             description:
               'Short summary used in blog listings and RSS-style outputs.',
           },
+        },
+      ],
+    },
+
+    // =====================================================================
+    // PUSH NOTIFICATION: sidebar panel (Publishing -> SEO -> Excerpt -> Push)
+    // =====================================================================
+    {
+      type: 'collapsible',
+      label: 'Push Notification',
+      admin: { position: 'sidebar', initCollapsed: false },
+      fields: [
+        {
+          name: 'sendPush',
+          type: 'checkbox',
+          label: 'Send notification when published',
+          defaultValue: true, // new post = ON. Old posts migration la false aagum
+          admin: {
+            description:
+              'Publish pannumbodhu browser push anuppum. Anuppina piragu auto-OFF aagidum.',
+          },
+        },
+        {
+          name: 'pushAudience',
+          type: 'radio',
+          label: 'Send to',
+          defaultValue: 'all',
+          options: [
+            { label: 'All Users', value: 'all' },
+            { label: 'Test Users', value: 'test' },
+          ],
+          admin: {
+            layout: 'vertical',
+            condition: (_, siblingData) => Boolean(siblingData?.sendPush),
+          },
+        },
+        {
+          name: 'lastPushAt',
+          type: 'date',
+          label: 'Last notification sent',
+          admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
         },
       ],
     },
