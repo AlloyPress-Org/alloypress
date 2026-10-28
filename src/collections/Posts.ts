@@ -1205,25 +1205,52 @@ export const Posts: CollectionConfig = {
       },
     ],
 
-       afterChange: [
+    afterChange: [
       async ({ doc, previousDoc, req }) => {
         if (doc._status !== 'published' || !doc.slug) return
 
         const cat = await triggerWebRevalidation(doc, req, previousDoc)
 
         if (req.context?.pushNow) {
-          const img =
-            typeof doc.featuredImage === 'object' ? doc.featuredImage?.url : undefined
+          const siteUrl = (process.env.SITE_URL || 'https://alloypress.com').replace(/\/$/, '')
+          const cmsUrl = (process.env.CMS_PUBLIC_URL || 'https://api.alloypress.com').replace(/\/$/, '')
           const section = cat?.section ?? 'blogs'
+
+          // featuredImage is only an ID inside the hook, so load the media doc
+          let imageUrl: string | undefined
+          const fi = doc.featuredImage
+          if (fi) {
+            const media =
+              typeof fi === 'object'
+                ? fi
+                : await req.payload
+                  .findByID({ collection: 'media', id: fi, depth: 0, req })
+                  .catch(() => null)
+            const u = (media as { url?: string | null } | null)?.url
+            if (u) {
+              const full = u.startsWith('http') ? u : `${cmsUrl}${u}`
+              const MEDIA_HOST = 'https://media.alloypress.com'
+              // WebP -> JPEG 1024px for push (Cloudflare resizes on the fly)
+              imageUrl = full.startsWith(MEDIA_HOST)
+                ? `${MEDIA_HOST}/cdn-cgi/image/width=1024,quality=80,format=jpeg${full.slice(MEDIA_HOST.length)}`
+                : full
+            }
+          }
+
+          // Body = SEO meta description (every post has it), excerpt as backup
+          const metaDescription =
+            typeof doc.meta?.description === 'string' ? doc.meta.description.trim() : ''
+          const message =
+            metaDescription ||
+            (typeof doc.excerpt === 'string' ? doc.excerpt.trim() : '') ||
+            'New on AlloyPress. Tap to read.'
 
           sendWebPush(
             {
               title: doc.title,
-              message: doc.excerpt || '',
-              url: `${process.env.SITE_URL}/${section}/${doc.slug}`,
-              image: img
-                ? new URL(img, process.env.CMS_PUBLIC_URL).toString()
-                : undefined,
+              message,
+              url: `${siteUrl}/${section}/${doc.slug}`,
+              image: imageUrl,
               audience: (req.context.pushAudience as 'all' | 'test') ?? 'all',
             },
             req.payload.logger,
