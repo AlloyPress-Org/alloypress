@@ -40,6 +40,7 @@ import { revalidationStatusEndpoint } from './endpoints/revalidationStatus'
 import { AuditLogs } from './collections/AuditLogs'
 import { auditLogPlugin } from './plugins/auditLog'
 import { ImageSlots } from './collections/ImageSlots'
+import { redirectAfterChange, redirectAfterDelete } from './hooks/revalidateWeb'
 
 const filename = fileURLToPath(import.meta.url)
 
@@ -620,6 +621,16 @@ export default buildConfig({
       collections: ['posts', 'pages'],
 
       redirectTypes: ['301'],
+
+      overrides: {
+        access: {
+          read: () => true, // website public-ah redirects read panna
+        },
+        hooks: {
+          afterChange: [redirectAfterChange],
+          afterDelete: [redirectAfterDelete],
+        },
+      },
 
     }),
 

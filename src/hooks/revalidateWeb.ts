@@ -192,3 +192,26 @@ export const imageSlotAfterChange: CollectionAfterChangeHook = async ({ req }) =
 export const imageSlotAfterDelete: CollectionAfterDeleteHook = async ({ req }) => {
   await sendWebRevalidation({ scope: 'image-slots' }, req.payload.logger, 'deleted image slot')
 }
+
+
+/* Redirects */
+export const redirectAfterChange: CollectionAfterChangeHook = async ({ doc, previousDoc, req }) => {
+  const from = str(doc?.from)
+  if (!from) return
+  await sendWebRevalidation({ scope: 'redirect', from }, req.payload.logger, `redirect "${from}"`)
+
+  // "From URL" maathinaa, pazhaya URL-um clear aaganum
+  const prev = str(previousDoc?.from)
+  if (prev && prev !== from) {
+    await sendWebRevalidation(
+      { scope: 'redirect', from: prev, skipEdgePurge: true },
+      req.payload.logger,
+      `redirect "${prev}" (old)`,
+    )
+  }
+}
+export const redirectAfterDelete: CollectionAfterDeleteHook = async ({ doc, req }) => {
+  const from = str(doc?.from)
+  if (!from) return
+  await sendWebRevalidation({ scope: 'redirect', from }, req.payload.logger, `deleted redirect "${from}"`)
+}
