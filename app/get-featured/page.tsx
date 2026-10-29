@@ -2,8 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
 import { withDefaultSocial } from "@/lib/seo/metadata";
+import ProofStrip, { type ProofStat } from "@/components/shared/ProofStrip";
+import { payloadFetch } from "@/lib/payload";
+import type { Post, PayloadResponse } from "@/lib/cms";
+import { getBlogHeadings } from "@/lib/blogUtils";
 
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
+
+// Cache this page for 7 days (static + ISR), same approach as the blog posts.
+// Must be a literal number: 60 * 60 * 24 * 7 = 604800.
+export const revalidate = 604800;
 
 export const metadata: Metadata = withDefaultSocial(
   {
@@ -39,41 +47,245 @@ const breadcrumbSchema = {
 
 const principles = [
   ["▣", "Readers are actively deciding", "People visit our lists because they need a practical answer. We include products that genuinely help with the use case an article covers."],
-  ["▤", "Editorial credibility still counts", "Paid inclusion supports editorial work, but it does not buy a position, rating, recommendation, or positive conclusion."],
-  ["⌁", "Long-term search and discoverability", "Useful lists can continue attracting readers through search and AI discovery. Inclusion gives a product durable editorial context."],
+  ["▤", "Trusted by buyers", "Readers trust lists that aren't for sale, so being on one carries weight with the people choosing a tool."],
+  ["⌁", "Long-term search and discoverability", "Useful lists continue attracting readers through search and AI discovery. Inclusion gives a product durable editorial context."],
   ["↗", "Updated as your product grows", "When meaningful features, pricing, or positioning changes affect an article, the relevant coverage can be revisited."],
 ];
 
-const articleTypes = [
-  ["01", "Best AI Image Generators", "List"], ["02", "Best AI Logo Generators", "List"], ["03", "Best AI Video Generators", "List"],
-  ["04", "Best AI Writing Tools", "List"], ["05", "Best AI Website Builders", "List"], ["06", "Best AI Background Removers", "List"],
-  ["07", "ChatGPT Alternatives", "Alternative"], ["08", "Jasper Alternatives", "Alternative"], ["09", "Midjourney Alternatives", "Alternative"],
-  ["10", "Best AI Productivity Tools", "List"], ["11", "Best AI Coding Tools", "List"], ["12", "Best AI Research Tools", "List"],
+// Rendered by the shared <ProofStrip /> component.
+const proofStats: readonly ProofStat[] = [
+  ["6.1M+", "Google Search visibility across our top 5 pages"],
+  ["2.3M+", "Google Search visibility for our Best AI Image Generators list"],
+  ["250+", "AI tools tested and published"],
+  ["1,000+", "Hours of hands-on testing"],
 ];
+
+type ListType = "List" | "Alternatives";
+
+type ListItem = {
+  title: string;
+  type: ListType;
+  href: string;
+  /** Optional manual override. Normally the CMS excerpt is used. */
+  description: string;
+  /** Optional manual override, e.g. "12". Normally counted from the article. */
+  tested: string;
+  /** Fallback date (from the sitemap) shown as "Updated Mon YYYY". */
+  updated: string;
+  published: string;
+};
+
+const SEVEN_DAYS = 604800;
+
+const slugOf = (href: string) => href.split("/").filter(Boolean).pop() ?? "";
+
+const formatMonth = (iso?: string) =>
+  iso
+    ? new Date(iso).toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    })
+    : "";
+
+// ---------------------------------------------------------------
+// Articles listed on this page. Slugs and dates come from the live
+// sitemap (alloypress.com/sitemap.xml), so every card links to a real page.
+// [slug, title, type, sitemap lastmod]
+// List  -> /blogs/<slug>        Alternatives -> /alternatives/<slug>
+// ---------------------------------------------------------------
+const listSource: [string, string, ListType, string][] = [
+  ["best-ai-image-generator", "Best AI Image Generators", "List", "2026-10-23"],
+  ["best-ai-video-generators", "Best AI Video Generators", "List", "2026-10-23"],
+  ["best-ai-logo-generators", "Best AI Logo Generators", "List", "2026-10-23"],
+  ["best-ai-writing-tools", "Best AI Writing Tools", "List", "2026-10-23"],
+  ["best-ai-blog-writing-tools", "Best AI Blog Writing Tools", "List", "2026-10-29"],
+  ["best-ai-website-builders", "Best AI Website Builders", "List", "2026-10-24"],
+  ["best-ai-landing-page-builders", "Best AI Landing Page Builders", "List", "2026-10-23"],
+  ["best-ai-background-remover-tools", "Best AI Background Remover Tools", "List", "2026-10-23"],
+  ["best-ai-image-editors", "Best AI Image Editors", "List", "2026-10-23"],
+  ["best-ai-video-editors", "Best AI Video Editors", "List", "2026-10-23"],
+  ["best-ai-poster-generator", "Best AI Poster Generators", "List", "2026-10-28"],
+  ["best-ai-ppt-generators", "Best AI PPT Generators", "List", "2026-10-24"],
+  ["best-ai-voice-generators", "Best AI Voice Generators", "List", "2026-10-21"],
+  ["best-ai-text-summarizers", "Best AI Text Summarizers", "List", "2026-10-28"],
+  ["best-ai-chatbots", "Best AI Chatbots", "List", "2026-10-23"],
+  ["best-ai-browser", "Best AI Browsers", "List", "2026-10-23"],
+  ["best-ai-seo-tools", "Best AI SEO Tools", "List", "2026-10-24"],
+  ["best-ai-visibility-tools", "Best AI Visibility Tools", "List", "2026-10-23"],
+  ["best-ai-vibe-coding-tools", "Best AI Vibe Coding Tools", "List", "2026-10-23"],
+  ["best-ai-detectors", "Best AI Detectors", "List", "2026-10-24"],
+  ["best-ai-image-detector", "Best AI Image Detectors", "List", "2026-10-21"],
+  ["best-ai-humanizer", "Best AI Humanizers", "List", "2026-10-24"],
+  ["best-ai-plagiarism-checker", "Best AI Plagiarism Checkers", "List", "2026-10-23"],
+  ["best-privacy-focused-ai-tools", "Best Privacy-Focused AI Tools", "List", "2026-10-23"],
+  ["list-of-top-ai-resume-builders", "Top AI Resume Builders", "List", "2026-10-23"],
+  ["social-media-marketing-tools", "Social Media Marketing Tools", "List", "2026-10-23"],
+  ["top-ai-tools-for-marketing", "Top AI Tools for Marketing", "List", "2026-10-23"],
+  ["top-ai-tools", "Top AI Tools", "List", "2026-10-23"],
+  ["free-grok-image-and-video-generation", "Free Grok Image and Video Alternatives", "Alternatives", "2026-09-25"],
+  ["kling-ai-alternatives", "Kling AI Alternatives", "Alternatives", "2026-10-24"],
+  ["gravitywrite-alternatives", "GravityWrite Alternatives", "Alternatives", "2026-09-25"],
+  ["quillbot-alternatives", "QuillBot Alternatives", "Alternatives", "2026-09-26"],
+  ["best-midjourney-alternatives", "Best Midjourney Alternatives", "Alternatives", "2026-09-26"],
+  ["chatgpt", "ChatGPT Alternatives", "Alternatives", "2026-10-14"],
+  ["sora", "Sora Alternatives", "Alternatives", "2026-10-24"],
+  ["reve-ai", "Reve AI Alternatives", "Alternatives", "2026-10-06"],
+];
+
+const lists: ListItem[] = listSource.map(([slug, title, type, lastmod]) => ({
+  title,
+  type,
+  href: `${type === "List" ? "/blogs" : "/alternatives"}/${slug}`,
+  description: "",
+  tested: "",
+  updated: formatMonth(lastmod),
+  published: "",
+}));
+
+const fallbackDescription = (type: ListType) =>
+  type === "List"
+    ? "Tools tested hands-on and compared side by side, with honest strengths, limitations and pricing."
+    : "Alternatives tested hands-on, showing where each one is stronger or weaker.";
+
+// ---------------------------------------------------------------
+// Live data from the CMS: excerpt, dates and tools-tested count.
+// Requests are split into small groups so each response stays small,
+// run in parallel, cached for 7 days and tagged like the blog posts
+// (post:<slug> + posts-content), so an article update also refreshes
+// this page. If a request fails, the sitemap dates above are used.
+// ---------------------------------------------------------------
+type ArticleMeta = { date: string; tested: string; metaDescription: string; };
+
+// Counts numbered tool headings ("1. Tool", "#2 Tool", "03) Tool").
+const NUMBERED_HEADING = /^\s*(?:#\d{1,2}\b|\d{1,2}\s*[.):\u2013-])\s*\S/;
+
+function countTools(content: Post["content"]) {
+  if (!content) return "";
+
+  const headings = getBlogHeadings(content);
+  const count = (level: number) =>
+    headings.filter((h) => h.level === level && NUMBERED_HEADING.test(h.text)).length;
+
+  const total = Math.max(count(2), count(3));
+  return total >= 3 ? String(total) : "";
+}
+
+async function getArticleMeta() {
+  const slugs = lists.map((item) => slugOf(item.href));
+  const groups: string[][] = [];
+  for (let i = 0; i < slugs.length; i += 6) groups.push(slugs.slice(i, i + 6));
+
+  const responses = await Promise.all(
+    groups.map((group) => {
+      const params = new URLSearchParams({
+        "where[slug][in]": group.join(","),
+        "where[workflowStatus][equals]": "published",
+        limit: String(group.length),
+        depth: "0",
+        "select[slug]": "true",
+        "select[meta]": "true",
+        "select[publishedAt]": "true",
+        "select[updatedAt]": "true",
+        "select[content]": "true",
+      });
+
+      return payloadFetch<PayloadResponse<Post>>(`/posts?${params.toString()}`, {
+        next: {
+          revalidate: SEVEN_DAYS,
+          tags: ["posts-content", ...group.map((slug) => `post:${slug}`)],
+        },
+      });
+    })
+  );
+
+  const meta = new Map<string, ArticleMeta>();
+
+  for (const response of responses) {
+    for (const post of response?.docs ?? []) {
+      if (!post.slug) continue;
+
+      const published = post.publishedAt ? new Date(post.publishedAt).getTime() : 0;
+      const updated = post.updatedAt ? new Date(post.updatedAt).getTime() : 0;
+      const wasUpdated = updated - published > 24 * 60 * 60 * 1000;
+
+      meta.set(post.slug, {
+        date: wasUpdated
+          ? `Updated ${formatMonth(post.updatedAt)}`
+          : post.publishedAt
+            ? `Published ${formatMonth(post.publishedAt)}`
+            : "",
+        tested: countTools(post.content),
+        metaDescription: ((post as Post & { meta?: { description?: string } }).meta?.description ?? "").trim(),
+      });
+    }
+  }
+
+  return meta;
+}
+
+// Higgsfield approval is pending. Set to true only once they approve the quote.
+const showTestimonial = false;
+
+const faqs = [
+  ["Is this paid placement?", "No. We don't sell positions, ratings or verdicts. The fee covers the time our team spends testing your tool, taking screenshots, writing and keeping the coverage updated. A tool that tests poorly doesn't get a strong write-up, paid or not."],
+  ["How much does it cost?", "It depends on the article and the depth of testing your tool needs. Reach out with your tool and we'll share how we work, what's included and the fees behind it, usually within 1 to 2 business days."],
+  ["Can you guarantee a #1 position?", "No, for any brand. Position is decided by how your tool performs against the others in the same test. If it stands out, nothing stops it from ranking first."],
+  ["Can you include my tool for free?", "We do cover tools from our own research, but our team is small and the testing queue is long. A confirmed collaboration gets a scheduled slot. Without one, we can't say when we'd reach your tool."],
+  ["You've already tested us for another article. Why is this one separate?", "Each article is a fresh, head-to-head test against the tools in that article, so it's new work every time."],
+  ["Can we send the description or the copy?", "No. Everything is written by our team from our own testing. We're happy to correct facts such as pricing or feature names."],
+  ["Can we pay through an affiliate commission instead?", "No. We don't work on commission, and we're removing affiliate links from our editorial content to keep coverage independent."],
+];
+
+const listPopup = {
+  eyebrow: "List inclusion",
+  title: "Get your tool considered for a list",
+  text: "Tell us which list your tool fits. We'll check the fit and share how we work, the value we provide and the fees behind it.",
+  email: "contact@alloypress.com",
+  subject: "Feature request: [Your tool name]",
+  include: [
+    "Tool name and website",
+    "The list or category you'd like to be in",
+    "What sets it apart from the tools already listed",
+    "Test access or demo details",
+  ],
+};
+
+function listMailto() {
+  const body = listPopup.include
+    .map((line) => encodeURIComponent(line + ":\n"))
+    .join("");
+  return (
+    "mailto:" + listPopup.email +
+    "?subject=" + encodeURIComponent(listPopup.subject) +
+    "&body=" + body
+  );
+}
+
 
 const differences = [
   ["01", "Real testing, not marketing", "We use the product where practical. We do not rely only on launch copy, feature pages, or sales claims."],
-  ["02", "We pick what belongs, not what pays", "Payment can fund editorial work. It does not guarantee a ranking, rating, recommendation, or favourable conclusion."],
-  ["03", "Built for long-term discoverability", "Useful articles can keep attracting readers through search and AI discovery, so context and structure matter."],
+  ["02", "Side by side with real competitors", "Readers see how your tool compares with others on the same tasks, which is what moves a decision."],
+  ["03", "Built for long-term discoverability", "Useful articles can keep attracting readers through search and AI discovery, as context and structure matter."],
   ["04", "Honest about strengths and limitations", "We explain where a product works well and where it falls short because readers need useful trade-offs."],
   ["05", "Updated as things change", "Meaningful changes to products, pricing, or capabilities can trigger a review of existing coverage."],
   ["06", "Context that actually helps", "Readers should understand who the tool is for, what it does best, and when another option may make more sense."],
 ];
 
 const boundaries = [
-  ["✕", "We don't guarantee a listing or ranking", "Every request is reviewed for editorial fit before inclusion is confirmed."],
-  ["✕", "We don't publish supplied marketing copy", "Your product information helps us understand the tool, but the final editorial wording is ours."],
-  ["✕", "We don't hide meaningful limitations", "If testing reveals an important weakness, readers should know about it."],
-  ["✕", "We don't publish without enough context", "A useful listing needs enough product information and, when required, access for evaluation."],
+  ["✓", "Every inclusion is earned in testing", "We review each request for editorial fit before anything is confirmed."],
+  ["✓", "Our words, your facts", "We write the coverage ourselves, and we're happy to correct facts like pricing or feature names."],
+  ["✓", "Honest strengths and limitations", "If testing reveals a real weakness, readers hear about it. That's why they trust the strengths too."],
+  ["✓", "Full context before we publish", "We publish once we have enough product information and, where needed, access for testing."],
 ];
 
 const process = [
-  ["01", "You submit your tool details", "Send the product name, URL, category, article you have in mind, and enough context for us to understand the product."],
-  ["02", "We review whether there's a genuine fit", "We check the product against the article topic, audience, and existing coverage before moving forward."],
+  ["01", "You submit your tool details", "Send the product name, URL, category, the article you have in mind, and enough context for us to understand the product."],
+  ["02", "We review whether there's a genuine fit", "We check the product against the article topic, audience, and existing coverage, then share how we work and the fees behind it."],
   ["03", "We collect access and testing details", "If hands-on evaluation is needed, we arrange product access, demo details, or the appropriate plan for testing."],
-  ["04", "We test and prepare the editorial coverage", "We evaluate relevant workflows and create the inclusion around observable usefulness rather than marketing claims."],
-  ["05", "The article is published and maintained", "Approved coverage is published with SEO-friendly structure and can be revisited when meaningful changes affect the article."],
-  ["06", "You receive the published context", "We share the relevant article details once the editorial work is complete and the page is live."],
+  ["04", "We test and prepare the editorial coverage", "We evaluate relevant workflows and write the inclusion around observable usefulness rather than marketing claims."],
+  ["05", "The article is published and maintained", "Approved coverage is published with a search-friendly structure and can be revisited when meaningful changes affect the article."],
+  ["06", "You receive the published details", "We share the article link and your position once the editorial work is complete and the page is live."],
 ];
 
 const requirements = [
@@ -81,7 +293,9 @@ const requirements = [
   "Key differentiators or features worth testing", "Product access or demo details, if required", "A business email connected to your company or product",
 ];
 
-export default function InclusionPage() {
+export default async function InclusionPage() {
+  const articleMeta = await getArticleMeta();
+
   return (
     <main className="inclusion-page">
       <Script
@@ -98,78 +312,161 @@ export default function InclusionPage() {
         <div className="inc-glow" aria-hidden="true" />
         <div className="inc-container inc-hero-inner">
           <div className="inc-hero-copy">
-            <div className="inc-eyebrow inc-light"><span /> EDITORIAL LISTING PROGRAMME</div>
+            <div className="inc-eyebrow inc-light"><span /> EDITORIAL LISTING PROGRAM</div>
             <h1>Get Your AI Tool<br />Considered for a <em>Spot It</em><br /><em>Actually Earns</em></h1>
-            <p>We publish honest, tested lists and alternatives articles covering the best AI tools in each category. If your tool fits genuinely, we want to know about it.</p>
+            <p>We publish honest, tested lists and alternatives articles covering the best AI tools in each category. If your tool genuinely fits, we want to know about it.</p>
             <button
               type="button"
               className="inc-primary inc-email-open"
-              data-email-open
+              data-inc-open
             >
               Get Featured <span>↗</span>
             </button>
             <div className="inc-hero-meta"><span>LISTS</span><i>·</i><span>ALTERNATIVES</span><i>·</i><span>HANDS-ON TESTING</span><i>·</i><span>EDITORIAL REVIEW</span></div>
+            <p className="inc-hero-editorial">Inclusion is editorial, not a guaranteed ranking.</p>
           </div>
         </div>
-        <div className="inc-note-bar"><div className="inc-container inc-note"><span className="inc-note-icon">●</span><p><strong>Quick note:</strong> inclusion is editorial, not a guaranteed ranking. We evaluate tools based on reader usefulness, fit, and evidence.</p></div></div>
       </section>
+
+      {/* PROOF STRIP (shared component) */}
+      <ProofStrip stats={proofStats} showAiPlatforms />
 
       <section className="inc-section inc-matters">
         <div className="inc-container">
-          <header className="inc-heading"><div><div className="inc-eyebrow"><span /> WHY IT MATTERS</div><h2>What being in an AlloyPress list actually means for your product.</h2><p>There's a meaningful difference between being featured because a product is useful to readers and being dropped into a directory. Here's what editorial inclusion provides.</p></div><span className="inc-index">01 / 06</span></header>
+          <header className="inc-heading"><div><div className="inc-eyebrow"><span /> WHY IT MATTERS</div><h2>What being in an AlloyPress list actually means for your product.</h2><p>There's a real difference between being featured because a product is useful to readers and being dropped into a directory. Here's what editorial inclusion provides.</p></div></header>
           <div className="inc-principle-grid">{principles.map(([icon, title, text]) => <article className="inc-principle-card" key={title}><span className="inc-card-icon">{icon}</span><div><h3>{title}</h3><p>{text}</p></div></article>)}</div>
         </div>
       </section>
 
       <section className="inc-section inc-lists">
         <div className="inc-container">
-          <header className="inc-heading"><div><div className="inc-eyebrow"><span /> OUR LISTS</div><h2>The lists and alternatives articles you can be considered for.</h2><p>These are article categories we actively maintain. If your tool belongs in one, that's the starting point for a conversation.</p></div><span className="inc-index">02 / 06</span></header>
-          <div className="inc-article-grid">{articleTypes.map(([num, title, type]) => <div className="inc-article-chip" key={title}><span>{num}</span><strong>{title}</strong><small>{type}</small></div>)}</div>
+          <header className="inc-heading"><div><div className="inc-eyebrow"><span /> OUR LISTS</div><h2>The lists and alternatives articles you can be considered for.</h2><p>These are article categories we actively maintain. If your tool belongs in one, that's the starting point for a conversation.</p></div></header>
+          <div className="inc-article-grid">
+            {lists.map((item, index) => {
+              const meta = articleMeta.get(slugOf(item.href));
+              const dateText =
+                meta?.date ||
+                (item.updated ? `Updated ${item.updated}` : item.published ? `Published ${item.published}` : "");
+              const toolCount = item.tested || meta?.tested || "";
+              const testedText = toolCount ? `${toolCount} tools tested` : "";
+              const description =
+                item.description || meta?.metaDescription || fallbackDescription(item.type);
+
+              return (
+                <Link className="inc-list-card" href={item.href} key={item.title}>
+                  <span className="inc-list-num">{String(index + 1).padStart(2, "0")}</span>
+                  <div className="inc-list-body">
+                    <strong>{item.title}</strong>
+                    <p className="inc-list-desc">{description}</p>
+                    {(testedText || dateText) && (
+                      <small className="inc-list-meta">
+                        {testedText}
+                        {testedText && dateText && " · "}
+                        {dateText}
+                      </small>
+                    )}
+                  </div>
+                  <span className="inc-list-type">{item.type} <i>↗</i></span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </section>
 
-      <section className="inc-proof-section"><div className="inc-container"><div className="inc-proof-card"><div><div className="inc-eyebrow inc-light"><span /> WE'RE NOT SELLING A RANKING</div><h2>We test first.<br />We list based on <em>what we find.</em></h2></div><div className="inc-proof-copy"><p>Most tools can look impressive on a product page. The useful question is what happens when someone actually uses them.</p><p>Our coverage focuses on real workflows, observable outputs, usability, pricing, limitations, and audience fit. Payment supports the work — it doesn't decide the conclusion.</p></div></div></div></section>
+      {showTestimonial && (
+        <section className="inc-testimonial">
+          <div className="inc-container">
+            <figure>
+              <blockquote>
+                &ldquo;Coming from a team that has tested 250+ tools, Higgsfield
+                ranking first means a lot.&rdquo;
+              </blockquote>
+              <figcaption>
+                Higgsfield Team, ranked #1 in our Best AI Video Generators test
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+      )}
+
+      <section className="inc-proof-section"><div className="inc-container"><div className="inc-proof-card"><div><div className="inc-eyebrow inc-light"><span /> WE'RE NOT SELLING A RANKING</div><h2>We test first.<br />We list based on <em>what we find.</em></h2></div><div className="inc-proof-copy"><p>Most tools can look impressive on a product page. The useful question is what happens when someone actually uses them.</p><p>Our coverage focuses on real workflows, observable outputs, usability, pricing, limitations, and audience fit. Payment supports the work; it doesn't decide the conclusion.</p></div></div></div></section>
 
       <section className="inc-section inc-difference">
         <div className="inc-container">
-          <header className="inc-heading"><div><div className="inc-eyebrow"><span /> WHY ALLOYPRESS</div><h2>What makes our lists different from most.</h2><p>There are a lot of “best of” lists for AI tools. Here's what separates ours.</p></div><span className="inc-index">03 / 06</span></header>
+          <header className="inc-heading"><div><div className="inc-eyebrow"><span /> WHY ALLOYPRESS</div><h2>What makes our lists different from most.</h2><p>There are a lot of “best of” lists for AI tools. Here's what separates ours.</p></div></header>
           <div className="inc-difference-grid">{differences.map(([num, title, text]) => <article className="inc-difference-card" key={num}><span>{num}</span><div><h3>{title}</h3><p>{text}</p></div></article>)}</div>
         </div>
       </section>
 
       <section className="inc-section inc-boundaries">
         <div className="inc-container">
-          <header className="inc-heading"><div><div className="inc-eyebrow"><span /> KEEP IT CLEAR</div><h2>A few things worth being clear about.</h2><p>We know there are sites that place products on lists after a paid request. That's not how we want our editorial coverage to work.</p></div><span className="inc-index">04 / 06</span></header>
+          <header className="inc-heading"><div><div className="inc-eyebrow"><span /> OUR COMMITMENTS</div><h2>Our commitments to readers (and to you).</h2><p>This is how we keep lists worth being on.</p></div></header>
           <div className="inc-boundary-grid">{boundaries.map(([icon, title, text]) => <article className="inc-boundary-card" key={title}><span>{icon}</span><div><h3>{title}</h3><p>{text}</p></div></article>)}</div>
         </div>
       </section>
 
       <section className="inc-section inc-process">
         <div className="inc-container">
-          <header className="inc-heading"><div><div className="inc-eyebrow inc-light"><span /> HOW IT WORKS</div><h2>What happens after you reach out.</h2><p>The process is straightforward. Here's exactly what to expect from submission to coverage.</p></div><span className="inc-index">05 / 06</span></header>
+          <header className="inc-heading"><div><div className="inc-eyebrow inc-light"><span /> HOW IT WORKS</div><h2>What happens after you reach out.</h2><p>The process is straightforward. Here's exactly what to expect from submission to coverage.</p></div></header>
           <div className="inc-process-list">{process.map(([num, title, text]) => <article className="inc-process-row" key={num}><span className="inc-process-number">{num}</span><div><h3>{title}</h3><p>{text}</p></div><b>↗</b></article>)}</div>
-          <div className="inc-timeline"><strong>Timeline: 7 to 14 working days in most cases</strong><p>Once collaboration is confirmed, product access is available, and required details are received, most inclusion requests can move through the editorial process within this window. Complex evaluations may take longer.</p></div>
+          <div className="inc-timeline"><p><strong>Timeline: 6 to 12 working days</strong>, depending on our current testing queue. It can be shorter or longer, and we confirm the exact timing when you reach out.</p></div>
+        </div>
+      </section>
+
+      <section className="inc-crosssell">
+        <div className="inc-container">
+          <div className="inc-crosssell-card">
+            <div>
+              <h2>Want more than a section?</h2>
+              <p>
+                A list section shows how you compare. A dedicated review shows
+                everything your tool does, on a permanent page that&apos;s only
+                about you and refreshed as you ship. Pair the two and we&apos;ll
+                share a combined rate.
+              </p>
+            </div>
+            <Link className="inc-secondary-link" href="/get-reviewed">
+              See dedicated reviews
+            </Link>
+          </div>
         </div>
       </section>
 
       <section className="inc-section inc-requirements"><div className="inc-container inc-requirements-layout"><div><div className="inc-eyebrow"><span /> BEFORE YOU REACH OUT</div><h2>What to share when you reach out.</h2><p>The more context you give us, the faster we can evaluate your request and tell you whether there's a useful place for the product.</p></div><div className="inc-requirement-list">{requirements.map((item, index) => <div key={item}><span>{String(index + 1).padStart(2, "0")}</span><p>{item}</p></div>)}</div></div></section>
 
-      <section className="inc-final"><div className="inc-final-grid" aria-hidden="true" /><div className="inc-final-glow" aria-hidden="true" /><div className="inc-container inc-final-inner"><div className="inc-eyebrow inc-light"><span /> GET STARTED</div><h2>If your tool genuinely belongs in our lists,<br /><em>let's find out.</em></h2><p>Send us the basics and we'll review your fit. If there's a useful editorial opportunity, we'll take it from there.</p><button
+      <section className="inc-section inc-faq">
+        <div className="inc-container">
+          <header className="inc-heading">
+            <div>
+              <div className="inc-eyebrow"><span /> FAQ</div>
+              <h2>Questions brands ask before reaching out.</h2>
+            </div>
+          </header>
+          <div className="inc-faq-list">
+            {faqs.map(([question, answer]) => (
+              <details className="inc-faq-item" key={question}>
+                <summary>{question}</summary>
+                <p>{answer}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="inc-final"><div className="inc-final-grid" aria-hidden="true" /><div className="inc-final-glow" aria-hidden="true" /><div className="inc-container inc-final-inner"><div className="inc-eyebrow inc-light"><span /> GET STARTED</div><h2>If your tool genuinely belongs in our lists,<br /><em>let's find out.</em></h2><p>Send us the basics and we'll review your fit, then share how we work, the value we provide and the fees behind it.</p><button
         type="button"
         className="inc-primary inc-email-open"
-        data-email-open
+        data-inc-open
       >
         Get Featured <span>↗</span>
-      </button><small>Product name, URL, category, and relevant testing details</small></div></section>
+      </button><p className="inc-urgency">We schedule testing in the order collaborations are confirmed, and each list has limited room.</p><small>Or email <a href="mailto:contact@alloypress.com">contact@alloypress.com</a> with your product name, URL, category and testing details.</small></div></section>
       <div
         className="inc-email-modal-wrap"
-        data-email-modal
+        data-inc-modal
         aria-hidden="true"
       >
-        <div
-          className="inc-email-backdrop"
-          data-email-close
-        />
+        <div className="inc-email-backdrop" data-inc-close />
 
         <div
           className="inc-email-modal"
@@ -180,7 +477,7 @@ export default function InclusionPage() {
           <button
             type="button"
             className="inc-email-close"
-            data-email-close
+            data-inc-close
             aria-label="Close"
           >
             ×
@@ -188,103 +485,110 @@ export default function InclusionPage() {
 
           <div className="inc-eyebrow">
             <span />
-            ARTICLE INCLUSION
+            {listPopup.eyebrow}
           </div>
 
-          <h2 id="inc-email-title">
-            Send us your tool
-          </h2>
+          <h2 id="inc-email-title">{listPopup.title}</h2>
+          <p>{listPopup.text}</p>
 
-          <p>
-            Send your product details and relevant
-            testing information to:
-          </p>
-
+          <span className="inc-field-label">Email</span>
           <div className="inc-email-row">
             <input
               type="text"
-              value="contact@alloypress.com"
+              value={listPopup.email}
               readOnly
               aria-label="AlloyPress email address"
               className="inc-email-input"
-              data-email-input
             />
-
-            <button
-              type="button"
-              className="inc-email-copy"
-              data-email-copy
-            >
+            <button type="button" className="inc-email-copy" data-inc-copy={listPopup.email}>
               Copy
             </button>
           </div>
+
+          <span className="inc-field-label">Subject</span>
+          <div className="inc-email-row">
+            <input
+              type="text"
+              value={listPopup.subject}
+              readOnly
+              aria-label="Email subject"
+              className="inc-email-input"
+            />
+            <button type="button" className="inc-email-copy" data-inc-copy={listPopup.subject}>
+              Copy
+            </button>
+          </div>
+
+          <span className="inc-field-label">Include in your email</span>
+          <ul className="inc-include">
+            {listPopup.include.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+
+          <a className="inc-mailto" href={listMailto()}>
+            Open in email app
+          </a>
+          <p className="inc-hint">
+            Use Gmail or Outlook in the browser? Copy the email and subject above.
+          </p>
         </div>
       </div>
 
-      <Script
-        id="email-popup-script"
-        strategy="afterInteractive"
-      >{`
+      <Script id="email-popup-script" strategy="afterInteractive">{`
   (() => {
-    const modal = document.querySelector("[data-email-modal]");
+    if (document.documentElement.dataset.incPopupReady === "true") return;
+    document.documentElement.dataset.incPopupReady = "true";
 
-    if (!modal || modal.dataset.ready === "true") {
-      return;
-    }
+    let opener = null;
 
-    modal.dataset.ready = "true";
+    const getModal = () => document.querySelector("[data-inc-modal]");
 
-    const openButtons = document.querySelectorAll(
-      "[data-email-open]"
-    );
+    const closeModal = () => {
+      const modal = getModal();
+      if (!modal || !modal.classList.contains("is-open")) return;
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      opener?.focus();
+      opener = null;
+    };
 
-    const closeButtons = document.querySelectorAll(
-      "[data-email-close]"
-    );
+    document.addEventListener("click", async (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const modal = getModal();
+      if (!modal) return;
 
-    const copyButton = document.querySelector(
-      "[data-email-copy]"
-    );
-
-    openButtons.forEach((button) => {
-      button.addEventListener("click", () => {
+      const openButton = target.closest("[data-inc-open]");
+      if (openButton) {
+        opener = openButton;
         modal.classList.add("is-open");
         modal.setAttribute("aria-hidden", "false");
-      });
-    });
+        document.body.style.overflow = "hidden";
+        modal.querySelector(".inc-email-close")?.focus();
+        return;
+      }
 
-    closeButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        modal.classList.remove("is-open");
-        modal.setAttribute("aria-hidden", "true");
-      });
+      if (target.closest("[data-inc-close]")) {
+        closeModal();
+        return;
+      }
+
+      const copyButton = target.closest("[data-inc-copy]");
+      if (copyButton) {
+        try {
+          await navigator.clipboard.writeText(copyButton.getAttribute("data-inc-copy") || "");
+          copyButton.textContent = "Copied";
+        } catch {
+          copyButton.textContent = "Copy failed";
+        }
+        window.setTimeout(() => { copyButton.textContent = "Copy"; }, 2000);
+      }
     });
 
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        modal.classList.remove("is-open");
-        modal.setAttribute("aria-hidden", "true");
-      }
-    });
-
-    copyButton?.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(
-          "contact@alloypress.com"
-        );
-
-        copyButton.textContent = "Copied!";
-
-        window.setTimeout(() => {
-          copyButton.textContent = "Copy";
-        }, 1600);
-      } catch {
-        copyButton.textContent = "Copy failed";
-
-        window.setTimeout(() => {
-          copyButton.textContent = "Copy";
-        }, 1600);
-      }
+      if (event.key === "Escape") closeModal();
     });
   })();
 `}</Script>
@@ -1166,6 +1470,393 @@ html[data-theme="dark"] .inc-final-inner > p {
 
   .inc-email-copy {
     width: 100%;
+  }
+}
+.inc-hero-editorial {
+  margin: 14px 0 0;
+  color: color-mix(in srgb, var(--foreground) 78%, transparent);
+  font: 500 var(--text-sm)/1.5 var(--font-ui);
+}
+
+/* ---------- Article cards (3 x 4 grid) ---------- */
+.inc-list-card {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  align-items: start;
+  gap: 12px;
+  min-height: 150px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+
+.inc-list-card:hover,
+.inc-list-card:focus-visible {
+  border-color: var(--brand);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--brand) 12%, transparent);
+  outline: none;
+}
+
+.inc-list-num {
+  color: var(--brand);
+  font: 700 var(--text-xs)/1.6 var(--font-mono);
+}
+
+.inc-list-body strong {
+  display: block;
+  font: 700 var(--text-md)/1.35 var(--font-ui);
+}
+
+.inc-list-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font: 400 var(--text-sm)/1.6 var(--font-body);
+}
+
+.inc-list-meta {
+  display: block;
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font: 500 var(--text-xs)/1.5 var(--font-mono);
+}
+
+.inc-list-type {
+  padding: 3px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--text-primary);
+  font: 600 var(--text-xs)/1.5 var(--font-mono);
+  white-space: nowrap;
+}
+
+.inc-list-type i {
+  color: var(--brand);
+  font-style: normal;
+}
+
+.inc-testimonial {
+  padding: 8px 0 56px;
+}
+
+.inc-testimonial figure {
+  margin: 0;
+  padding: 28px 32px;
+  border-left: 4px solid var(--brand);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--brand) 7%, var(--card));
+}
+
+.inc-testimonial blockquote {
+  margin: 0 0 10px;
+  color: var(--text-primary);
+  font: 700 clamp(20px, 2.4vw, 26px)/1.4 var(--font-ui);
+  letter-spacing: -.02em;
+}
+
+.inc-testimonial figcaption {
+  color: var(--text-secondary);
+  font: 500 var(--text-sm)/1.5 var(--font-ui);
+}
+
+.inc-boundary-card {
+  border-color: color-mix(in srgb, var(--brand) 28%, transparent);
+  background: var(--card);
+}
+
+.inc-boundary-card > span {
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  color: var(--brand);
+  font-size: 14px;
+}
+
+.inc-timeline p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.inc-timeline p strong {
+  display: inline;
+  color: var(--text-primary);
+}
+
+.inc-crosssell {
+  padding: 0 0 64px;
+}
+
+.inc-crosssell-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 32px;
+  border: 1px solid var(--brand);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--brand) 7%, var(--card));
+}
+
+.inc-crosssell-card > div {
+  flex: 1 1 520px;
+}
+
+.inc-crosssell-card h2 {
+  margin: 0 0 8px;
+  font: 800 var(--text-2xl)/1.2 var(--font-ui);
+  letter-spacing: -.03em;
+}
+
+.inc-crosssell-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  font: 400 var(--text-md)/1.7 var(--font-body);
+}
+
+.inc-secondary-link {
+  display: inline-flex;
+  padding: 13px 22px;
+  border: 1px solid var(--brand);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text-primary);
+  font: 700 var(--text-md)/1.2 var(--font-ui);
+  text-decoration: none;
+  transition: background .2s ease;
+}
+
+.inc-secondary-link:hover {
+  background: color-mix(in srgb, var(--brand) 12%, var(--card));
+}
+
+.inc-faq-list {
+  display: grid;
+  gap: 10px;
+  max-width: 860px;
+}
+
+.inc-faq-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.inc-faq-item[open] {
+  border-color: var(--brand);
+}
+
+.inc-faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  color: var(--text-primary);
+  font: 700 var(--text-md)/1.4 var(--font-ui);
+  cursor: pointer;
+  list-style: none;
+}
+
+.inc-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.inc-faq-item summary::after {
+  content: "+";
+  flex: none;
+  color: var(--brand);
+  font: 600 22px/1 var(--font-mono);
+}
+
+.inc-faq-item[open] summary::after {
+  content: "−";
+}
+
+.inc-faq-item summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+.inc-faq-item p {
+  margin: 0;
+  padding: 0 20px 18px;
+  color: var(--text-secondary);
+  font: 400 var(--text-md)/1.7 var(--font-body);
+}
+
+.inc-urgency {
+  margin: 16px 0 0;
+  font: 500 var(--text-sm)/1.6 var(--font-ui);
+}
+
+.inc-final small a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.inc-email-modal {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+
+.inc-field-label {
+  display: block;
+  margin: 16px 0 6px;
+  color: var(--text-secondary);
+  font: 700 var(--text-xs)/1.2 var(--font-mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.inc-include {
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.inc-include li {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 6px;
+  color: var(--text-primary);
+  font: 500 var(--text-sm)/1.5 var(--font-ui);
+}
+
+.inc-include li::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+.inc-mailto {
+  display: flex;
+  justify-content: center;
+  padding: 13px 18px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font: 700 var(--text-md)/1.2 var(--font-ui);
+  text-decoration: none;
+}
+
+.inc-mailto:hover {
+  background: var(--brand-hover);
+}
+
+.inc-email-modal p.inc-hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .inc-article-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .inc-article-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inc-list-card {
+    grid-template-columns: 26px 1fr;
+    min-height: 0;
+  }
+
+  .inc-list-type {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .inc-crosssell-card {
+    padding: 22px;
+  }
+}
+
+/* =========================================================
+   LAYOUT FIXES (hero spacing, FAQ centering, final CTA spacing)
+   Selectors are intentionally more specific than ".x > p" rules
+   above so the margins actually apply.
+   ========================================================= */
+
+/* Hero */
+.inc-hero h1 {
+  text-wrap: balance;
+}
+
+.inc-hero .inc-primary {
+  margin-top: 32px;
+}
+
+.inc-hero .inc-hero-meta {
+  margin-top: 32px;
+  gap: 10px;
+  font-size: 11px;
+  letter-spacing: .08em;
+}
+
+.inc-hero-copy > .inc-hero-editorial {
+  max-width: 560px;
+  margin: 16px auto 0;
+  color: var(--text-secondary);
+  font: 500 var(--text-sm)/1.6 var(--font-ui);
+}
+
+/* FAQ centered */
+.inc-faq .inc-heading {
+  justify-content: center;
+  text-align: center;
+}
+
+.inc-faq .inc-heading h2 {
+  margin-inline: auto;
+}
+
+.inc-faq-list {
+  margin-inline: auto;
+}
+
+/* Final CTA spacing */
+.inc-final h2 {
+  margin: 18px 0 20px;
+}
+
+.inc-final .inc-primary {
+  margin-top: 32px;
+}
+
+.inc-final-inner > .inc-urgency {
+  max-width: 560px;
+  margin: 28px auto 0;
+  color: var(--text-secondary);
+}
+
+.inc-final-inner > small {
+  max-width: 640px;
+  margin: 28px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 450px) {
+  .inc-hero .inc-hero-meta {
+    font-size: 10px;
   }
 }
 `;

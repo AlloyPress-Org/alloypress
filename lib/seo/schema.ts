@@ -308,7 +308,6 @@ export function createFAQSchema(
       return {
         "@type": "Question",
         name: question,
-
         acceptedAnswer: {
           "@type": "Answer",
           text: answer,

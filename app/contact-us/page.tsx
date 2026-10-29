@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Script from "next/script";
+import ProofStrip from "@/components/shared/ProofStrip";
+import { ContactPopup } from "./ContactClient";
 import { withDefaultSocial } from "@/lib/seo/metadata";
 
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
@@ -33,48 +35,62 @@ const breadcrumbSchema = {
 
 const paths = [
   {
-    icon: "▣",
-    title: "Article Inclusion",
-    text: "Get your tool featured in one of our existing listicles or alternatives articles. We test the product, write a dedicated section, and include a link so readers can navigate to your site directly. Position is based on how the tool performs during our evaluation.",
-    href: "get-featured",
-  },
-  {
     icon: "⌕",
     title: "Dedicated Review",
-    text: "A completely new, standalone article written specifically for your product. We test it hands-on across real workflows, document everything with screenshots, and publish a detailed in-depth review optimised for long-term search visibility.",
-    href: "get-reviewed",
+    text: "A completely new, standalone article written specifically for your product. We test it hands-on across real workflows, document everything with screenshots, and publish a permanent, in-depth review we refresh as you ship.",
+    href: "/get-reviewed",
+    cta: "See review details",
+  },
+  {
+    icon: "▣",
+    title: "Article Inclusion",
+    text: "Get your tool featured in one of our existing lists or alternatives articles. We test the product, write a dedicated section, and include a link so readers can reach your site directly. Position is based on how the tool performs in our evaluation.",
+    href: "/get-featured",
+    cta: "See list details",
   },
   {
     icon: "◈",
-    title: "Long-Term Partnership",
-    text: "For brands and agencies looking to build an ongoing editorial relationship with AlloyPress. This includes early access for feature testing, regular content updates, promotional coverage, and digital marketing support.",
-    href: "testing-partner",
+    title: "Testing Partnership",
+    text: "For AI teams that want an ongoing, independent read on their product: regular testing cycles, written reports, competitive benchmarking and SEO input. You can start with a single cycle.",
+    href: "/testing-partner",
+    cta: "See partnership details",
   },
   {
     icon: "◇",
     title: "General Enquiries",
-    text: "For anything else — press mentions, factual corrections on an existing article, product update notifications, or anything that doesn't fit the other categories. Use the email directly and we'll route it to the right person.",
-    link: "Send us an email",
-    href: "mailto:contact@alloypress.com",
+    text: "For anything else: press mentions, factual corrections on an existing article, product update notifications, or anything that doesn't fit the other paths. Email us and we'll route it to the right person.",
+    href: "",
+    cta: "Email us",
   },
 ];
 
+const heroStats = [
+  ["250+", "AI tools tested"],
+  ["AI-cited", "ChatGPT, Perplexity, Gemini, AI Overviews"],
+  ["1 to 3 days", "Response time"],
+  ["Global", "Open to work with"],
+];
+
+const contactEmail = "contact@alloypress.com";
+
+
 const outreach = [
-  ["01", "Product name and website URL", "So we can look at the tool before we even reply. Saves a round of back and forth."],
-  ["02", "What you are looking for", "Tell us whether you are interested in an article inclusion, a full review, a partnership, or something else."],
-  ["03", "Which article or category you have in mind", "If you want to be in one of our existing lists, tell us which one. It helps us check fit immediately."],
-  ["04", "How your tool compares to competitors", "Mention which tools you see yourself competing with. This gives us useful context for the evaluation."],
-  ["05", "Product access or demo details", "If you have a premium plan or a demo account ready for testing, share it. Makes everything faster."],
-  ["06", "Use a business email", "Please reach out from an email address associated with your company or product. It helps us verify quickly."],
+  ["01", "Product name and website URL", "So we can look at the tool before we even reply."],
+  ["02", "What you are looking for", "A dedicated review, an article inclusion, both, a testing partnership, or something else."],
+  ["03", "Which article or category you have in mind", "If you want to be in one of our existing lists, tell us which one."],
+  ["04", "How your tool compares to competitors", "Mention which tools you see yourself competing with."],
+  ["05", "Product access or demo details", "If you have a premium plan or a demo account ready for testing, share it."],
+  ["06", "Use a business email", "An address associated with your company or product helps us verify quickly."],
+  ["07", "Agencies: copy someone from the brand", "It keeps access and approvals aligned from the start."],
 ];
 
 const expectations = [
-  "Response within 1–2 business days",
-  "Clear yes or no — no vague replies",
+  "Response within 1 to 3 business days",
+  "Clear yes or no, no vague replies",
   "Honest feedback if your tool isn't a match",
   "All collaborations go through editorial review",
   "Open to agencies representing brands",
-  "Long-term partnership discussions welcome",
+  "Testing partnership discussions welcome",
 ];
 
 export default function ContactPage() {
@@ -109,15 +125,15 @@ export default function ContactPage() {
 
               <p>
                 Whether you're looking to get your tool reviewed, featured in one
-                of our lists, or explore a longer-term partnership — reach out
-                and we'll take it from there.
+                of our lists, or explore a testing partnership, reach out and
+                we'll take it from there.
               </p>
             </div>
 
             <aside className="contact-quick-card">
               <div className="contact-response">
                 <span />
-                Usually responds within <strong>1 to 2 business days</strong>
+                Usually responds within <strong>1 to 3 business days</strong>
               </div>
 
               <div className="contact-card-divider" />
@@ -127,44 +143,23 @@ export default function ContactPage() {
               <button
                 type="button"
                 className="contact-email"
-                data-email-popup-open
+                data-ct-open="review"
               >
-                <span>Contact</span>
+                <span>{contactEmail}</span>
                 <b>→</b>
               </button>
 
               <div className="contact-meta-grid">
-                <div>
-                  <strong>Editorial</strong>
-                  <span>All collaborations</span>
-                </div>
-                <div>
-                  <strong>AI + SaaS</strong>
-                  <span>Focus area</span>
-                </div>
-                <div>
-                  <strong>1 to 2 days</strong>
-                  <span>Response time</span>
-                </div>
-                <div>
-                  <strong>Global</strong>
-                  <span>Open to work with</span>
-                </div>
+                {heroStats.map(([value, label]) => (
+                  <div key={value}>
+                    <strong>{value}</strong>
+                    <span>{label}</span>
+                  </div>
+                ))}
               </div>
             </aside>
           </div>
 
-          <div className="contact-hero-bottom">
-            <div className="contact-container contact-note">
-              <span className="contact-note-icon">⊘</span>
-              <p>
-                <strong>Quick note:</strong> Generic outreach, link swap requests,
-                and unrelated pitches are filtered and ignored. If you have a
-                genuine product or collaboration in mind, we'd love to hear from
-                you.
-              </p>
-            </div>
-          </div>
         </section>
 
         <section className="contact-section contact-paths" id="how-we-work">
@@ -177,17 +172,14 @@ export default function ContactPage() {
                 </div>
                 <h2>Choose the right path for your goal.</h2>
                 <p>
-                  We collaborate in a few specific ways. Read through and pick
-                  the one that matches what you need — it helps us get back to
-                  you faster.
+                  We collaborate in a few specific ways. Pick the one that
+                  matches what you need. It helps us get back to you faster.
                 </p>
               </div>
-              <span className="contact-index">01 / 03</span>
             </header>
 
             <div className="contact-path-grid">
               {paths.map((path) => (
-
                 <article className="contact-path-card" key={path.title}>
                   <div className="contact-path-top">
                     <span className="contact-path-icon">{path.icon}</span>
@@ -196,28 +188,22 @@ export default function ContactPage() {
                   <h3>{path.title}</h3>
                   <p>{path.text}</p>
 
-
-                  {path.title === "General Enquiries" ? (
+                  {path.href ? (
+                    <Link className="contact-path-cta" href={path.href}>
+                      {path.cta}
+                      <span aria-hidden="true">↗</span>
+                    </Link>
+                  ) : (
                     <button
                       type="button"
                       className="contact-path-cta"
-                      data-email-popup-open
+                      data-ct-open="other"
                     >
-                      Explore this option
+                      {path.cta}
                       <span aria-hidden="true">↗</span>
                     </button>
-                  ) : (
-                    <Link
-                      className="contact-path-cta"
-                      href={`/${path.href}`}
-                    >
-                      Explore this option
-                      <span aria-hidden="true">↗</span>
-                    </Link>
                   )}
-
                 </article>
-
               ))}
             </div>
           </div>
@@ -234,13 +220,13 @@ export default function ContactPage() {
                 <h2>What to include when you reach out.</h2>
                 <p>
                   The more context you give us upfront, the faster we can give
-                  you a clear answer. Here is what helps.
+                  you a clear answer.
                 </p>
               </div>
-              <span className="contact-index">02 / 03</span>
             </header>
 
             <div className="contact-outreach-layout">
+              <div className="contact-outreach-main">
               <div className="contact-outreach-list">
                 {outreach.map(([number, title, text]) => (
                   <div className="contact-outreach-item" key={number}>
@@ -252,6 +238,11 @@ export default function ContactPage() {
                   </div>
                 ))}
               </div>
+              <p className="contact-filter-note">
+                For a fast reply, tell us the tool you represent. We don&apos;t
+                reply to link-swap, guest-post or unrelated requests.
+              </p>
+              </div>
 
               <aside className="contact-expect-card">
                 <div className="contact-eyebrow contact-eyebrow-light">
@@ -261,7 +252,7 @@ export default function ContactPage() {
                 <h3>We keep things straightforward.</h3>
                 <p>
                   No automated responses, no complex onboarding. When you email
-                  us, a real person reads it and replies with a clear answer —
+                  us, a real person reads it and replies with a clear answer,
                   whether that is next steps or a polite pass.
                 </p>
 
@@ -277,6 +268,8 @@ export default function ContactPage() {
             </div>
           </div>
         </section>
+
+        <ProofStrip />
 
         <section className="contact-final-cta">
           <div className="contact-final-grid" aria-hidden="true" />
@@ -296,123 +289,25 @@ export default function ContactPage() {
 
             <p>
               Tell us what you're working on and what you have in mind. We'll
-              review the details and get back to you.
+              review the details and share how we work, the value we provide and
+              the fees behind it.
             </p>
 
             <button
               type="button"
               className="contact-primary-button"
-              data-email-popup-open
+              data-ct-open="review"
             >
               Email AlloyPress <span>↗</span>
             </button>
 
             <div className="contact-final-email">
               <span>·</span>
-              <span>Usually responds within 1–2 business days</span>
+              <span>Usually responds within 1 to 3 business days</span>
             </div>
           </div>
         </section>
-        <dialog
-          className="contact-email-dialog"
-          data-email-dialog
-        >
-          <div className="contact-email-dialog-inner">
-            <button
-              type="button"
-              className="contact-email-dialog-close"
-              data-email-popup-close
-              aria-label="Close"
-            >
-              ×
-            </button>
-
-            <div className="contact-eyebrow">
-              <span />
-              GET IN TOUCH
-            </div>
-
-            <h2>Contact AlloyPress</h2>
-
-            <p>
-              Send your enquiry to our email address.
-              Copy the email below to continue.
-            </p>
-
-            <div className="contact-email-copy-row">
-              <span>contact@alloypress.com</span>
-
-              <button
-                type="button"
-                data-email-copy
-                className="contact-email-copy-button"
-              >
-                Copy
-              </button>
-            </div>
-          </div>
-        </dialog>
-        <Script id="contact-email-popup">
-          {`
-    (() => {
-      const dialog = document.querySelector("[data-email-dialog]");
-
-      if (!dialog || dialog.dataset.ready === "true") {
-        return;
-      }
-
-      dialog.dataset.ready = "true";
-
-      const openButtons = document.querySelectorAll(
-        "[data-email-popup-open]"
-      );
-
-      const closeButton = dialog.querySelector(
-        "[data-email-popup-close]"
-      );
-
-      const copyButton = dialog.querySelector(
-        "[data-email-copy]"
-      );
-
-      openButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          dialog.showModal();
-        });
-      });
-
-      closeButton?.addEventListener("click", () => {
-        dialog.close();
-      });
-
-      dialog.addEventListener("click", (event) => {
-        if (event.target === dialog) {
-          dialog.close();
-        }
-      });
-
-      copyButton?.addEventListener("click", async () => {
-        const email = "contact@alloypress.com";
-
-        try {
-          await navigator.clipboard.writeText(email);
-
-          copyButton.textContent = "Copied!";
-
-          window.setTimeout(() => {
-            copyButton.textContent = "Copy";
-          }, 1600);
-        } catch {
-          copyButton.textContent = "Copy failed";
-
-          window.setTimeout(() => {
-            copyButton.textContent = "Copy";
-          }, 1600);
-        }
-      });
-    })();
-  `}
-        </Script>
+        <ContactPopup />
       </main>
     </>
   );
@@ -1383,4 +1278,195 @@ html[data-theme="light"] .contact-final-inner > p {
     width: 100%;
   }
 }
+.contact-path-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.contact-email-dialog {
+  max-height: calc(100dvh - 28px);
+  overflow-y: auto;
+}
+
+.ct-field-label {
+  display: block;
+  margin: 16px 0 6px;
+  color: var(--text-secondary);
+  font: 700 var(--text-xs)/1.2 var(--font-mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.ct-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ct-topic {
+  padding: 8px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-primary);
+  font: 600 var(--text-sm)/1.2 var(--font-ui);
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+
+.ct-topic:hover {
+  border-color: var(--brand);
+}
+
+.ct-topic.is-active {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #fff;
+}
+
+.ct-topic:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+.ct-mailto {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 13px 18px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font: 700 var(--text-md)/1.2 var(--font-ui);
+  text-decoration: none;
+}
+
+.ct-mailto:hover {
+  background: var(--brand-hover);
+}
+
+.contact-email-dialog p.ct-hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  text-align: center;
+}
+
+
+@media (max-width: 600px) {
+
+
+  .contact-email-dialog {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 18px 18px 0 0;
+  }
+}
+
+
+/* ---- Layout and spacing tune-up ---- */
+.contact-hero {
+  min-height: 0;
+}
+
+.contact-hero-inner {
+  padding: 64px 0 56px;
+}
+
+.contact-section {
+  padding: 64px 0;
+}
+
+.contact-section-heading {
+  margin-bottom: 32px;
+}
+
+.contact-path-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-path-card p {
+  margin-bottom: 22px;
+}
+
+.contact-path-cta {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.contact-outreach-layout {
+  align-items: start;
+}
+
+.contact-outreach-main {
+  display: grid;
+  gap: 14px;
+}
+
+.contact-filter-note {
+  margin: 0;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font: 400 var(--text-sm)/1.6 var(--font-body);
+}
+
+.contact-expect-card {
+  position: sticky;
+  top: 96px;
+}
+
+
+
+.contact-final-cta {
+  min-height: 0;
+}
+
+.contact-final-inner {
+  padding: 72px 0 80px;
+}
+
+.ct-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.contact-email-copy-button {
+  position: relative;
+  min-width: 78px;
+}
+
+@media (max-width: 900px) {
+  .contact-expect-card {
+    position: static;
+  }
+}
+
+@media (max-width: 600px) {
+  .contact-section {
+    padding: 48px 0;
+  }
+
+  .contact-hero-inner {
+    padding: 44px 0 40px;
+  }
+
+  .contact-final-inner {
+    padding: 56px 0 64px;
+  }
+
+}
+
 `;
