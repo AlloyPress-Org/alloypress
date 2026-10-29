@@ -267,7 +267,16 @@ export async function POST(request: NextRequest) {
       tags.add(`media:${id}`);
       // lists embed images
       [...CATEGORIES, ...SUB_CATEGORIES].forEach((c) => tags.add(`category:${c}`));
-    } else {
+    } else if (scope === "redirect") {
+      const raw = typeof body.from === "string" ? body.from : "";
+      let path = raw;
+      try {
+        path = new URL(raw, "https://alloypress.com").pathname;
+      } catch { }
+      tags.add("redirects");
+      if (/^\/[\w\-./]{1,300}$/.test(path)) paths.add(path);
+    }
+    else {
       return bad("unknown scope");
     }
 

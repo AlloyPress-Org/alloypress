@@ -23,6 +23,8 @@ import {
 import { CATEGORY_PATHS } from "@/lib/seo/constants";
 import { collectFaqs } from "@/lib/faq-from-content";
 import { getImageSlot } from "@/lib/api/imageSlots";
+import { permanentRedirect } from "next/navigation";
+import { resolveRedirect } from "@/lib/redirects";
 
 // ============================================================
 // SITE
@@ -1011,6 +1013,8 @@ export default async function CategoryPostPage({
   );
 
   if (!post) {
+    const target = await resolveRedirect(`/${category}/${slug}`);
+    if (target) permanentRedirect(target);
     notFound();
   }
 

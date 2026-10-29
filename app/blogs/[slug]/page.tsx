@@ -20,6 +20,8 @@ import {
 import { SITE_URL } from "@/lib/seo/constants";
 import { collectFaqs } from "@/lib/faq-from-content";
 import { getImageSlot } from "@/lib/api/imageSlots";
+import { permanentRedirect } from "next/navigation";
+import { resolveRedirect } from "@/lib/redirects";
 
 // ============================================================
 // BREADCRUMB CONSTANTS
@@ -564,6 +566,9 @@ export default async function BlogPostPage({
         />
       );
     }
+
+    const target = await resolveRedirect(`/blogs/${slug}`);
+    if (target) permanentRedirect(target);
 
     return notFound();
   }
