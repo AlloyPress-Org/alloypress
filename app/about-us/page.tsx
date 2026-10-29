@@ -1265,6 +1265,14 @@ a.about-content-row {
     font-size: clamp(var(--text-3xl), 11vw, var(--text-4xl));
   }
 
+    .about-title br {
+    display: none;
+  }
+
+  .about-title {
+    text-wrap: balance;
+  }
+
   .about-hero-description {
     font-size: var(--text-sm);
   }
@@ -1450,9 +1458,9 @@ export default function AboutPage() {
               <div className="about-kicker">Who we are</div>
 
               <h1 className="about-title">
-                The AI publication that
+                The AI publication that{" "}
                 <br />
-                actually <span>tests</span> before it
+                actually <span>tests</span> before it{" "}
                 <br />
                 tells you.
               </h1>

@@ -201,11 +201,11 @@ async function getArticleMeta() {
 }
 
 // Higgsfield approval is pending. Set to true only once they approve the quote.
-const showTestimonial = false;
+const showTestimonial = true;
 
 const faqs = [
   ["Is this paid placement?", "No. We don't sell positions, ratings or verdicts. The fee covers the time our team spends testing your tool, taking screenshots, writing and keeping the coverage updated. A tool that tests poorly doesn't get a strong write-up, paid or not."],
-  ["How much does it cost?", "It depends on the article and the depth of testing your tool needs. Reach out with your tool and we'll share how we work, what's included and the fees behind it, usually within 1 to 2 business days."],
+  ["How much does it cost?", "It depends on the article and the depth of testing your tool needs. Reach out with your tool and we'll share how we work, what's included and the fees behind it, usually within 1 to 3 business days."],
   ["Can you guarantee a #1 position?", "No, for any brand. Position is decided by how your tool performs against the others in the same test. If it stands out, nothing stops it from ranking first."],
   ["Can you include my tool for free?", "We do cover tools from our own research, but our team is small and the testing queue is long. A confirmed collaboration gets a scheduled slot. Without one, we can't say when we'd reach your tool."],
   ["You've already tested us for another article. Why is this one separate?", "Each article is a fresh, head-to-head test against the tools in that article, so it's new work every time."],
@@ -289,7 +289,7 @@ export default async function InclusionPage() {
         <div className="inc-container inc-hero-inner">
           <div className="inc-hero-copy">
             <div className="inc-eyebrow inc-light"><span /> EDITORIAL LISTING PROGRAM</div>
-            <h1>Get Your AI Tool<br />Considered for a <em>Spot It</em><br /><em>Actually Earns</em></h1>
+            <h1>Get Your AI Tool{" "}<br />Considered for a <em>Spot It</em>{" "}<br /><em>Actually Earns</em></h1>
             <p>We publish honest, tested lists and alternatives articles covering the best AI tools in each category. If your tool genuinely fits, we want to know about it.</p>
             <button
               type="button"
@@ -323,8 +323,6 @@ export default async function InclusionPage() {
               const dateText =
                 meta?.date ||
                 (item.updated ? `Updated ${item.updated}` : item.published ? `Published ${item.published}` : "");
-              const toolCount = item.tested || meta?.tested || "";
-              const testedText = toolCount ? `${toolCount} tools tested` : "";
               const description =
                 item.description || meta?.metaDescription || fallbackDescription(item.type);
 
@@ -334,12 +332,8 @@ export default async function InclusionPage() {
                   <div className="inc-list-body">
                     <strong>{item.title}</strong>
                     <p className="inc-list-desc">{description}</p>
-                    {(testedText || dateText) && (
-                      <small className="inc-list-meta">
-                        {testedText}
-                        {testedText && dateText && " · "}
-                        {dateText}
-                      </small>
+                    {dateText && (
+                      <small className="inc-list-meta">{dateText}</small>
                     )}
                   </div>
                   <span className="inc-list-type">{item.type} <i>↗</i></span>
@@ -359,7 +353,7 @@ export default async function InclusionPage() {
                 ranking first means a lot.&rdquo;
               </blockquote>
               <figcaption>
-                Higgsfield Team, ranked #1 in our Best AI Video Generators test
+                By Higgsfield Team.
               </figcaption>
             </figure>
           </div>
@@ -1520,22 +1514,27 @@ html[data-theme="dark"] .inc-final-inner > p {
 }
 
 .inc-testimonial {
-  padding: 8px 0 56px;
+  padding: 24px 0 56px;
 }
 
 .inc-testimonial figure {
-  margin: 0;
-  padding: 28px 32px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 36px 40px;
+  border: 1px solid var(--border);
   border-left: 4px solid var(--brand);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--brand) 7%, var(--card));
+  border-right: 4px solid var(--brand);
+  border-radius: 16px;
+  background: var(--card);
+  text-align: center;
 }
 
 .inc-testimonial blockquote {
-  margin: 0 0 10px;
+  margin: 0 0 14px;
   color: var(--text-primary);
-  font: 700 clamp(20px, 2.4vw, 26px)/1.4 var(--font-ui);
+  font: 700 clamp(20px, 2.2vw, 26px)/1.4 var(--font-ui);
   letter-spacing: -.02em;
+  text-wrap: balance;
 }
 
 .inc-testimonial figcaption {

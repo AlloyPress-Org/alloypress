@@ -227,21 +227,21 @@ export default function ContactPage() {
 
             <div className="contact-outreach-layout">
               <div className="contact-outreach-main">
-              <div className="contact-outreach-list">
-                {outreach.map(([number, title, text]) => (
-                  <div className="contact-outreach-item" key={number}>
-                    <span>{number}</span>
-                    <div>
-                      <h3>{title}</h3>
-                      <p>{text}</p>
+                <div className="contact-outreach-list">
+                  {outreach.map(([number, title, text]) => (
+                    <div className="contact-outreach-item" key={number}>
+                      <span>{number}</span>
+                      <div>
+                        <h3>{title}</h3>
+                        <p>{text}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-              <p className="contact-filter-note">
-                For a fast reply, tell us the tool you represent. We don&apos;t
-                reply to link-swap, guest-post or unrelated requests.
-              </p>
+                  ))}
+                </div>
+                <p className="contact-filter-note">
+                  For a fast reply, tell us the tool you represent. We don&apos;t
+                  reply to link-swap, guest-post or unrelated requests.
+                </p>
               </div>
 
               <aside className="contact-expect-card">
@@ -282,7 +282,7 @@ export default function ContactPage() {
             </div>
 
             <h2>
-              Have something useful
+              Have something useful{" "}
               <br />
               to <em>build together?</em>
             </h2>

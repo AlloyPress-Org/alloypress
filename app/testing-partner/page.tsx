@@ -95,7 +95,7 @@ const workflow = [
   {
     number: "01",
     title: "You reach out",
-    text: "Email contact@alloypress.com with your product, what you want tested, and any relevant access or context. We respond within 1 to 2 business days.",
+    text: "Email contact@alloypress.com with your product, what you want tested, and any relevant access or context. We respond within 1 to 3 business days.",
   },
   {
     number: "02",
@@ -250,7 +250,7 @@ const popups = {
   partnership: {
     eyebrow: "Testing partnership",
     title: "Talk to us about a testing partnership",
-    text: "Tell us what you're building. We'll suggest a scope around your priorities and budget, usually within 1 to 2 business days.",
+    text: "Tell us what you're building. We'll suggest a scope around your priorities and budget, usually within 1 to 3 business days.",
     subject: "Testing partnership: [Your product]",
     include: [
       "What you're building and your website",
@@ -772,7 +772,7 @@ export default function TestingPartnerPage() {
                 <h2>Want an independent eye on your product?</h2>
                 <p>
                   Tell us what you are building and what you would like tested.
-                  We will respond within 1 to 2 business days and take it from
+                  We will respond within 1 to 3 business days and take it from
                   there. Scope and fees are based on what you need and the
                   budget you have in mind.
                 </p>

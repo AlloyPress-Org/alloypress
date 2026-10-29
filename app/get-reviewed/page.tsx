@@ -81,7 +81,7 @@ const featuredReviews = [
 const afterLive = [
   ["▣", "A permanent page", "Your review is its own page. It isn't a list position that can move when we retest the category."],
   ["↻", "Refreshed as you ship", "When you release a major feature or change pricing, we update the review so it matches your product."],
-  ["↗", "Found in search and AI answers", "We do real testing and write honest verdict. So, our reviews are built to rank on Google and to be cited by ChatGPT, Perplexity and Google AI Overviews."],
+  ["↗", "Found in search and AI answers", "Because we test for real and write honest verdicts, our reviews are built to rank on Google and to be cited by ChatGPT, Perplexity, Google AI Overviews & more."],
   ["✓", "A badge you can use", "Show the Tested by AlloyPress badge on your site, linked to an independent review."],
 ];
 
@@ -107,7 +107,7 @@ const previewShots: { src: string | null; alt: string; number?: string }[] = [
 
 const faqs = [
   ["Is this paid placement?", "No. We don't sell positions, ratings or verdicts. The fee covers the time our team spends testing your tool, taking screenshots, writing and keeping the coverage updated. A tool that tests poorly doesn't get a strong write-up, paid or not."],
-  ["How much does it cost?", "It depends on the format and the depth of testing your tool needs. Reach out with your tool and we'll share how we work, what's included and the fees behind it, usually within 1 to 2 business days."],
+  ["How much does it cost?", "It depends on the format and the depth of testing your tool needs. Reach out with your tool and we'll share how we work, what's included and the fees behind it, usually within 1 to 3 business days."],
   ["Can you guarantee a #1 position?", "No, for any brand. In lists, position is decided by how your tool performs against the others in the same test. If it stands out, nothing stops it from ranking first. A dedicated review has no ranking at all: the page is only about your tool."],
   ["Can you test my tool for free?", "We do cover tools from our own research, but our team is small and the testing queue is long. A confirmed collaboration gets a scheduled slot. Without one, we can't say when we'd reach your tool."],
   ["Can we pay through an affiliate commission instead?", "No. We don't work on commission, and we're removing affiliate links from our editorial content to keep coverage independent."],
@@ -119,7 +119,7 @@ const faqs = [
 const reviewPopup = {
   eyebrow: "Dedicated review",
   title: "Request a review",
-  text: "Email us your tool and we'll reply within 1 to 2 business days with how we work, the value we provide and the fees behind it.",
+  text: "Email us your tool and we'll reply within 1 to 3 business days with how we work, the value we provide and the fees behind it.",
   email: "contact@alloypress.com",
   subject: "Review request: [Your tool name]",
   include: [
@@ -234,7 +234,7 @@ export default function ReviewsPage() {
             </div>
 
             <h1>
-              Your AI Tool, Reviewed by
+              Your AI Tool, Reviewed by{" "}
               <br />
               People Who <span><em>Actually Use It.</em></span>
             </h1>
@@ -679,7 +679,7 @@ export default function ReviewsPage() {
             </div>
 
             <h2>
-              Ready to get your tool in front of
+              Ready to get your tool in front of{" "}
               <br />
               the <em>right readers?</em>
             </h2>
@@ -687,7 +687,7 @@ export default function ReviewsPage() {
             <p>
               Send us the basics and we'll share how we work, the value we
               provide and the fees behind it. Most requests get a response
-              within 1 to 2 business days.
+              within 1 to 3 business days.
             </p>
 
             <button
