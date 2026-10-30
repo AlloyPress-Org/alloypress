@@ -3,6 +3,7 @@ import { Suspense, cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
 import { postHref } from "@/lib/post-href";
+import "@/components/css-style/hero.css";
 
 type HeroPost = {
   id: number | string;

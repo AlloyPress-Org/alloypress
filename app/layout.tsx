@@ -4,9 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import "@/components/css-style/navbar.css";
-import "@/components/css-style/hero.css";
 import "@/components/css-style/footer.css";
-import "@/components/css-style/testing-partner.css";
 
 import EmailCtaModal from "@/components/ui/EmailCtaModal";
 import HtmlWidgetRuntime from "@/components/HtmlWidgetRuntime";
