@@ -431,6 +431,7 @@ function SmartImage({
       <Image
         src={src}
         loader={cfLoader}
+        quality={preload ? 75 : 90}
         alt={alt}
         width={width}
         height={height}

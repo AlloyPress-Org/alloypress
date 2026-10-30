@@ -10,6 +10,7 @@ import {
   FaXTwitter,
 } from "react-icons/fa6";
 
+const SHOW_FEATURED_BADGE = false;
 const navigateLinks = [
   { label: "Home", href: "/" },
   { label: "Listicles", href: "/blogs/listicles" },
@@ -186,9 +187,9 @@ export default function Footer() {
   const footerBadgeCode = `<a href="https://alloypress.com"
    target="_blank"
    rel="noopener noreferrer"
-   aria-label="Featured on AlloyPress">
+   aria-label="Tested by AlloyPress">
  <img src="https://alloypress.com/badges/featured.svg"
-     alt="Featured on AlloyPress"
+     alt="Tested By AlloyPress"
      width="320"
      height="117">
 </a>`;
@@ -258,20 +259,20 @@ export default function Footer() {
               </div>
 
               {/* Featured Badge */}
-              <div className="footer-featured-badge">
+              {SHOW_FEATURED_BADGE && (<div className="footer-featured-badge">
                 <span className="footer-featured-label">
-                  Featured on AlloyPress
+                  Tested by Alloypress
                 </span>
 
                 <div className="footer-featured-row">
                   <a
                     href="https://alloypress.com"
                     className="footer-featured-card"
-                    aria-label="Featured on AlloyPress"
+                    aria-label="Featured by AlloyPress"
                   >
                     <img
                       src="/badges/featured.svg"
-                      alt="Featured on AlloyPress"
+                      alt="Tested by AlloyPress"
                       width={320}
                       height={117}
                       className="footer-featured-image"
@@ -295,6 +296,7 @@ export default function Footer() {
                   </button>
                 </div>
               </div>
+              )}
             </div>
 
             {/* Navigate */}

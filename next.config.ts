@@ -45,7 +45,7 @@ const nextConfig: NextConfig = {
     // Kammi width variants = kammi image transformations
     deviceSizes: [640, 828, 1080, 1200],
     imageSizes: [96, 192, 384],
-
+    qualities: [70, 75, 85, 90],
     remotePatterns,
   },
 };

@@ -16,5 +16,5 @@ export default function cfLoader({
   const w = BUCKETS.find((b) => b >= target) ?? 1200;
 
   const path = src.replace("https://media.alloypress.com", "");
-  return `https://media.alloypress.com/cdn-cgi/image/width=${w},quality=${quality ?? 70},format=auto${path}`;
+  return `https://media.alloypress.com/cdn-cgi/image/width=${w},quality=${quality ?? 90},format=auto${path}`;
 }
