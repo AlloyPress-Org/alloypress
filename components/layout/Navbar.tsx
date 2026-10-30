@@ -143,30 +143,14 @@ export default function Navbar() {
   );
 
   useEffect(() => {
-    /*
-     * Read the same theme key used by the
-     * blocking script in layout.tsx.
-     */
-    const savedTheme = window.localStorage.getItem(THEME_KEY);
-
-    let initialTheme: "light" | "dark";
-
-    if (savedTheme === "light" || savedTheme === "dark") {
-      initialTheme = savedTheme;
-    } else {
-      initialTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
-    }
-
-    /*
-     * Make sure the actual HTML element and
-     * React state are always synchronized.
-     */
-    document.documentElement.dataset.theme = initialTheme;
-
-    setTheme(initialTheme);
+    const current = document.documentElement.dataset.theme;
+    setTheme(current === "dark" ? "dark" : "light");
     setMounted(true);
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document.documentElement.classList.remove("theme-preload")
+      )
+    );
   }, []);
 
   /*
@@ -278,9 +262,8 @@ export default function Navbar() {
             <button
               type="button"
               ref={brandsTriggerRef}
-              className={`nav-link nav-dropdown-trigger ${
-                brandsActive ? "is-active" : ""
-              }`}
+              className={`nav-link nav-dropdown-trigger ${brandsActive ? "is-active" : ""
+                }`}
               aria-expanded={brandsOpen}
               aria-controls="for-brands-menu"
               onClick={() => setBrandsOpen((value) => !value)}
@@ -298,9 +281,8 @@ export default function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`nav-dropdown-item ${
-                    pathname === item.href ? "is-current" : ""
-                  }`}
+                  className={`nav-dropdown-item ${pathname === item.href ? "is-current" : ""
+                    }`}
                   aria-current={pathname === item.href ? "page" : undefined}
                   onClick={closeBrands}
                 >
@@ -332,7 +314,8 @@ export default function Navbar() {
             aria-label={themeLabel}
             onClick={toggleTheme}
           >
-            {mounted && theme === "dark" ? <SunIcon /> : <MoonIcon />}
+            <span className="theme-icon-sun"><SunIcon /></span>
+            <span className="theme-icon-moon"><MoonIcon /></span>
           </button>
 
           {/* CTA */}
@@ -362,7 +345,8 @@ export default function Navbar() {
             aria-label={themeLabel}
             onClick={toggleTheme}
           >
-            {mounted && theme === "dark" ? <SunIcon /> : <MoonIcon />}
+            <span className="theme-icon-sun"><SunIcon /></span>
+            <span className="theme-icon-moon"><MoonIcon /></span>
           </button>
 
           <button

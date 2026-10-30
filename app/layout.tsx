@@ -13,7 +13,6 @@ import HtmlWidgetRuntime from "@/components/HtmlWidgetRuntime";
 
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import ThemeScript from "@/components/ThemeScript";
 import BackToTop from "@/components/BackToTop";
 import ScrollToTop from "@/components/ScrollToTop";
 import DelayedScripts from "@/components/DelayedScripts";
@@ -29,6 +28,8 @@ const inter = Inter({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+
+const THEME_INIT = `(function(){try{var k="alloypress-theme",s=localStorage.getItem(k),t=(s==="light"||s==="dark")?s:(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","dark")}})();`;
 const GTM_ID = "GTM-P72SG3JX";
 const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 
@@ -71,14 +72,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={inter.variable}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} theme-preload`}>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         <link rel="preconnect" href="https://media.alloypress.com" />
-        <style dangerouslySetInnerHTML={{
-          __html: `
-    html{background:#000}
-    html[data-theme="light"]{background:#f1f8f3}
-  `}} />
       </head>
 
       <body>
@@ -99,8 +96,6 @@ export default function RootLayout({
             __html: JSON.stringify(organizationJsonLd),
           }}
         />
-
-        <ThemeScript />
         <ScrollToTop />
 
         <Navbar />
