@@ -481,7 +481,7 @@ export default function AlloyNav() {
             =================================================== */}
 
         <Link
-          href="/"
+          href="https://alloypress.com"
           className="
             alloy-nav__bottom-item
             alloy-nav__view-site

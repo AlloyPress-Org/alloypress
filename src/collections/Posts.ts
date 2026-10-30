@@ -340,12 +340,17 @@ const makeFollowModeField = (): SelectField => ({
 /* Used by the main Content editor AND the Styled Box "Body (with links)"      */
 /* editor, so both have exactly the same link options.                         */
 /* -------------------------------------------------------------------------- */
+
 const buildLinkFeatureFields = ({
   defaultFields,
 }: {
   defaultFields: any[]
 }): any[] => [
-    ...defaultFields.filter((field) => field.name !== 'rel'),
+    ...defaultFields
+      .filter((field) => field.name !== 'rel')
+      .map((field) =>
+        field.name === 'newTab' ? { ...field, defaultValue: true } : field,
+      ),
 
     // NEW: follow behavior dropdown (replaces the old nofollow checkbox in the UI)
     makeFollowModeField(),
