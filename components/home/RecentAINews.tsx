@@ -4,6 +4,7 @@ import { cache } from "react";
 
 import { payloadFetch } from "@/lib/payload";
 import { getCategoryBySlug } from "@/lib/api/categories";
+import "@/components/css-style/recent-ai-news.css";
 
 function cleanNewsDescription(value?: string | null): string {
   if (!value) return "";

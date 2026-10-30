@@ -5,16 +5,7 @@ import "./globals.css";
 
 import "@/components/css-style/navbar.css";
 import "@/components/css-style/hero.css";
-import "@/components/css-style/latest.css";
-import "@/components/css-style/category.css";
-import "@/components/css-style/alloy-pick.css";
-import "@/components/css-style/learn-ai.css";
-import "@/components/css-style/recent-ai-news.css";
-import "@/components/css-style/ai-tool-reviews.css";
 import "@/components/css-style/footer.css";
-import "@/components/css-style/popular.css";
-import "@/components/css-style/news-letter.css";
-import "@/components/css-style/tool-submit.css";
 import "@/components/css-style/testing-partner.css";
 
 import EmailCtaModal from "@/components/ui/EmailCtaModal";
@@ -83,6 +74,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
         <link rel="preconnect" href="https://media.alloypress.com" />
+        <style dangerouslySetInnerHTML={{
+          __html: `
+    html{background:#000}
+    html[data-theme="light"]{background:#f1f8f3}
+  `}} />
       </head>
 
       <body>

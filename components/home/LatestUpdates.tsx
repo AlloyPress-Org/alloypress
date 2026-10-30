@@ -5,6 +5,7 @@ import { cache } from "react";
 import { payloadFetch } from "@/lib/payload";
 import { getCategoryBySlug } from "@/lib/api/categories";
 import { postHref } from "@/lib/post-href";
+import "@/components/css-style/latest.css";
 
 type Media = {
   url?: string | null;

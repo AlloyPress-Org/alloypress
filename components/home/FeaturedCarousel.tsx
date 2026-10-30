@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import cfLoader from "@/lib/imageLoader";
 import { postHref } from "@/lib/post-href";
+import "@/components/css-style/alloy-pick.css";
 
 type Media = {
   url?: string | null;

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import "@/components/css-style/tool-submit.css";
 
 export default function ToolSubmissionCTA() {
   return (

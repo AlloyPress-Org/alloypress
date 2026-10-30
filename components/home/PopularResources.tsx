@@ -4,6 +4,7 @@ import Image from "@/components/CfImage";
 
 import { payloadFetch } from "@/lib/payload";
 import { getCategoryBySlug } from "@/lib/api/categories";
+import "@/components/css-style/popular.css";
 
 type Media = {
   url?: string | null;

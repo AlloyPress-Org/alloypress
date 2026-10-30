@@ -3,6 +3,7 @@ import { payloadFetch } from "@/lib/payload";
 import { getCategoryBySlug } from "@/lib/api/categories";
 import { cleanEditorialText } from "@/lib/content/cleanEditorialText";
 import { postHref } from "@/lib/post-href";
+import "@/components/css-style/ai-tool-reviews.css";
 
 // ============================================================
 // CONFIG

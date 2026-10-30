@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import "@/components/css-style/news-letter.css";
 
 // Values must match NEWSLETTER_INTERESTS in the CMS Subscribers collection.
 const INTERESTS = [

@@ -4,6 +4,7 @@ import { cache } from "react";
 import { payloadFetch } from "@/lib/payload";
 import { postHref } from "@/lib/post-href";
 import FeaturedCarousel from "./FeaturedCarousel";
+import "@/components/css-style/alloy-pick.css";
 
 // ============================================================
 // CONFIG

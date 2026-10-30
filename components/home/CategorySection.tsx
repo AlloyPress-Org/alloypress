@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import "@/components/css-style/category.css";
 
 type CategoryDefinition = {
   number: string;

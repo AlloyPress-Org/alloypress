@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-
 import "@/components/css-style/testing-cta.css";
 
 export default function TestingPartnerPromo() {
