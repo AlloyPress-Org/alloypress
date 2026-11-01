@@ -14,19 +14,28 @@ type StatusResponse = { now: number; entries: Entry[] }
 
 const POLL_MS = 2500
 
+// If the editor does nothing for this long, polling pauses so Neon can scale to zero.
+// Any click / key press / scroll / touch (or coming back to the tab) resumes it at once.
+const IDLE_MS = 60_000
+
 /**
  * Registered in payload.config.ts -> admin.components.actions.
  * Polls /api/revalidation-status and shows a toast when the CMS tells the website
  * to refresh its cache: "Updating website..." -> success / error.
+ *
+ * Polls only while the tab is visible AND the editor is active.
  */
 export const RevalidationToast = () => {
   useEffect(() => {
     let stopped = false
     let since: number | null = null
+    let lastActivity = Date.now()
     const shown = new Map<string, 'pending' | 'done'>()
 
+    const isIdle = () => Date.now() - lastActivity > IDLE_MS
+
     const poll = async () => {
-      if (stopped || document.hidden) return
+      if (stopped || document.hidden || isIdle()) return
 
       try {
         // First call only learns the server clock (no old toasts on page load).
@@ -71,12 +80,31 @@ export const RevalidationToast = () => {
       }
     }
 
+    // Any real user activity marks the editor as active again.
+    const markActive = () => {
+      const wasIdle = isIdle()
+      lastActivity = Date.now()
+      if (wasIdle) void poll() // resume immediately, no waiting for the next tick
+    }
+
+    const onVisibility = () => {
+      if (!document.hidden) markActive()
+    }
+
+    const activityEvents = ['pointerdown', 'keydown', 'wheel', 'touchstart'] as const
+    activityEvents.forEach((evt) =>
+      window.addEventListener(evt, markActive, { capture: true, passive: true }),
+    )
+    document.addEventListener('visibilitychange', onVisibility)
+
     void poll()
     const timer = window.setInterval(() => void poll(), POLL_MS)
 
     return () => {
       stopped = true
       window.clearInterval(timer)
+      activityEvents.forEach((evt) => window.removeEventListener(evt, markActive, true))
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [])
 
