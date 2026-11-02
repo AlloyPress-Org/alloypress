@@ -6,16 +6,40 @@ import { createBreadcrumbSchema } from "@/lib/seo/schema";
 import { withDefaultSocial } from "@/lib/seo/metadata";
 import ProofStrip from "@/components/shared/ProofStrip";
 import ReviewRequestPopup from "./ReviewRequestPopup";
+import { payloadFetch } from "@/lib/payload";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = withDefaultSocial(
-  {
-    title: "AI Tool Reviews — Tested Before We Recommend",
-    description:
-      "Request an AlloyPress AI tool review. We test real workflows, verify claims, explain limitations, and publish practical, reader-first reviews.",
-    alternates: { canonical: "/get-reviewed" },
-  },
-  "/get-reviewed"
-);
+const PAGE_SLUG = "get-reviewed";
+const CANONICAL = "/get-reviewed";
+const FALLBACK_TITLE = "Get Your AI tool reviewed by real testers | AlloyPress";
+const FALLBACK_DESC =
+  "Request an in-depth review of your AI tool. We test it on real workflows, show original screenshots and pricing, and update it as you launch new features.";
+
+const SEO_SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://alloypress.com";
+
+type PageSeoDoc = {
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    openGraphImage?: { url?: string | null } | null;
+  } | null;
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await payloadFetch<{ docs?: PageSeoDoc[] }>(
+    `/pages?where[slug][equals]=${PAGE_SLUG}&where[status][equals]=published&limit=1&depth=1&select[seo]=true`,
+    { strict: false, next: { revalidate: 604800, tags: ["pages", `page:${PAGE_SLUG}`] } },
+  );
+  const seo = data?.docs?.[0]?.seo;
+  const img = seo?.openGraphImage?.url;
+
+  return buildPageMetadata({
+    title: seo?.title?.trim() || FALLBACK_TITLE,
+    description: seo?.description?.trim() || FALLBACK_DESC,
+    canonicalPath: CANONICAL,
+    imageUrl: img ? (img.startsWith("http") ? img : `${SEO_SITE}${img}`) : `${SEO_SITE}/og-default.png`,
+  });
+}
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",
@@ -45,11 +69,6 @@ const coverage = [
   "Creator and marketing tools",
 ];
 
-/**
- * Featured review cards: [name, meta description, slug].
- * TODO: replace each description with the exact meta description of that
- * review's blog post so the card always matches what Google shows.
- */
 const featuredReviews = [
   [
     "Grok AI Image and Animation",
@@ -173,7 +192,7 @@ const included = [
   ],
 ];
 
-const process = [
+const processSteps = [
   [
     "01",
     "Submit your review request",
@@ -565,7 +584,7 @@ export default function ReviewsPage() {
             </div>
 
             <div className="process-list">
-              {process.map(([number, title, text]) => (
+              {processSteps.map(([number, title, text]) => (
                 <article className="process-item" key={number}>
                   <span className="process-step">{number}</span>
                   <div className="process-content">

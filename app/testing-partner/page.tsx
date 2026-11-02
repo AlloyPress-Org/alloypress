@@ -4,20 +4,42 @@ import Script from "next/script";
 import { ArrowUpRight, Check, ChevronRight } from "lucide-react";
 import { withDefaultSocial } from "@/lib/seo/metadata";
 import { BrandLogos } from "@/components/shared/ProofStrip";
-
 import "@/components/css-style/testing-partner.css";
-
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import { payloadFetch } from "@/lib/payload";
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
 
-export const metadata: Metadata = withDefaultSocial(
-  {
-    title: "AI Tool Testing Partner",
-    description:
-      "Partner with AlloyPress for structured, real-world AI tool testing, competitive benchmarking, and business/SEO input grounded in category experience.",
-    alternates: { canonical: "/testing-partner" },
-  },
-  "/testing-partner"
-);
+const PAGE_SLUG = "testing-partner";
+const CANONICAL = "/testing-partner /";
+const FALLBACK_TITLE = "Independent AI product testing partner | AlloyPress";
+const FALLBACK_DESC =
+  "Honest, hands-on testing for your AI product. We spot bugs, suggest new features and share SEO input, backed by deep AI testing and marketing experience.";
+
+const SEO_SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://alloypress.com";
+
+type PageSeoDoc = {
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    openGraphImage?: { url?: string | null } | null;
+  } | null;
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await payloadFetch<{ docs?: PageSeoDoc[] }>(
+    `/pages?where[slug][equals]=${PAGE_SLUG}&where[status][equals]=published&limit=1&depth=1&select[seo]=true`,
+    { strict: false, next: { revalidate: 604800, tags: ["pages", `page:${PAGE_SLUG}`] } },
+  );
+  const seo = data?.docs?.[0]?.seo;
+  const img = seo?.openGraphImage?.url;
+
+  return buildPageMetadata({
+    title: seo?.title?.trim() || FALLBACK_TITLE,
+    description: seo?.description?.trim() || FALLBACK_DESC,
+    canonicalPath: CANONICAL,
+    imageUrl: img ? (img.startsWith("http") ? img : `${SEO_SITE}${img}`) : `${SEO_SITE}/og-default.png`,
+  });
+}
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",
@@ -159,69 +181,69 @@ const reportGroups: {
   note?: string;
   items: [Priority, string][];
 }[] = [
-  {
-    title: "1. Bugs and reliability",
-    items: [
-      ["High", "Follow-up requests sometimes fail with a \"PIN not found\" error, with no prompt to enter one. A retry fixes it, so users see it as random and stop trusting the tool."],
-      ["High", "Credits are still deducted when a generation fails. Users pay for nothing, and paying users notice this fastest."],
-      ["Medium", "Voice input handles short prompts well but returns an error on longer ones."],
-      ["Medium", "The AI edit prompt fails with no error message once input passes about 500 characters."],
-    ],
-  },
-  {
-    title: "2. Output quality",
-    items: [
-      ["High", "The article writer adds no images where readers expect them. Tone, EEAT-aligned structure and formatting trail the category leaders. A stronger writer could become the most compelling tool in the suite."],
-      ["Medium", "On the same coding prompts, the in-house model gave shallower output than a leading third-party model."],
-    ],
-  },
-  {
-    title: "3. Usage and adoption",
-    items: [
-      ["High", "The research agent behaves like the article writer, so users won't see why both exist and will likely use only one."],
-      ["Quick win", "Remaining AI credits are hidden in the dashboard. Showing them on every generation screen removes the most common point of confusion."],
-      ["Medium", "The featured tools are what new users try first. Polishing those first protects the first impression."],
-    ],
-  },
-  {
-    title: "4. Hidden issues that cost repeat users",
-    note: "These rarely show up in your analytics or support tickets. Users simply don't come back.",
-    items: [
-      ["High", "Work in progress is lost on a page refresh or an expired session, with no autosave or draft history."],
-      ["High", "The sign-up verification email lands in spam for Outlook users, so part of every day's sign-ups never activate."],
-      ["Medium", "On phones, the export button sits off-screen, so mobile users can create but can't download."],
-      ["Medium", "Cancelling a plan takes five screens and a support email, which turns a quiet churn into a public complaint."],
-    ],
-  },
-  {
-    title: "5. New feature suggestions",
-    items: [
-      ["Medium", "Inline section editing and auto-generated tables in the article writer."],
-      ["Medium", "Follow-up prompts and an edit-and-preview mode inside the presentation builder."],
-      ["Medium", "A built-in blog with a customizable template and an AI blog writer. Two of the benchmarked competitors already offer this."],
-    ],
-  },
-  {
-    title: "6. Marketing and positioning",
-    items: [
-      ["Medium", "The \"Start for free\" button leads to a paid-plan step, which feels misleading at sign-up."],
-      ["Quick win", "Unanswered reviews on Trustpilot and G2 show up in brand searches. Replying to them builds trust with people still deciding."],
-      ["Medium", "The homepage lists features, while competitors lead with the outcome for their main user type."],
-    ],
-  },
-  {
-    title: "7. SEO, search results and AI visibility",
-    note: "We check how your brand shows up on Google and in AI answers, not just inside the product.",
-    items: [
-      ["High", "Two brand domains rank for the brand name and compete with each other. Pick one primary domain and redirect the other to combine their ranking strength."],
-      ["High", "ChatGPT and Perplexity name two competitors for \"best [category] tool\" but not you. They cite comparison pages, and you have none."],
-      ["High", "Feature pages load their content with JavaScript only, so Google indexes an almost empty page."],
-      ["Medium", "Old URLs from the last redesign return 404 with no redirects, so the backlinks pointing at them are wasted."],
-      ["Medium", "Competitors own \"[Product] alternatives\" and \"[Product] vs [Competitor]\" searches, so people researching you land on their pages."],
-      ["Quick win", "Product pages carry no structured data, so search results show no pricing or ratings next to the brand."],
-    ],
-  },
-];
+    {
+      title: "1. Bugs and reliability",
+      items: [
+        ["High", "Follow-up requests sometimes fail with a \"PIN not found\" error, with no prompt to enter one. A retry fixes it, so users see it as random and stop trusting the tool."],
+        ["High", "Credits are still deducted when a generation fails. Users pay for nothing, and paying users notice this fastest."],
+        ["Medium", "Voice input handles short prompts well but returns an error on longer ones."],
+        ["Medium", "The AI edit prompt fails with no error message once input passes about 500 characters."],
+      ],
+    },
+    {
+      title: "2. Output quality",
+      items: [
+        ["High", "The article writer adds no images where readers expect them. Tone, EEAT-aligned structure and formatting trail the category leaders. A stronger writer could become the most compelling tool in the suite."],
+        ["Medium", "On the same coding prompts, the in-house model gave shallower output than a leading third-party model."],
+      ],
+    },
+    {
+      title: "3. Usage and adoption",
+      items: [
+        ["High", "The research agent behaves like the article writer, so users won't see why both exist and will likely use only one."],
+        ["Quick win", "Remaining AI credits are hidden in the dashboard. Showing them on every generation screen removes the most common point of confusion."],
+        ["Medium", "The featured tools are what new users try first. Polishing those first protects the first impression."],
+      ],
+    },
+    {
+      title: "4. Hidden issues that cost repeat users",
+      note: "These rarely show up in your analytics or support tickets. Users simply don't come back.",
+      items: [
+        ["High", "Work in progress is lost on a page refresh or an expired session, with no autosave or draft history."],
+        ["High", "The sign-up verification email lands in spam for Outlook users, so part of every day's sign-ups never activate."],
+        ["Medium", "On phones, the export button sits off-screen, so mobile users can create but can't download."],
+        ["Medium", "Cancelling a plan takes five screens and a support email, which turns a quiet churn into a public complaint."],
+      ],
+    },
+    {
+      title: "5. New feature suggestions",
+      items: [
+        ["Medium", "Inline section editing and auto-generated tables in the article writer."],
+        ["Medium", "Follow-up prompts and an edit-and-preview mode inside the presentation builder."],
+        ["Medium", "A built-in blog with a customizable template and an AI blog writer. Two of the benchmarked competitors already offer this."],
+      ],
+    },
+    {
+      title: "6. Marketing and positioning",
+      items: [
+        ["Medium", "The \"Start for free\" button leads to a paid-plan step, which feels misleading at sign-up."],
+        ["Quick win", "Unanswered reviews on Trustpilot and G2 show up in brand searches. Replying to them builds trust with people still deciding."],
+        ["Medium", "The homepage lists features, while competitors lead with the outcome for their main user type."],
+      ],
+    },
+    {
+      title: "7. SEO, search results and AI visibility",
+      note: "We check how your brand shows up on Google and in AI answers, not just inside the product.",
+      items: [
+        ["High", "Two brand domains rank for the brand name and compete with each other. Pick one primary domain and redirect the other to combine their ranking strength."],
+        ["High", "ChatGPT and Perplexity name two competitors for \"best [category] tool\" but not you. They cite comparison pages, and you have none."],
+        ["High", "Feature pages load their content with JavaScript only, so Google indexes an almost empty page."],
+        ["Medium", "Old URLs from the last redesign return 404 with no redirects, so the backlinks pointing at them are wasted."],
+        ["Medium", "Competitors own \"[Product] alternatives\" and \"[Product] vs [Competitor]\" searches, so people researching you land on their pages."],
+        ["Quick win", "Product pages carry no structured data, so search results show no pricing or ratings next to the brand."],
+      ],
+    },
+  ];
 
 const benchmarkRows = [
   ["Output quality", "Average", "Strong", "Average"],
@@ -610,13 +632,12 @@ export default function TestingPartnerPage() {
                       {group.items.map(([priority, text]) => (
                         <li key={text}>
                           <span
-                            className={`tp-pill ${
-                              priority === "High"
+                            className={`tp-pill ${priority === "High"
                                 ? "tp-high"
                                 : priority === "Medium"
                                   ? "tp-medium"
                                   : "tp-quick"
-                            }`}
+                              }`}
                           >
                             {priority}
                           </span>

@@ -4,24 +4,44 @@ import Script from "next/script";
 import ProofStrip from "@/components/shared/ProofStrip";
 import { ContactPopup } from "./ContactClient";
 import { withDefaultSocial } from "@/lib/seo/metadata";
+import { buildPageMetadata } from "@/lib/seo/metadata";
+import { payloadFetch } from "@/lib/payload";
 
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
 
-export const metadata: Metadata = withDefaultSocial(
-  {
-    title: "Contact AlloyPress — AI Reviews, Partnerships & Enquiries",
-    description:
-      "Contact AlloyPress for AI tool reviews, article inclusion, partnerships, editorial enquiries, and other collaboration requests.",
-    alternates: { canonical: "/contact-us" },
-    openGraph: {
-      title: "Contact AlloyPress — AI Reviews & Partnerships",
-      description:
-        "Get in touch with AlloyPress about AI tool reviews, editorial collaborations, partnerships, and enquiries.",
-      type: "website",
-    },
-  },
-  "/contact-us"
-);
+// ===== 4 values mattum maathunga (keela table paarunga) =====
+const PAGE_SLUG = "contact-us";
+const CANONICAL = "/contact-us";
+const FALLBACK_TITLE = "Contact AlloyPress | Reviews, Listings and Partnerships";
+const FALLBACK_DESC =
+  "Get your AI tool reviewed, considered for a list, or tested with us. Email the AlloyPress team and a real person will read it and reply.";
+// ============================================================
+
+const SEO_SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://alloypress.com";
+
+type PageSeoDoc = {
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    openGraphImage?: { url?: string | null } | null;
+  } | null;
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await payloadFetch<{ docs?: PageSeoDoc[] }>(
+    `/pages?where[slug][equals]=${PAGE_SLUG}&where[status][equals]=published&limit=1&depth=1&select[seo]=true`,
+    { strict: false, next: { revalidate: 604800, tags: ["pages", `page:${PAGE_SLUG}`] } },
+  );
+  const seo = data?.docs?.[0]?.seo;
+  const img = seo?.openGraphImage?.url;
+
+  return buildPageMetadata({
+    title: seo?.title?.trim() || FALLBACK_TITLE,
+    description: seo?.description?.trim() || FALLBACK_DESC,
+    canonicalPath: CANONICAL,
+    imageUrl: img ? (img.startsWith("http") ? img : `${SEO_SITE}${img}`) : `${SEO_SITE}/og-default.png`,
+  });
+}
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",

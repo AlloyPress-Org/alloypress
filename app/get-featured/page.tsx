@@ -8,26 +8,43 @@ import type { Post, PayloadResponse } from "@/lib/cms";
 import { getBlogHeadings } from "@/lib/blogUtils";
 
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 // Cache this page for 7 days (static + ISR), same approach as the blog posts.
 // Must be a literal number: 60 * 60 * 24 * 7 = 604800.
 export const revalidate = 604800;
 
-export const metadata: Metadata = withDefaultSocial(
-  {
-    title: "AI Tool Article Inclusion",
-    description:
-      "Submit your AI tool for consideration in AlloyPress editorial lists and alternatives articles. Learn how inclusion works, what we evaluate, and what to expect.",
-    alternates: { canonical: "/get-featured" },
-    openGraph: {
-      title: "AI Tool Article Inclusion",
-      description:
-        "Get your AI tool considered for relevant AlloyPress lists and alternatives articles through a reader-first editorial process.",
-      type: "website",
-    },
-  },
-  "/get-featured"
-);
+const PAGE_SLUG = "get-featured";
+const CANONICAL = "/get-featured";
+const FALLBACK_TITLE = "Submit your AI tool to our tested lists | AlloyPress";
+const FALLBACK_DESC =
+  "Think your AI tool can compete with the best in its category? See how we test tools side by side, what we look for and how to submit yours.";
+
+const SEO_SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://alloypress.com";
+
+type PageSeoDoc = {
+  seo?: {
+    title?: string | null;
+    description?: string | null;
+    openGraphImage?: { url?: string | null } | null;
+  } | null;
+};
+
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await payloadFetch<{ docs?: PageSeoDoc[] }>(
+    `/pages?where[slug][equals]=${PAGE_SLUG}&where[status][equals]=published&limit=1&depth=1&select[seo]=true`,
+    { strict: false, next: { revalidate: 604800, tags: ["pages", `page:${PAGE_SLUG}`] } },
+  );
+  const seo = data?.docs?.[0]?.seo;
+  const img = seo?.openGraphImage?.url;
+
+  return buildPageMetadata({
+    title: seo?.title?.trim() || FALLBACK_TITLE,
+    description: seo?.description?.trim() || FALLBACK_DESC,
+    canonicalPath: CANONICAL,
+    imageUrl: img ? (img.startsWith("http") ? img : `${SEO_SITE}${img}`) : `${SEO_SITE}/og-default.png`,
+  });
+}
 
 const breadcrumbSchema = {
   "@context": "https://schema.org",
@@ -255,7 +272,7 @@ const boundaries = [
   ["✓", "Full context before we publish", "We publish once we have enough product information and, where needed, access for testing."],
 ];
 
-const process = [
+const processSteps = [
   ["01", "You submit your tool details", "Send the product name, URL, category, the article you have in mind, and enough context for us to understand the product."],
   ["02", "We review whether there's a genuine fit", "We check the product against the article topic, audience, and existing coverage, then share how we work and the fees behind it."],
   ["03", "We collect access and testing details", "If hands-on evaluation is needed, we arrange product access, demo details, or the appropriate plan for testing."],
@@ -379,7 +396,7 @@ export default async function InclusionPage() {
       <section className="inc-section inc-process">
         <div className="inc-container">
           <header className="inc-heading"><div><div className="inc-eyebrow inc-light"><span /> HOW IT WORKS</div><h2>What happens after you reach out.</h2><p>The process is straightforward. Here's exactly what to expect from submission to coverage.</p></div></header>
-          <div className="inc-process-list">{process.map(([num, title, text]) => <article className="inc-process-row" key={num}><span className="inc-process-number">{num}</span><div><h3>{title}</h3><p>{text}</p></div><b>↗</b></article>)}</div>
+          <div className="inc-process-list">{processSteps.map(([num, title, text]) => <article className="inc-process-row" key={num}><span className="inc-process-number">{num}</span><div><h3>{title}</h3><p>{text}</p></div><b>↗</b></article>)}</div>
           <div className="inc-timeline"><p><strong>Timeline: 6 to 12 working days</strong>, depending on our current testing queue. It can be shorter or longer, and we confirm the exact timing when you reach out.</p></div>
         </div>
       </section>

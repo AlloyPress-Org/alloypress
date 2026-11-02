@@ -10,9 +10,12 @@ import { createBreadcrumbSchema } from "@/lib/seo/schema";
 // Fallback copy used only if the "about" page doesn't exist yet
 // in Payload's Pages collection, or the request fails.
 // ------------------------------------------------------------
-const FALLBACK_TITLE = "About AlloyPress";
+const FALLBACK_TITLE = "About AlloyPress | Independent, hands-on AI tool reviews";
 const FALLBACK_DESCRIPTION =
-  "AlloyPress is an independent AI editorial publication. We test AI tools hands-on, write what we actually find, and help readers choose without expensive trial and error.";
+  "An independent AI publication. We test tools hands-on, write what we actually find, and share clear AI knowledge so you can choose without guesswork.";
+  
+const PAGE_SLUG = "about-us";
+const SEO_SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://alloypress.com";
 
 type PageDoc = {
   seo?: {
@@ -25,11 +28,12 @@ type PageDoc = {
 
 async function getAboutPage(): Promise<PageDoc | null> {
   const data = await payloadFetch<{ docs?: PageDoc[] }>(
-    "/pages?where[slug][equals]=about&where[status][equals]=published&limit=1",
+    `/pages?where[slug][equals]=${PAGE_SLUG}&where[status][equals]=published&limit=1&depth=1&select[seo]=true`,
     {
+      strict: false,
       next: {
-        revalidate: 86400,
-        tags: ["pages", "page:about"],
+        revalidate: 604800,
+        tags: ["pages", `page:${PAGE_SLUG}`],
       },
     },
   );
@@ -46,7 +50,11 @@ export async function generateMetadata(): Promise<Metadata> {
     description: seo?.description || FALLBACK_DESCRIPTION,
     canonicalPath: "/about-us",
     canonicalUrl: seo?.canonicalURL,
-    imageUrl: seo?.openGraphImage?.url,
+    imageUrl: seo?.openGraphImage?.url
+      ? seo.openGraphImage.url.startsWith("http")
+        ? seo.openGraphImage.url
+        : `${SEO_SITE}${seo.openGraphImage.url}`
+      : `${SEO_SITE}/og-default.png`,
   });
 }
 
