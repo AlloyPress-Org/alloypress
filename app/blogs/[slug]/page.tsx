@@ -22,6 +22,7 @@ import { collectFaqs } from "@/lib/faq-from-content";
 import { getImageSlot } from "@/lib/api/imageSlots";
 import { permanentRedirect } from "next/navigation";
 import { resolveRedirect } from "@/lib/redirects";
+import { getKnownPostSlugs } from "@/lib/known-slugs";
 
 // ============================================================
 // BREADCRUMB CONSTANTS
@@ -319,6 +320,11 @@ const getPost = cache(
     slug: string,
     isDraft = false,
   ): Promise<PostWithMeta | null> => {
+    if (!isDraft) {
+      const known = await getKnownPostSlugs();
+      if (known && !known.has(slug)) return null;
+    }
+
     const params = new URLSearchParams();
 
     params.set(

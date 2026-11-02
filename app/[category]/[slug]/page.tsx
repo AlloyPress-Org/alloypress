@@ -25,6 +25,7 @@ import { collectFaqs } from "@/lib/faq-from-content";
 import { getImageSlot } from "@/lib/api/imageSlots";
 import { permanentRedirect } from "next/navigation";
 import { resolveRedirect } from "@/lib/redirects";
+import { getKnownPostSlugs } from "@/lib/known-slugs";
 
 // ============================================================
 // SITE
@@ -643,6 +644,14 @@ const getPost = cache(
     ) {
       return null;
     }
+
+    // Real slugs: lowercase letters, digits, hyphens. Anything else is a bot probe.
+    if (slug.length > 120 || !/^[a-z0-9][a-z0-9-]*$/.test(slug)) {
+      return null;
+    }
+
+    const known = await getKnownPostSlugs();
+    if (known && !known.has(slug)) return null;
 
     const params =
       new URLSearchParams();
