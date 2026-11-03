@@ -32,12 +32,12 @@ const STATIC_PAGES = [
   "/comparisons",
   "/about-us",
   "/contact-us",
-  "/get-reviewed",
+  "/review-your-ai-tool",
   "/privacy-policy",
   "/terms-and-conditions",
   "/do-not-sell-my-info",
   "/testing-partner",
-  "/get-featured",
+  "/submit-your-ai-tool",
 ];
 
 type Category = {

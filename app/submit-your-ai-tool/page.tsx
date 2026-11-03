@@ -14,8 +14,8 @@ import { buildPageMetadata } from "@/lib/seo/metadata";
 // Must be a literal number: 60 * 60 * 24 * 7 = 604800.
 export const revalidate = 604800;
 
-const PAGE_SLUG = "get-featured";
-const CANONICAL = "/get-featured";
+const PAGE_SLUG = "submit-your-ai-tool";
+const CANONICAL = "/submit-your-ai-tool";
 const FALLBACK_TITLE = "Submit your AI tool to our tested lists | AlloyPress";
 const FALLBACK_DESC =
   "Think your AI tool can compete with the best in its category? See how we test tools side by side, what we look for and how to submit yours.";
@@ -55,8 +55,8 @@ const breadcrumbSchema = {
         url: "/",
       },
       {
-        name: "Get Featured",
-        url: "/get-featured",
+        name: "Submit-Your-Ai-Tool",
+        url: "/submit-your-ai-tool",
       },
     ]),
   ],
@@ -413,7 +413,7 @@ export default async function InclusionPage() {
                 share a combined rate.
               </p>
             </div>
-            <Link className="inc-secondary-link" href="/get-reviewed">
+            <Link className="inc-secondary-link" href="/review-your-ai-tool">
               See dedicated reviews
             </Link>
           </div>

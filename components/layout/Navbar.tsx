@@ -16,9 +16,21 @@ const navItems = [
 ];
 
 const brandItems = [
-  { label: "Get Reviewed", href: "/get-reviewed" },
-  { label: "Get Featured", href: "/get-featured" },
-  { label: "Testing Partner", href: "/testing-partner" },
+  {
+    label: "Review Your AI Tool",
+    description: "A dedicated, hands-on review",
+    href: "/review-your-ai-tool",
+  },
+  {
+    label: "Submit Your AI Tool",
+    description: "Be considered for our lists",
+    href: "/submit-your-ai-tool",
+  },
+  {
+    label: "Your AI Testing Partner",
+    description: "Ongoing independent testing",
+    href: "/testing-partner",
+  },
 ];
 
 const THEME_KEY = "alloypress-theme";
@@ -290,13 +302,15 @@ export default function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`nav-dropdown-item ${pathname === item.href ? "is-current" : ""
-                    }`}
+                  className={`nav-dropdown-item ${pathname === item.href ? "is-current" : ""}`}
                   aria-current={pathname === item.href ? "page" : undefined}
                   onClick={closeBrands}
                 >
-                  {item.label}
-                  <span aria-hidden="true">↗</span>
+                  <span className="nav-dropdown-text">
+                    <span className="nav-dropdown-title">{item.label}</span>
+                    <span className="nav-dropdown-desc">{item.description}</span>
+                  </span>
+                  <span className="nav-dropdown-arrow" aria-hidden="true">↗</span>
                 </Link>
               ))}
             </div>
@@ -421,21 +435,18 @@ const dropdownStyles = `
   position: relative;
 }
 
-.nav-link.nav-dropdown-trigger {
+.nav-dropdown-trigger {
   gap: 5px;
   border: 0;
   background: transparent;
-  color: var(--brand);
-  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
 }
 
-.nav-link.nav-dropdown-trigger:hover,
-.nav-link.nav-dropdown-trigger.is-active,
-.nav-dropdown.is-open .nav-link.nav-dropdown-trigger {
-  background: transparent;
-  color: var(--brand-hover, var(--brand));
+/* Menu open-aa irukkumbodhu, hover look-a ve vaikkum */
+.nav-dropdown.is-open .nav-dropdown-trigger {
+  color: var(--foreground);
+  background: var(--surface);
 }
 
 .nav-dropdown-trigger:focus-visible,
@@ -459,7 +470,7 @@ const dropdownStyles = `
   z-index: 60;
   display: grid;
   gap: 2px;
-  min-width: 220px;
+  min-width: 290px;
   padding: 6px;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -484,20 +495,43 @@ const dropdownStyles = `
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 11px 12px;
+  gap: 24px;
+  padding: 12px 14px;
   border-radius: 8px;
-  color: var(--foreground);
-  font-family: var(--font-ui);
-  font-size: var(--text-sm);
-  font-weight: 600;
   white-space: nowrap;
   transition:
     color 0.15s ease,
     background-color 0.15s ease;
 }
 
-.nav-dropdown-item span {
+.nav-dropdown-item:hover,
+.nav-dropdown-item.is-current {
+  background: color-mix(in srgb, var(--brand) 10%, transparent);
+}
+
+.nav-dropdown-text {
+  display: grid;
+  gap: 2px;
+}
+
+.nav-dropdown-title {
+  color: var(--foreground);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.3;
+  transition: color 0.15s ease;
+}
+
+.nav-dropdown-desc {
+  color: var(--text-secondary);
+  font-family: var(--font-body, var(--font-ui));
+  font-size: var(--text-xs);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.nav-dropdown-arrow {
   color: var(--text-secondary);
   font-size: var(--text-md);
   transition:
@@ -505,13 +539,12 @@ const dropdownStyles = `
     transform 0.15s ease;
 }
 
-.nav-dropdown-item:hover,
-.nav-dropdown-item.is-current {
+.nav-dropdown-item:hover .nav-dropdown-title,
+.nav-dropdown-item.is-current .nav-dropdown-title {
   color: var(--brand);
-  background: color-mix(in srgb, var(--brand) 10%, transparent);
 }
 
-.nav-dropdown-item:hover span {
+.nav-dropdown-item:hover .nav-dropdown-arrow {
   color: var(--brand);
   transform: translate(2px, -2px);
 }
@@ -540,7 +573,10 @@ const dropdownStyles = `
 
 @media (prefers-reduced-motion: reduce) {
   .nav-dropdown-menu,
-  .nav-dropdown-chevron {
+  .nav-dropdown-chevron,
+  .nav-dropdown-item,
+  .nav-dropdown-title,
+  .nav-dropdown-arrow {
     transition: none;
   }
 }

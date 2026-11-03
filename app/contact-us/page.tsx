@@ -58,14 +58,14 @@ const paths = [
     icon: "⌕",
     title: "Dedicated Review",
     text: "A completely new, standalone article written specifically for your product. We test it hands-on across real workflows, document everything with screenshots, and publish a permanent, in-depth review we refresh as you ship.",
-    href: "/get-reviewed",
+    href: "/review-your-ai-tool",
     cta: "See review details",
   },
   {
     icon: "▣",
     title: "Article Inclusion",
     text: "Get your tool featured in one of our existing lists or alternatives articles. We test the product, write a dedicated section, and include a link so readers can reach your site directly. Position is based on how the tool performs in our evaluation.",
-    href: "/get-featured",
+    href: "/submit-your-ai-tool",
     cta: "See list details",
   },
   {

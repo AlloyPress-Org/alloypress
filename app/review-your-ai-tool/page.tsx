@@ -9,8 +9,8 @@ import ReviewRequestPopup from "./ReviewRequestPopup";
 import { payloadFetch } from "@/lib/payload";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
-const PAGE_SLUG = "get-reviewed";
-const CANONICAL = "/get-reviewed";
+const PAGE_SLUG = "review-your-ai-tool";
+const CANONICAL = "/review-your-ai-tool";
 const FALLBACK_TITLE = "Get Your AI tool reviewed by real testers | AlloyPress";
 const FALLBACK_DESC =
   "Request an in-depth review of your AI tool. We test it on real workflows, show original screenshots and pricing, and update it as you launch new features.";
@@ -51,7 +51,7 @@ const breadcrumbSchema = {
       },
       {
         name: "Review Tool",
-        url: "/get-reviewed",
+        url: "/review-your-ai-tool",
       },
     ]),
   ],
@@ -114,11 +114,6 @@ const previewChecks = [
   "The Tested by AlloyPress badge",
 ];
 
-/**
- * Preview screenshots. Leave `src` as null to show the striped placeholder.
- * Later, drop real images into /public/reviews/ and set e.g.
- * src: "/reviews/onepage-review-1.png".
- */
 const previewShots: { src: string | null; alt: string; number?: string }[] = [
   { src: "/test1.avif", alt: "Original screenshot from our testing", number: "2" },
   { src: "/test2.avif", alt: "Original screenshot from our testing" },
@@ -622,7 +617,7 @@ export default function ReviewsPage() {
                   by how your tool performs against the others.
                 </p>
               </div>
-              <Link className="review-primary" href="/get-featured">
+              <Link className="review-primary" href="/submit-your-ai-tool">
                 See our lists
               </Link>
             </div>

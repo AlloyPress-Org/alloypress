@@ -46,7 +46,7 @@ const resourceLinks = [
 const companyLinks = [
   { label: "About Us", href: "/about-us" },
   { label: "Contact Us", href: "/contact-us" },
-  { label: "Feature Your Tool", href: "/get-featured" },
+  { label: "Feature Your Tool", href: "/submit-your-ai-tool" },
   { label: "Testing Partner", href: "/testing-partner" },
   {
     label: "Careers",
@@ -320,7 +320,7 @@ export default function Footer() {
                 companyLinks[2],
                 {
                   label: "Get Reviewed",
-                  href: "/get-reviewed",
+                  href: "/review-your-ai-tool",
                 },
                 companyLinks[3],
               ]}

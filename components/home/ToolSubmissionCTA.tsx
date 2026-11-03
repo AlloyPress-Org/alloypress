@@ -50,7 +50,7 @@ export default function ToolSubmissionCTA() {
             </p>
 
             <Link
-              href="/get-featured"
+              href="/submit-your-ai-tool"
               className="tool-cta-primary"
             >
               Get featured
@@ -71,7 +71,7 @@ export default function ToolSubmissionCTA() {
             </p>
 
             <Link
-              href="/get-reviewed"
+              href="/review-your-ai-tool"
               className="tool-cta-secondary"
             >
               See How Reviews Work
