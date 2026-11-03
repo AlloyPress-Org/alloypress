@@ -46,8 +46,8 @@ const resourceLinks = [
 const companyLinks = [
   { label: "About Us", href: "/about-us" },
   { label: "Contact Us", href: "/contact-us" },
-  { label: "Feature Your Tool", href: "/submit-your-ai-tool" },
-  { label: "Testing Partner", href: "/testing-partner" },
+  { label: "Submit Your AI Tool", href: "/submit-your-ai-tool" },
+  { label: "Your AI Testing Partner", href: "/testing-partner" },
   {
     label: "Careers",
     href: "https://nvdigital.in/careers/",
@@ -319,7 +319,7 @@ export default function Footer() {
                 companyLinks[1],
                 companyLinks[2],
                 {
-                  label: "Get Reviewed",
+                  label: "Review Your AI Tool",
                   href: "/review-your-ai-tool",
                 },
                 companyLinks[3],
