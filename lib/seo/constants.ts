@@ -50,7 +50,7 @@ export const LOGO_ID = `${SITE_URL}/#logo`;
 
 export const SITE_LOGO_URL =
   process.env.NEXT_PUBLIC_SITE_LOGO_URL?.trim() ||
-  `${SITE_URL}/ap-logo.png`;
+  `${SITE_URL}/ap-icons.png`;
 
 // 1200x630 image create panni /public/og-default.png-la vainga
 export const DEFAULT_OG_IMAGE_URL =
