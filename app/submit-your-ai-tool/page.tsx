@@ -71,10 +71,10 @@ const principles = [
 
 // Rendered by the shared <ProofStrip /> component.
 const proofStats: readonly ProofStat[] = [
-  ["6.1M+", "Google Search visibility across our top 5 pages"],
+  ["280K+", "Citations in Google AI Overviews & AI Mode (last 6 months)"],
+  ["11K+", "Citations in Microsoft Copilot (last 3 months)"],
   ["2.3M+", "Google Search visibility for our Best AI Image Generators list"],
   ["250+", "AI tools tested and published"],
-  ["1,000+", "Hours of hands-on testing"],
 ];
 
 type ListType = "List" | "Alternatives";
@@ -227,7 +227,7 @@ const faqs = [
   ["Can you include my tool for free?", "We do cover tools from our own research, but our team is small and the testing queue is long. A confirmed collaboration gets a scheduled slot. Without one, we can't say when we'd reach your tool."],
   ["You've already tested us for another article. Why is this one separate?", "Each article is a fresh, head-to-head test against the tools in that article, so it's new work every time."],
   ["Can we send the description or the copy?", "No. Everything is written by our team from our own testing. We're happy to correct facts such as pricing or feature names."],
-  ["Can we pay through an affiliate commission instead?", "No. We don't work on commission, and we're removing affiliate links from our editorial content to keep coverage independent."],
+  ["Can we pay through an affiliate commission instead?", "No. We don't work on an affiliate basis with any brand. Commissions don't decide what we test, how we schedule testing, or what we write."],
 ];
 
 const listPopup = {
@@ -322,7 +322,11 @@ export default async function InclusionPage() {
       </section>
 
       {/* PROOF STRIP (shared component) */}
-      <ProofStrip stats={proofStats} showAiPlatforms />
+      <ProofStrip
+        stats={proofStats}
+        showAiPlatforms
+        source="Source: Google Search Console and Bing Webmaster Tools, as of November 2026."
+      />
 
       <section className="inc-section inc-matters">
         <div className="inc-container">

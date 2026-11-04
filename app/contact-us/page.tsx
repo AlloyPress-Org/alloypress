@@ -86,7 +86,7 @@ const paths = [
 
 const heroStats = [
   ["250+", "AI tools tested"],
-  ["AI-cited", "ChatGPT, Perplexity, Gemini, AI Overviews"],
+  ["280k+", "Google AI citations"],
   ["1 to 3 days", "Response time"],
   ["Global", "Open to work with"],
 ];
@@ -289,7 +289,7 @@ export default function ContactPage() {
           </div>
         </section>
 
-        <ProofStrip />
+        <ProofStrip source="Source: Google Search Console and Bing Webmaster Tools, as of November 2026." />
 
         <section className="contact-final-cta">
           <div className="contact-final-grid" aria-hidden="true" />

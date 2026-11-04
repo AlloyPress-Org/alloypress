@@ -100,7 +100,7 @@ const featuredReviews = [
 const afterLive = [
   ["▣", "A permanent page", "Your review is its own page. It isn't a list position that can move when we retest the category."],
   ["↻", "Refreshed as you ship", "When you release a major feature or change pricing, we update the review so it matches your product."],
-  ["↗", "Found in search and AI answers", "Because we test for real and write honest verdicts, our reviews are built to rank on Google and to be cited by ChatGPT, Perplexity, Google AI Overviews & more."],
+  ["↗", "Found in search and AI answers", "Our pages were cited more than 280,000 times in Google's AI Overviews and AI Mode in the last six months, and our reviews are built to keep earning that visibility."],
   ["✓", "A badge you can use", "Show the Tested by AlloyPress badge on your site, linked to an independent review."],
 ];
 
@@ -124,7 +124,7 @@ const faqs = [
   ["How much does it cost?", "It depends on the format and the depth of testing your tool needs. Reach out with your tool and we'll share how we work, what's included and the fees behind it, usually within 1 to 3 business days."],
   ["Can you guarantee a #1 position?", "No, for any brand. In lists, position is decided by how your tool performs against the others in the same test. If it stands out, nothing stops it from ranking first. A dedicated review has no ranking at all: the page is only about your tool."],
   ["Can you test my tool for free?", "We do cover tools from our own research, but our team is small and the testing queue is long. A confirmed collaboration gets a scheduled slot. Without one, we can't say when we'd reach your tool."],
-  ["Can we pay through an affiliate commission instead?", "No. We don't work on commission, and we're removing affiliate links from our editorial content to keep coverage independent."],
+  ["Can we pay through an affiliate commission instead?", "No. We don't work on an affiliate basis with any brand. Commissions don't decide what we test, how we schedule testing, or what we write."],
   ["Can we send the description or write the review ourselves?", "No. Everything is written by our team from our own testing. That independence is what makes the coverage worth having. We're happy to correct facts such as pricing or feature names."],
   ["What happens when our product changes?", "Tell us when you ship a major feature or change pricing. We refresh the review so it stays accurate."],
   ["Do you work with agencies?", "Yes. Please copy someone from the brand team so we're aligned on access and approvals."],
@@ -312,7 +312,10 @@ export default function ReviewsPage() {
         </section>
 
         {/* PROOF STRIP (shared component) */}
-        <ProofStrip showAiPlatforms />
+        <ProofStrip
+          showAiPlatforms
+          source="Source: Google Search Console and Bing Webmaster Tools, as of November 2026."
+        />
 
         {/* WHY IT MATTERS */}
         <section className="review-section review-why">

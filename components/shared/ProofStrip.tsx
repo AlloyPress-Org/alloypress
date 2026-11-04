@@ -3,8 +3,8 @@ import Image from "next/image";
 export type ProofStat = readonly [value: string, label: string];
 
 export const defaultProofStats: readonly ProofStat[] = [
-  ["6.1M+", "Google Search visibility across our top 5 pages"],
-  ["639K+", "Google Search visibility across our top 5 reviews"],
+  ["280K+", "Citations in Google AI Overviews & AI Mode (last 6 months)"],
+  ["11K+", "Citations in Microsoft Copilot (last 3 months)"],
   ["250+", "AI tools tested and published"],
   ["1,000+", "Hours of hands-on testing"],
 ];
@@ -68,6 +68,8 @@ type ProofStripProps = {
   aiLabel?: string;
   ariaLabel?: string;
   className?: string;
+  /** Optional one-line source note shown as a stripe under the stat cards. */
+  source?: string;
 };
 
 export default function ProofStrip({
@@ -78,6 +80,7 @@ export default function ProofStrip({
   aiLabel = "Cited in AI answers from",
   ariaLabel = "AlloyPress in numbers",
   className = "",
+  source,
 }: ProofStripProps) {
   return (
     <section className={`ps-section ${className}`.trim()} aria-label={ariaLabel}>
@@ -93,6 +96,8 @@ export default function ProofStrip({
             ))}
           </div>
         )}
+
+        {source && <p className="ps-source">{source}</p>}
 
         {showAiPlatforms && (
           <div className="ps-row">
@@ -149,6 +154,20 @@ const proofStyles = `
   margin-top: 12px;
   color: var(--text-secondary);
   font: 400 var(--text-sm)/1.55 var(--font-body);
+}
+
+/* ---------- Source stripe (under the stat cards) ---------- */
+.ps-source {
+  display: flex;
+  align-items: center;
+  margin: -14px 0 0;
+  padding: 10px 16px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brand);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--brand) 5%, transparent);
+  color: var(--text-secondary);
+  font: 500 var(--text-xs)/1.5 var(--font-mono);
 }
 
 .ps-row {
