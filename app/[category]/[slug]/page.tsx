@@ -45,6 +45,7 @@ const ALLOWED_CATEGORIES = new Set([
   "news",
   "alternatives",
   "comparisons",
+  "tutorial",
 ]);
 
 const CATEGORY_LABELS: Record<
@@ -56,6 +57,7 @@ const CATEGORY_LABELS: Record<
   news: "News",
   alternatives: "Alternatives",
   comparisons: "Comparisons",
+  tutorial: "Tutorial",
 };
 
 // ============================================================

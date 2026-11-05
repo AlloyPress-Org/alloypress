@@ -588,7 +588,7 @@ export default async function BlogPostPage({
       ? post.category?.id
       : post.category;
 
-  const SECTION_SLUGS = ["blogs", "reviews", "news", "alternatives", "comparisons"];
+  const SECTION_SLUGS = ["blogs", "reviews", "news", "alternatives", "comparisons", "tutorial"];
 
   type CatLite = { slug?: string; name?: string; parent?: unknown } | null;
 
@@ -623,6 +623,9 @@ export default async function BlogPostPage({
     }
     : null;
 
+  if (!isDraft && section?.slug === "tutorial") {
+    permanentRedirect(`/tutorial/${post.slug}`);
+  }
   // ==========================================================
   // RELATED POSTS
   // ==========================================================

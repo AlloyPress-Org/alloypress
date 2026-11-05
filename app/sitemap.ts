@@ -14,6 +14,7 @@ const ALLOWED_CATEGORIES = new Set([
   "news",
   "alternatives",
   "comparisons",
+  "tutorial",
 ]);
 
 // Subcategory listing pages that exist as routes:
@@ -30,6 +31,7 @@ const STATIC_PAGES = [
   "/news",
   "/alternatives",
   "/comparisons",
+  "tutorial",
   "/about-us",
   "/contact-us",
   "/review-your-ai-tool",

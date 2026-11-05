@@ -1,7 +1,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
-const CATEGORIES = ["blogs", "reviews", "news", "alternatives", "comparisons"];
+const CATEGORIES = ["blogs", "reviews", "news", "alternatives", "comparisons", "tutorial"];
 
 // Subcategories of "blogs" (Learn). Their listing pages live at /blogs/<slug>
 // and their posts at /blogs/<post-slug>.

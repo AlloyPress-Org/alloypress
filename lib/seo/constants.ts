@@ -79,6 +79,7 @@ export const ARTICLE_CATEGORIES = [
   "news",
   "alternatives",
   "comparisons",
+  "tutorial",
 ] as const;
 
 export type ArticleCategory = (typeof ARTICLE_CATEGORIES)[number];
@@ -89,6 +90,7 @@ export const CATEGORY_LABELS: Record<ArticleCategory, string> = {
   news: "News",
   alternatives: "Alternatives",
   comparisons: "Comparisons",
+  tutorial: "Tutorial",
 };
 
 export const isArticleCategory = (
