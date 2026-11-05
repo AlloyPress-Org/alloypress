@@ -88,38 +88,12 @@ export default function NewsletterSection() {
           </div>
 
           <h2>
-            The AI tools worth your
-            <br />
-            attention, tested and
-            <br />
-            curated.
+            Get new reviews by email
           </h2>
 
           <p>
-            One email a week. No filler, no hype. Just the
-            <br />
-            tools we’ve actually tested, the updates worth
-            <br />
-            knowing, and the occasional deal worth taking.
+            We only email when there's something worth reading. Unsubscribe anytime.
           </p>
-
-          <div className="newsletter-benefits">
-            <div className="newsletter-benefit">
-              <span className="benefit-check">✓</span>
-              <strong>No spam</strong>
-            </div>
-
-            <span className="benefit-divider">|</span>
-
-            <div className="newsletter-benefit">
-              <span className="benefit-check">✓</span>
-              <strong>Unsubscribe anytime</strong>
-            </div>
-          </div>
-
-          <div className="newsletter-meta">
-            Curated by AlloyPress
-          </div>
 
         </div>
 

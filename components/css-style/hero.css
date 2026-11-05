@@ -2586,3 +2586,46 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* H1: trust line */
+.hero-trust-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 22px;
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: 1.7;
+  color: var(--text-secondary); /* same as .hero-description */
+}
+
+.hero-trust-line svg {
+  flex-shrink: 0;
+  color: var(--brand);
+}
+
+/* H2: See how we test link */
+.hero-stats-link {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.hero-stats-link a {
+  color: var(--text-primary); /* light: black, dark: white */
+  font-family: var(--font-ui);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.2s ease;
+}
+
+.hero-stats-link a:hover {
+  color: var(--brand); /* hover: green */
+}
+
+@media (max-width: 900px) {
+  .hero-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

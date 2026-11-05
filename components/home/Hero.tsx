@@ -209,7 +209,23 @@ export default function Hero() {
               practical alternatives, and clear explanations
               based on hands-on testing.
             </p>
-
+<p className="hero-trust-line">
+  <svg
+    viewBox="0 0 24 24"
+    width="16"
+    height="16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+  <span>No tool can pay for a ranking or a verdict. We write what we see.</span>
+</p>
             <div className="hero-actions">
               <Link
                 href="/blogs"
@@ -707,8 +723,8 @@ export default function Hero() {
               </div>
 
               <div>
-                <strong>100%</strong>
-                <span>Hands on Testing</span>
+                <strong>250+</strong>
+                <span>AI tools tested hands-on by our team</span>
               </div>
             </div>
 
@@ -721,8 +737,8 @@ export default function Hero() {
               </div>
 
               <div>
-                <strong>250+</strong>
-                <span>AI Tools Tested</span>
+                <strong>280k+</strong>
+                <span>Citations in Google AI Overviews and AI Mode, last 6 months</span>
               </div>
             </div>
 
@@ -735,8 +751,8 @@ export default function Hero() {
               </div>
 
               <div>
-                <strong>20+</strong>
-                <span>Detailed AI Reviews</span>
+                <strong>190+</strong>
+                <span>Countries our readers come from</span>
               </div>
             </div>
 
@@ -749,16 +765,20 @@ export default function Hero() {
               </div>
 
               <div>
-                <strong>4+ LLMs</strong>
+                <strong>0%</strong>
 
                 <span>
-                  Cited by GPT, Gemini, Claude, Perplexity and more
+                  Countries our readers come from
                 </span>
               </div>
             </div>
           </div>
         </div>
       </div>
+      <div className="hero-stats-link">
+  <Link href="/how-we-test">See how we test every tool →</Link>
+</div>
+      
     </section>
   );
 }

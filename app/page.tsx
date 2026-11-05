@@ -11,6 +11,8 @@ import PopularResources from "@/components/home/PopularResources";
 import ToolSubmissionCTA from "@/components/home/ToolSubmissionCTA";
 import NewsletterSection from "@/components/home/NewsletterSection";
 import TestingPartnerPromo from "@/components/home/testing-cta";
+import HowWeTest from "@/components/home/How-we-test";
+import BrandBlocks from "@/components/home/Brandblocks";
 
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { createWebSiteSchema } from "@/lib/seo/schema";
@@ -68,11 +70,11 @@ export default function Home() {
       {/* Listicle posts (Learn > Listicle), View all -> /blogs/listicles */}
       <AIToolList />
 
+      <HowWeTest />
+
       <NewsletterSection />
 
-      <TestingPartnerPromo />
-
-      <ToolSubmissionCTA />
+      <BrandBlocks />
     </>
   );
 }

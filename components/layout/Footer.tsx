@@ -47,7 +47,10 @@ const companyLinks = [
   { label: "About Us", href: "/about-us" },
   { label: "Contact Us", href: "/contact-us" },
   { label: "Submit Your AI Tool", href: "/submit-your-ai-tool" },
+  { label: "Review Your AI Tool", href: "/review-your-ai-tool" },
   { label: "Your AI Testing Partner", href: "/testing-partner" },
+  { label: "How We Test", href: "/how-we-test" },
+  { label: "Editorial Policy", href: "/editorial-policy" },
   {
     label: "Careers",
     href: "https://nvdigital.in/careers/",
@@ -312,19 +315,7 @@ export default function Footer() {
             />
 
             {/* Company */}
-            <FooterColumn
-              title="Company"
-              links={[
-                companyLinks[0],
-                companyLinks[1],
-                companyLinks[2],
-                {
-                  label: "Review Your AI Tool",
-                  href: "/review-your-ai-tool",
-                },
-                companyLinks[3],
-              ]}
-            />
+            <FooterColumn title="Company" links={companyLinks} />
 
             {/* Learn */}
             <FooterColumn
