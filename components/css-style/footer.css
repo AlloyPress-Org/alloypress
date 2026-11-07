@@ -120,6 +120,8 @@ html[data-theme="light"] .site-footer {
 
 /* Google preferred source button */
 .footer-source-link {
+  width: fit-content;
+  max-width: 100%;
   display: inline-flex;
   align-items: center;
   gap: 10px;

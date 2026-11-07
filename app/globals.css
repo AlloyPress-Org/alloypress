@@ -28,9 +28,9 @@
   --foreground: #f0f3ee;
 
   --text-primary: #f0f3ee;
-  --text-secondary: #a8b0aa;
-  --text-muted: #737d76;
-  --text-subtle: #4f5952;
+  --text-secondary: #c4cdc7;
+  --text-muted: #a9b3ac;
+  --text-subtle: #85918a;
 
   --border: #12351f;
   --border-strong: #1b5a2c;
@@ -102,9 +102,9 @@ html[data-theme="dark"] {
   --foreground: #f0f3ee;
 
   --text-primary: #f0f3ee;
-  --text-secondary: #a8b0aa;
-  --text-muted: #737d76;
-  --text-subtle: #4f5952;
+  --text-secondary: #c4cdc7;
+  --text-muted: #a9b3ac;
+  --text-subtle: #85918a;
 
   --border: #12351f;
   --border-strong: #1b5a2c;
@@ -146,9 +146,9 @@ html[data-theme="light"] {
   --foreground: #101713;
 
   --text-primary: #101713;
-  --text-secondary: #4e5a53;
-  --text-muted: #6e7972;
-  --text-subtle: #929c96;
+  --text-secondary: #3f4a43;
+  --text-muted: #4b564f;
+  --text-subtle: #66716a;
 
   --border: #d9e4dd;
   --border-strong: #b9cabe;
@@ -194,9 +194,9 @@ html[data-theme="light"] {
     --foreground: #f0f3ee;
 
     --text-primary: #f0f3ee;
-    --text-secondary: #a8b0aa;
-    --text-muted: #737d76;
-    --text-subtle: #4f5952;
+    --text-secondary: #c4cdc7;
+    --text-muted: #a9b3ac;
+    --text-subtle: #85918a;
 
     --border: #12351f;
     --border-strong: #1b5a2c;
@@ -725,9 +725,9 @@ html[data-theme="dark"] {
 
   --foreground: #f0f3ee;
   --text-primary: #f0f3ee;
-  --text-secondary: #a8b0aa;
-  --text-muted: #737d76;
-  --text-subtle: #4f5952;
+  --text-secondary: #c4cdc7;
+  --text-muted: #a9b3ac;
+  --text-subtle: #85918a;
 
   --border: #12351f;
   --border-strong: #1b5a2c;
@@ -748,7 +748,7 @@ html[data-theme="dark"] {
 }
 
 html[data-theme="light"] {
-  background: #f1f8f3 !important;
+  background: #ffffff !important;
 }
 
 html[data-theme="light"] body {
@@ -1433,15 +1433,3 @@ html[data-theme="light"] .email-cta-close {
     --site-container: 2000px;
   }
 }
-
-
-html.theme-preload,
-html.theme-preload *,
-html.theme-preload *::before,
-html.theme-preload *::after {
-  transition: none !important;
-}
-
-.theme-icon-sun { display: none; }
-html[data-theme="dark"] .theme-icon-sun { display: inline-flex; }
-html[data-theme="dark"] .theme-icon-moon { display: none; }

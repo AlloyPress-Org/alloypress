@@ -271,7 +271,7 @@ export default function Footer() {
                   height={18}
                   aria-hidden="true"
                 />
-                <span>Add AlloyPress as a preferred source on Google</span>
+                <span>Add AlloyPress as a preferred<br />source on Google</span>
               </a>
 
               {/* Social Icons (active accounts only) */}

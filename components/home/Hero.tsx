@@ -768,7 +768,7 @@ export default function Hero() {
                 <strong>0%</strong>
 
                 <span>
-                  Countries our readers come from
+                  Paid rankings or verdicts. Ever.
                 </span>
               </div>
             </div>
