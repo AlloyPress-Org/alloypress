@@ -23,6 +23,7 @@ type Post = {
   title?: string | null;
   slug?: string | null;
   publishedAt?: string | null;
+  updatedAt?: string | null;
   featuredImage?: Media | number | null;
   category?: Category | number | null;
 };
@@ -75,6 +76,26 @@ function formatDate(date?: string | null): string {
     day: "numeric",
     year: "numeric",
   }).format(parsed);
+}
+
+function getDateInfo(post: Post): { label: string; date: string | null } {
+  const published = post.publishedAt ? new Date(post.publishedAt) : null;
+  const updated = post.updatedAt ? new Date(post.updatedAt) : null;
+
+  const hasPublished = !!published && !Number.isNaN(published.getTime());
+  const hasUpdated = !!updated && !Number.isNaN(updated.getTime());
+
+  const ONE_DAY = 24 * 60 * 60 * 1000;
+
+  // Updated only if it was edited at least 1 day after publishing
+  if (
+    hasUpdated &&
+    (!hasPublished || updated!.getTime() - published!.getTime() > ONE_DAY)
+  ) {
+    return { label: "Updated", date: post.updatedAt ?? null };
+  }
+
+  return { label: "Published", date: post.publishedAt ?? null };
 }
 
 export default function FeaturedCarousel({
@@ -171,6 +192,8 @@ export default function FeaturedCarousel({
           const isActive =
             index === activeIndex;
 
+          const dateInfo = getDateInfo(post);
+
           return (
             <Link
               key={post.id}
@@ -237,15 +260,11 @@ export default function FeaturedCarousel({
                     •
                   </span>
 
-                  <time
-                    dateTime={
-                      post.publishedAt || undefined
-                    }
-                  >
-                    {formatDate(
-                      post.publishedAt
-                    )}
-                  </time>
+                  {dateInfo.date && (
+                    <time dateTime={dateInfo.date}>
+                      {dateInfo.label} {formatDate(dateInfo.date)}
+                    </time>
+                  )}
                 </div>
               </div>
             </Link>
@@ -301,8 +320,8 @@ export default function FeaturedCarousel({
               key={post.id}
               type="button"
               className={`alloy-featured-dot${index === activeIndex
-                  ? " is-active"
-                  : ""
+                ? " is-active"
+                : ""
                 }`}
               aria-label={`Show featured article ${index + 1
                 }`}
