@@ -11,44 +11,45 @@ import {
 } from "react-icons/fa6";
 
 const SHOW_FEATURED_BADGE = false;
-const navigateLinks = [
-  { label: "Home", href: "/" },
-  { label: "Listicles", href: "/blogs/listicles" },
-  { label: "Informatives", href: "/blogs/informatives" },
-  { label: "Reviews", href: "/reviews" },
-  { label: "News", href: "/news" },
-  { label: "Alternatives", href: "/alternatives" },
-  { label: "Comparisons", href: "/comparisons" },
-];
 
-const resourceLinks = [
+type FooterLink = {
+  label: string;
+  href: string;
+  external?: boolean;
+  accent?: boolean;
+};
+
+/* Top Guides: biggest pages first, Resume Builders moved in, no badge */
+const topGuideLinks: FooterLink[] = [
   { label: "AI Image Generators", href: "/blogs/best-ai-image-generator" },
   { label: "AI Website Builders", href: "/blogs/best-ai-website-builders" },
+  { label: "AI Blog Writers", href: "/blogs/best-ai-blog-writing-tools" },
+  { label: "AI Logo Generators", href: "/blogs/best-ai-logo-generators" },
   {
     label: "AI Background Removers",
     href: "/blogs/best-ai-background-remover-tools",
   },
+  { label: "AI Voice Generators", href: "/blogs/best-ai-voice-generators" },
   {
-    label: "AI Voice Generators",
-    href: "/blogs/best-ai-voice-generators",
-  },
-  {
-    label: "AI Blog Writers",
-    href: "/blogs/best-ai-blog-writing-tools",
-  },
-  {
-    label: "AI Logo Generators",
-    href: "/blogs/best-ai-logo-generators",
-    popular: true,
+    label: "AI Resume Builders",
+    href: "/blogs/list-of-top-ai-resume-builders",
   },
 ];
 
-const companyLinks = [
+/* Learn: beginner-first order, ends with All guides */
+const learnLinks: FooterLink[] = [
+  { label: "What is AI?", href: "/blogs/artificial-intelligence" },
+  { label: "What is ChatGPT?", href: "/blogs/what-is-chat-gpt" },
+  {
+    label: "How AI Image Generators Work",
+    href: "/blogs/how-ai-image-generators-work",
+  },
+  { label: "AI Hallucinations", href: "/blogs/ai-hallucinations-explained" },
+  { label: "AI vs Humans", href: "/blogs/ai-vs-human-intelligence" },
+];
+
+const companyLinks: FooterLink[] = [
   { label: "About Us", href: "/about-us" },
-  { label: "Contact Us", href: "/contact-us" },
-  { label: "Submit Your AI Tool", href: "/submit-your-ai-tool" },
-  { label: "Review Your AI Tool", href: "/review-your-ai-tool" },
-  { label: "Your AI Testing Partner", href: "/testing-partner" },
   { label: "How We Test", href: "/how-we-test" },
   { label: "Editorial Policy", href: "/editorial-policy" },
   {
@@ -56,56 +57,68 @@ const companyLinks = [
     href: "https://nvdigital.in/careers/",
     external: true,
   },
+  { label: "Contact Us", href: "/contact-us" },
 ];
 
-const learnLinks = [
-  {
-    label: "What is AI?",
-    href: "/blogs/artificial-intelligence",
-  },
-  {
-    label: "AI Hallucinations",
-    href: "/blogs/ai-hallucinations-explained",
-  },
-  {
-    label: "AI vs Humans",
-    href: "/blogs/ai-vs-human-intelligence",
-  },
-  {
-    label: "AI Writing Prompts",
-    href: "/blogs/ai-writing-prompts-for-every-task",
-  },
-  {
-    label: "AI Resume Builders",
-    href: "/blogs/list-of-top-ai-resume-builders",
-  },
+const brandLinks: FooterLink[] = [
+  { label: "Review Your AI Tool", href: "/review-your-ai-tool" },
+  { label: "Submit Your AI Tool", href: "/submit-your-ai-tool" },
+  { label: "AI Testing Partnership", href: "/testing-partner" },
 ];
 
-const popularLinks = [
+/* Start here: label -> category page, title -> article */
+const startHereLinks = [
   {
-    category: "LISTICLE",
+    category: "Best-of lists",
+    categoryHref: "/blogs/listicles",
     label: "AI Video Generators",
     href: "/blogs/best-ai-video-generators",
   },
   {
-    category: "ALTERNATIVES",
+    category: "Alternatives",
+    categoryHref: "/alternatives",
     label: "ChatGPT Alternatives",
     href: "/alternatives/chatgpt",
   },
   {
-    category: "REVIEW",
+    category: "Reviews",
+    categoryHref: "/reviews",
     label: "Cursor AI Review",
     href: "/reviews/cursor-ai",
   },
   {
-    category: "EDUCATION",
+    category: "Guides",
+    categoryHref: "/blogs/informatives",
     label: "Google AI Mode Explained",
     href: "/blogs/google-ai-mode-explained",
   },
   {
-    category: "COMPARISONS",
+    category: "Comparisons",
+    categoryHref: "/comparisons",
     label: "Invideo vs Synthesia",
     href: "/comparisons/invideo-vs-synthesia",
+  },
+];
+
+/* Show an icon only while that account is active. Set active: false to hide. */
+const socialLinks = [
+  {
+    label: "YouTube",
+    href: "https://www.youtube.com/@AlloyPress",
+    active: true,
+    Icon: FaYoutube,
+  },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/alloypressdotcom/",
+    active: true,
+    Icon: FaInstagram,
+  },
+  {
+    label: "X",
+    href: "https://x.com/AlloyPress",
+    active: true,
+    Icon: FaXTwitter,
   },
 ];
 
@@ -134,17 +147,14 @@ function SocialIcon({
 function FooterColumn({
   title,
   links,
+  className = "",
 }: {
   title: string;
-  links: {
-    label: string;
-    href: string;
-    popular?: boolean;
-    external?: boolean;
-  }[];
+  links: FooterLink[];
+  className?: string;
 }) {
   return (
-    <div className="footer-column">
+    <div className={`footer-column ${className}`.trim()}>
       <h3>{title}</h3>
 
       <nav aria-label={title}>
@@ -156,24 +166,16 @@ function FooterColumn({
                   href={link.href}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className={link.accent ? "footer-link-accent" : undefined}
                 >
                   {link.label}
-
-                  {link.popular && (
-                    <span className="footer-popular">
-                      Popular
-                    </span>
-                  )}
                 </a>
               ) : (
-                <Link href={link.href}>
+                <Link
+                  href={link.href}
+                  className={link.accent ? "footer-link-accent" : undefined}
+                >
                   {link.label}
-
-                  {link.popular && (
-                    <span className="footer-popular">
-                      Popular
-                    </span>
-                  )}
                 </Link>
               )}
             </li>
@@ -232,33 +234,55 @@ export default function Footer() {
                 </span>
               </Link>
 
-              <p>
-                Honest AI tool reviews, comparisons and alternatives-based on
-                hands on testing.
+              <p className="footer-tagline">
+                Honest AI tool reviews, comparisons and alternatives, based on
+                hands-on testing.
               </p>
 
-              {/* Social Icons */}
+              <p className="footer-trust">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  fill="none"
+                  stroke="#3be27f"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M8 1.5l5.5 2v4c0 3.4-2.4 5.9-5.5 7-3.1-1.1-5.5-3.6-5.5-7v-4z" />
+                  <path d="M5.5 8l1.8 1.8L10.7 6.4" />
+                </svg>
+                <span>Every tool tested by our team. No paid rankings.</span>
+              </p>
+
+              {/* Google preferred source */}
+              <a
+                href="https://www.google.com/preferences/source?q=alloypress.com"
+                className="footer-source-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Image
+                  src="/Google.png"
+                  alt=""
+                  width={18}
+                  height={18}
+                  aria-hidden="true"
+                />
+                <span>Add AlloyPress as a preferred source on Google</span>
+              </a>
+
+              {/* Social Icons (active accounts only) */}
               <div className="footer-socials">
-                <SocialIcon
-                  label="YouTube"
-                  href="https://www.youtube.com/@AlloyPress"
-                >
-                  <FaYoutube aria-hidden="true" />
-                </SocialIcon>
-
-                <SocialIcon
-                  label="Instagram"
-                  href="https://www.instagram.com/alloypressdotcom/"
-                >
-                  <FaInstagram aria-hidden="true" />
-                </SocialIcon>
-
-                <SocialIcon
-                  label="X"
-                  href="https://x.com/AlloyPress"
-                >
-                  <FaXTwitter aria-hidden="true" />
-                </SocialIcon>
+                {socialLinks
+                  .filter((s) => s.active)
+                  .map(({ label, href, Icon }) => (
+                    <SocialIcon key={label} label={label} href={href}>
+                      <Icon aria-hidden="true" />
+                    </SocialIcon>
+                  ))}
               </div>
 
               {/* Featured Badge */}
@@ -302,59 +326,42 @@ export default function Footer() {
               )}
             </div>
 
-            {/* Navigate */}
-            <FooterColumn
-              title="Navigate"
-              links={navigateLinks}
-            />
-
-            {/* Top Resources */}
-            <FooterColumn
-              title="Top Resources"
-              links={resourceLinks}
-            />
-
-            {/* Company */}
-            <FooterColumn title="Company" links={companyLinks} />
+            {/* Top Guides */}
+            <FooterColumn title="Top Guides" links={topGuideLinks} />
 
             {/* Learn */}
-            <FooterColumn
-              title="Learn"
-              links={learnLinks}
-            />
+            <FooterColumn title="Learn" links={learnLinks} />
+
+            {/* Company + For AI Brands */}
+            <div className="footer-stack">
+              <FooterColumn title="Company" links={companyLinks} />
+              <FooterColumn
+                title="For AI Brands"
+                links={brandLinks}
+                className="footer-column-brands"
+              />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Popular Links */}
+      {/* Start here */}
       <div className="footer-popular-section">
         <div className="container">
+          <p className="footer-start-title">Start here</p>
+
           <div className="footer-popular-grid">
-            {popularLinks.map((item) => (
-              <Link
-                href={item.href}
-                key={item.label}
-                className="footer-popular-item"
-              >
-                <span>{item.category}</span>
-                <strong>{item.label}</strong>
-              </Link>
+            {startHereLinks.map((item) => (
+              <div key={item.label} className="footer-popular-item">
+                <Link href={item.categoryHref} className="footer-popular-label">
+                  {item.category}
+                </Link>
+                <Link href={item.href} className="footer-popular-title">
+                  {item.label}
+                </Link>
+              </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Source */}
-      <div className="footer-source">
-        <div className="container">
-          <a
-            href="https://www.google.com/preferences/source?q=alloypress.com"
-            className="footer-source-link"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Set AlloyPress as the preferred source for AI on Google
-          </a>
         </div>
       </div>
 
