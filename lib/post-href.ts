@@ -4,6 +4,7 @@ const SECTION_SLUGS = new Set([
   "news",
   "alternatives",
   "comparisons",
+  "tutorial",
 ]);
 
 export function sectionSlug(

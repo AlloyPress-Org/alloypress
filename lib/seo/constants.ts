@@ -108,4 +108,5 @@ export const CATEGORY_PATHS = {
   news: "/news",
   alternatives: "/alternatives",
   comparisons: "/comparisons",
+  tutorial: "/tutorial",
 } as const;

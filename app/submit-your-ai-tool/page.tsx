@@ -64,7 +64,7 @@ const breadcrumbSchema = {
 
 const principles = [
   ["▣", "Readers are actively deciding", "People visit our lists because they need a practical answer. We include products that genuinely help with the use case an article covers."],
-  ["▤", "Trusted by buyers", "Readers trust lists that aren't for sale, so being on one carries weight with the people choosing a tool."],
+  ["▤", "Readers trust lists where the order can't be bought, so being on one carries weight with the people choosing a tool."],
   ["⌁", "Long-term search and discoverability", "Useful lists continue attracting readers through search and AI discovery. Inclusion gives a product durable editorial context."],
   ["↗", "Updated as your product grows", "When meaningful features, pricing, or positioning changes affect an article, the relevant coverage can be revisited."],
 ];
@@ -375,6 +375,9 @@ export default async function InclusionPage() {
               </blockquote>
               <figcaption>
                 By Higgsfield Team.
+                <p className="inc-testimonial-note">
+                  Brand feedback. Positions are set by our editorial testing, never by brands.
+                </p>
               </figcaption>
             </figure>
           </div>

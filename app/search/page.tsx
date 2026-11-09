@@ -79,6 +79,7 @@ const ALLOWED_CATEGORIES = new Set([
   "news",
   "alternatives",
   "comparisons",
+  "tutorial"
 ]);
 
 const SUGGESTED_SEARCHES = [

@@ -182,7 +182,7 @@ const included = [
   ],
   [
     "08",
-    "SEO optimisation and long-term publishing",
+    "SEO optimization and long-term publishing",
     "Structured for discoverability and maintained when product details, pricing, or capabilities change.",
   ],
 ];
@@ -334,7 +334,7 @@ export default function ReviewsPage() {
                 <p>
                   The internet is full of posts that read like product brochures.
                   We built AlloyPress to do the opposite:
-                  every tool gets tested hands-on, not summarised from a feature page.
+                  every tool gets tested hands-on, not summarized from a feature page.
                 </p>
               </div>
             </div>

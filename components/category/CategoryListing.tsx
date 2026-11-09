@@ -113,6 +113,11 @@ const NAV_CATEGORIES: Array<{
       slug: "comparisons",
       href: "/comparisons",
     },
+    {
+      label: "Tutorials",
+      slug: "tutorial",
+      href: "/tutorial",
+    },
   ];
 
 // ============================================================

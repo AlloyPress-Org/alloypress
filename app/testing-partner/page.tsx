@@ -137,7 +137,7 @@ const workflow = [
   {
     number: "05",
     title: "Repeat as your product grows",
-    text: "The most useful testing relationships are ongoing. We re-test after major updates, validate new features, and track how the product changes over time",
+    text: "The most useful testing relationships are ongoing. We re-test after major updates, validate new features, and track how the product changes over time.",
   },
 ];
 
@@ -168,10 +168,10 @@ const outputs = [
     text: "Repeat testing cycles as your product evolves, so feedback stays current and you can track how changes land.",
   },
   {
-    mark: "Visibility",
-    title: "Editorial coverage opportunity",
-    text: "Tools that perform well in testing are considered for AlloyPress articles and reviews. Performance determines inclusion, not partnership.",
-  },
+  mark: "Coverage",
+  title: "A separate editorial option",
+  text: "Your report stays private. If your tool also performs well in testing and you are interested, we can consider it for AlloyPress coverage as a separate editorial decision. Performance determines inclusion, not partnership.",
+},
 ];
 
 type Priority = "High" | "Medium" | "Quick win";
@@ -311,7 +311,7 @@ const differentiators = [
   {
     number: "02",
     title: "We know the category, not just the tool",
-    text: "We understand what good looks like in AI writing, image generation, video, humanisers, detectors, and a dozen other spaces.",
+    text: "We understand what good looks like in AI writing, image generation, video, humanizers, detectors, and a dozen other spaces.",
   },
   {
     number: "03",
@@ -336,7 +336,7 @@ const differentiators = [
 ];
 
 const standards = [
-  "A testing partnership does not guarantee article inclusion or a dedicated review on AlloyPress.",
+  "Your findings stay private. We never publish what we find in a partnership.",
   "It does not guarantee a positive review or a specific ranking position in any article.",
   "Editorial decisions stay independent regardless of any partnership arrangement.",
   "It is not a one-time transaction. The value comes from ongoing testing across product cycles.",
