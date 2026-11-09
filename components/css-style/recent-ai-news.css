@@ -31,12 +31,10 @@
   height: 520px;
   top: -260px;
   right: -170px;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--brand) 13%, transparent),
-    color-mix(in srgb, var(--brand) 4%, transparent) 42%,
-    transparent 72%
-  );
+  background: radial-gradient(circle,
+      color-mix(in srgb, var(--brand) 13%, transparent),
+      color-mix(in srgb, var(--brand) 4%, transparent) 42%,
+      transparent 72%);
   filter: blur(3px);
 }
 
@@ -47,22 +45,18 @@
   height: 340px;
   left: -190px;
   bottom: -190px;
-  background: radial-gradient(
-    ellipse,
-    color-mix(in srgb, var(--brand) 8%, transparent),
-    transparent 70%
-  );
+  background: radial-gradient(ellipse,
+      color-mix(in srgb, var(--brand) 8%, transparent),
+      transparent 70%);
 }
 
 .news-line {
   position: absolute;
   height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--brand) 18%, transparent),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      color-mix(in srgb, var(--brand) 18%, transparent),
+      transparent);
   pointer-events: none;
 }
 
@@ -216,11 +210,9 @@
 .recent-news-image-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    transparent 48%,
-    color-mix(in srgb, #000 38%, transparent)
-  );
+  background: linear-gradient(180deg,
+      transparent 48%,
+      color-mix(in srgb, #000 38%, transparent));
   pointer-events: none;
 }
 
@@ -306,10 +298,9 @@
    Holds equal-height cards, each stretched with flex:1 so
    their combined height matches the LHS featured card.
 
-   FIX: thumbnails are now 16:10 landscape (was 1:1 square)
-   so 16:9 banner images are no longer heavily cropped.
-   The img is absolutely positioned inside the wrapper so it
-   works with <Image fill> and never collapses.
+   Thumbnails are 16:10 landscape so 16:9 banner images are
+   not heavily cropped. The img is absolutely positioned
+   inside the wrapper so it works with <Image fill>.
    ========================================================= */
 
 .recent-news-list {
@@ -345,8 +336,8 @@
 .recent-news-item-link {
   position: relative;
   display: grid;
-  grid-template-columns: 128px minmax(0, 1fr) 18px; /* was 90px */
-  align-items: center;                              /* was start */
+  grid-template-columns: 128px minmax(0, 1fr) 18px;
+  align-items: center;
   gap: 15px;
   flex: 1;
   padding: 16px 18px;
@@ -356,8 +347,8 @@
 
 .recent-news-item-image {
   position: relative;
-  width: 128px;               /* was 90px */
-  aspect-ratio: 16 / 10;      /* was 1 / 1 */
+  width: 128px;
+  aspect-ratio: 16 / 10;
   align-self: center;
   overflow: hidden;
   border-radius: var(--radius-md);
@@ -446,11 +437,9 @@
 .recent-news-thumb-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--brand) 9%, transparent),
-    color-mix(in srgb, var(--brand) 2%, transparent)
-  );
+  background: linear-gradient(135deg,
+      color-mix(in srgb, var(--brand) 9%, transparent),
+      color-mix(in srgb, var(--brand) 2%, transparent));
 }
 
 /* Tablet */
@@ -560,12 +549,11 @@
   }
 
   /* ---------- Supporting cards (mobile) ----------
-     - arrow column removed (whole card is a link) so the
-       text gets the full width and nothing collides
-     - meta stacks: category on line 1, date on line 2
-     - titles may use 3 lines, so no cut-off text */
+     thumbnail | text | arrow (arrow stays visible, vertically centered)
+     meta stacks: category on line 1, date on line 2
+     titles may use 3 lines, so no cut-off text */
   .recent-news-item-link {
-    grid-template-columns: 88px minmax(0, 1fr);
+    grid-template-columns: 88px minmax(0, 1fr) 16px;
     gap: 12px;
     padding: 12px;
   }
@@ -576,7 +564,13 @@
   }
 
   .recent-news-arrow {
-    display: none;
+    display: block !important;
+    align-self: start;       /* top of card, not vertical center */
+    justify-self: end;
+    padding-top: 14px;       /* lines arrow up with the "UPDATED ... 2026" date line */
+    font-size: 16px;
+    line-height: 1;
+    color: var(--brand);
   }
 
   .recent-news-item-meta {
@@ -614,13 +608,18 @@
   }
 
   .recent-news-item-link {
-    grid-template-columns: 76px minmax(0, 1fr);
+    grid-template-columns: 76px minmax(0, 1fr) 14px;
     gap: 10px;
     padding: 10px;
   }
 
   .recent-news-item-image {
     width: 76px;
+  }
+
+  .recent-news-arrow {
+    font-size: 14px;
+    padding-top: 15px;
   }
 
   .recent-news-item-content h3 {
@@ -637,6 +636,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .recent-news-featured,
   .recent-news-featured-image img,
   .recent-news-item-image img,
