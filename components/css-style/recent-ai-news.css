@@ -249,8 +249,9 @@
 .recent-news-meta,
 .recent-news-item-meta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 4px 8px;
   font-family: "DM Mono", monospace;
   font-size: var(--text-xs);
   line-height: 1.3;
@@ -553,23 +554,85 @@
     border-radius: var(--radius-md);
   }
 
+  /* Featured meta: allow clean wrapping on narrow screens */
+  .recent-news-meta {
+    letter-spacing: 0.05em;
+  }
+
+  /* ---------- Supporting cards (mobile) ----------
+     - arrow column removed (whole card is a link) so the
+       text gets the full width and nothing collides
+     - meta stacks: category on line 1, date on line 2
+     - titles may use 3 lines, so no cut-off text */
   .recent-news-item-link {
-    grid-template-columns: 96px minmax(0, 1fr) 14px;
-    gap: 11px;
-    padding: 12px 14px;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
   }
 
   .recent-news-item-image {
-    width: 96px;
+    width: 88px;
     border-radius: 10px;
   }
 
+  .recent-news-arrow {
+    display: none;
+  }
+
+  .recent-news-item-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    margin-bottom: 6px;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  .recent-news-item-meta span,
+  .recent-news-item-meta time {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .recent-news-item-content h3 {
-    font-size: 12px;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    -webkit-line-clamp: 3;
   }
 
   .recent-news-item-excerpt {
     display: none;
+  }
+}
+
+/* Very small phones (≤ 380px) */
+
+@media (max-width: 380px) {
+  .recent-ai-news-inner {
+    padding-inline: 12px;
+  }
+
+  .recent-news-item-link {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .recent-news-item-image {
+    width: 76px;
+  }
+
+  .recent-news-item-content h3 {
+    font-size: 12.5px;
+  }
+
+  .recent-news-featured-content {
+    padding: 16px 16px 19px;
+  }
+
+  .recent-news-featured-content h3 {
+    font-size: 18px;
   }
 }
 

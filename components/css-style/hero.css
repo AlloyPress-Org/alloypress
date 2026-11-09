@@ -2556,7 +2556,7 @@
   color: var(--text-primary);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
 
   .orbit-spin-slow,
   .orbit-spin-reverse,
@@ -2566,14 +2566,6 @@
   .orbit-ambient-glow,
   .hero-floating-card {
     animation: none !important;
-  }
-}
-
-
-/* Floating cards: desktop only */
-@media (max-width: 1023px) {
-  .hero-floating-card {
-    display: none !important;
   }
 }
 
@@ -2624,8 +2616,31 @@
   color: var(--brand); /* hover: green */
 }
 
-@media (max-width: 900px) {
+@media (min-width: 481px) and (max-width: 900px) {
   .hero-stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+/* Trust line: match description size on mobile */
+@media (max-width: 768px) {
+  .hero-trust-line {
+    align-items: flex-start;
+    line-height: 1.65;            /* same as .hero-description */
+  }
+
+  .hero-trust-line svg {
+    width: 16px;
+    height: 16px;
+    margin-top: 0.25em;           /* centres icon on the first text line */
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-trust-line {
+    gap: 9px;
+    margin: 12px 0 20px;
+    font-size: var(--text-sm);    /* same as .hero-description at this width */
   }
 }
