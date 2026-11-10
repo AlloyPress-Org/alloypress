@@ -14,6 +14,9 @@ export function sendWebPush(a: Args, logger: { warn: (m: string) => void; error:
     target_url: a.url,
     image: a.image,
     expire_push: '2d',
+    ...(a.url.length <= 100 && {
+      action_buttons: [{ title: 'Read now', url: a.url }],
+    }),
   }
   if (a.audience === 'test') body.segments = [testSeg]
 

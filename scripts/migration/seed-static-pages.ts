@@ -59,12 +59,12 @@ const STATIC_PAGES: readonly StaticPageSeed[] = [
   },
   {
     title: 'AI Tool Article Inclusion',
-    slug: 'get-featured',
+    slug: 'submit-your-ai-tool',
     seo: {
       title: 'AI Tool Article Inclusion',
       description:
         'Submit your AI tool for consideration in AlloyPress editorial lists and alternatives articles. Learn how inclusion works, what we evaluate, and what to expect.',
-      canonicalURL: '/get-featured',
+      canonicalURL: '/submit-your-ai-tool',
     },
   },
   {
@@ -99,12 +99,12 @@ const STATIC_PAGES: readonly StaticPageSeed[] = [
   },
   {
     title: 'AI Tool Reviews — Tested Before We Recommend',
-    slug: 'get-reviewed',
+    slug: 'review-your-ai-tool',
     seo: {
       title: 'AI Tool Reviews — Tested Before We Recommend',
       description:
         'Request an AlloyPress AI tool review. We test real workflows, verify claims, explain limitations, and publish practical, reader-first reviews.',
-      canonicalURL: '/get-reviewed',
+      canonicalURL: '/review-your-ai-tool',
     },
   },
 ]
