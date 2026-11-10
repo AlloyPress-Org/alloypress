@@ -10,7 +10,7 @@ import { payloadFetch } from "@/lib/payload";
 import { createBreadcrumbSchema } from "@/lib/seo/schema";
 
 const PAGE_SLUG = "testing-partner";
-const CANONICAL = "/testing-partner/";
+const CANONICAL = "/testing-partner";
 const FALLBACK_TITLE = "Independent AI product testing partner | AlloyPress";
 const FALLBACK_DESC =
   "Honest, hands-on testing for your AI product. We spot bugs, suggest new features and share SEO input, backed by deep AI testing and marketing experience.";
