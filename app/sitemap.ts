@@ -31,6 +31,7 @@ const STATIC_PAGES = [
   "/news",
   "/alternatives",
   "/comparisons",
+  "/tutorial",
   "/about-us",
   "/contact-us",
   "/review-your-ai-tool",
