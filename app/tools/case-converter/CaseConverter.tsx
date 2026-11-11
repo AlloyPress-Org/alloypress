@@ -76,7 +76,6 @@ export default function CaseConverter() {
 
   // Keep typing smooth on very long text
   const deferred = useDeferredValue(text);
-  const output = useMemo(() => convertCase(deferred, mode, opts), [deferred, mode, opts]);
 
   // All-cases preview: only the first 160 characters are converted, so 15 formats stay cheap on huge text
   const previews = useMemo(() => {
@@ -87,7 +86,6 @@ export default function CaseConverter() {
   }, [deferred, opts]);
 
   const hasText = text.length > 0;
-  const currentLabel = CASE_MODES.find((c) => c.mode === mode)?.label ?? "";
   const showStyles = mode === "title";
   const showAcronyms = mode === "title" || mode === "sentence" || mode === "capitalized";
   const styleNote = TITLE_STYLES.find((s) => s.id === titleStyle)?.note;
@@ -141,15 +139,28 @@ export default function CaseConverter() {
     setSelLen(end - start);
   };
 
-  const convertSelection = () => {
+  /** Converts the highlighted part, or the whole text when nothing is highlighted. */
+  const applyMode = (m: CaseMode, o: { titleStyle: TitleStyle; keepAcronyms: boolean } = opts) => {
     const { start, end } = sel.current;
-    if (end <= start || end > text.length) return;
-    const converted = convertCase(text.slice(start, end), mode, opts);
-    change(text.slice(0, start) + converted + text.slice(end));
-    const newEnd = start + converted.length;
-    sel.current = { start, end: newEnd };
-    setSelLen(newEnd - start);
-    requestAnimationFrame(() => inputRef.current?.setSelectionRange(start, newEnd));
+    const part = end > start && end <= text.length;
+    const converted = convertCase(part ? text.slice(start, end) : text, m, o);
+    change(part ? text.slice(0, start) + converted + text.slice(end) : converted);
+    if (part) {
+      const newEnd = start + converted.length;
+      sel.current = { start, end: newEnd };
+      setSelLen(newEnd - start);
+      requestAnimationFrame(() => inputRef.current?.setSelectionRange(start, newEnd));
+    }
+  };
+
+  const pickMode = (m: CaseMode) => {
+    setMode(m);
+    applyMode(m);
+  };
+
+  const pickStyle = (id: TitleStyle) => {
+    setTitleStyle(id);
+    if (mode === "title") applyMode("title", { titleStyle: id, keepAcronyms });
   };
 
   /* ---------- actions ---------- */
@@ -163,7 +174,7 @@ export default function CaseConverter() {
   };
 
   const onDownload = () => {
-    const url = URL.createObjectURL(new Blob([output], { type: "text/plain;charset=utf-8" }));
+    const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
     a.download = "alloypress-converted.txt";
@@ -181,7 +192,7 @@ export default function CaseConverter() {
     }
   };
 
-  const renderGroup = (group: "text" | "code", title: string) => (
+  const renderGroup = (group: "text" | "format" | "code", title: string) => (
     <div className="cc-group">
       <p className="cc-group-title">{title}</p>
       <div className="cc-modes" role="group" aria-label={title}>
@@ -191,7 +202,7 @@ export default function CaseConverter() {
             type="button"
             className={`cc-mode${mode === c.mode ? " is-on" : ""}`}
             aria-pressed={mode === c.mode}
-            onClick={() => setMode(c.mode)}
+            onClick={() => pickMode(c.mode)}
           >
             {c.label}
           </button>
@@ -203,9 +214,45 @@ export default function CaseConverter() {
   return (
     <div className="tl-tool">
       <div className="cc-card">
-        {/* ---------- 1. Pick a case ---------- */}
+        {/* ---------- 1. Input: Undo/Redo/Clear top right, Copy/Download bottom right ---------- */}
+        <div className="cc-pane">
+          <div className="cc-head">
+            <label htmlFor="cc-input" className="cc-label">
+              Your text{selLen > 0 && <span className="cc-sel"> · {fmt(selLen)} selected</span>}
+            </label>
+            <div className="cc-actions">
+              <button type="button" className="tl-btn" onClick={undo} disabled={!past.length} aria-label="Undo">Undo</button>
+              <button type="button" className="tl-btn" onClick={redo} disabled={!future.length} aria-label="Redo">Redo</button>
+              <button type="button" className="tl-btn" onClick={() => change("")} disabled={!hasText}>Clear</button>
+            </div>
+          </div>
+          <textarea
+            id="cc-input"
+            ref={inputRef}
+            className="cc-textarea"
+            value={text}
+            onChange={(e) => change(e.target.value, true)}
+            onSelect={onSelect}
+            onKeyDown={onKeyDown}
+            placeholder="Type or paste your text, then tap a case below. Highlight part of it to convert only that part."
+            spellCheck
+          />
+          <div className="cc-foot">
+            <div className="cc-actions">
+              <button type="button" className="tl-btn" onClick={onPaste}>Paste</button>
+              <button type="button" className="tl-btn" onClick={() => change(SAMPLE)}>Sample</button>
+            </div>
+            <div className="cc-actions">
+              <CopyButton text={text} disabled={!hasText} />
+              <button type="button" className="tl-btn" onClick={onDownload} disabled={!hasText}>Download .txt</button>
+            </div>
+          </div>
+        </div>
+
+        {/* ---------- 2. Pick a case (below the input) ---------- */}
         <div className="cc-choose">
           {renderGroup("text", "Text case")}
+          {renderGroup("format", "Formatting")}
           {renderGroup("code", "Code case")}
 
           {(showStyles || showAcronyms) && (
@@ -219,7 +266,7 @@ export default function CaseConverter() {
                         type="button"
                         className={titleStyle === s.id ? "is-on" : ""}
                         aria-pressed={titleStyle === s.id}
-                        onClick={() => setTitleStyle(s.id)}
+                        onClick={() => pickStyle(s.id)}
                       >
                         {s.label}
                       </button>
@@ -236,58 +283,6 @@ export default function CaseConverter() {
               )}
             </div>
           )}
-        </div>
-
-        {/* ---------- 2. Input | Result ---------- */}
-        <div className="cc-panels">
-          <div className="cc-pane">
-            <label htmlFor="cc-input" className="cc-label">Your text</label>
-            <textarea
-              id="cc-input"
-              ref={inputRef}
-              className="cc-textarea"
-              value={text}
-              onChange={(e) => change(e.target.value, true)}
-              onSelect={onSelect}
-              onKeyDown={onKeyDown}
-              placeholder="Type or paste your text here…"
-              spellCheck
-            />
-            <div className="cc-actions">
-              <button type="button" className="tl-btn" onClick={onPaste}>Paste</button>
-              <button type="button" className="tl-btn" onClick={() => change(SAMPLE)}>Sample</button>
-              <button type="button" className="tl-btn" onClick={undo} disabled={!past.length} aria-label="Undo">Undo</button>
-              <button type="button" className="tl-btn" onClick={redo} disabled={!future.length} aria-label="Redo">Redo</button>
-              <button type="button" className="tl-btn" onClick={() => change("")} disabled={!hasText}>Clear</button>
-            </div>
-            <div className="cc-actions">
-              <button type="button" className="tl-btn tl-btn--primary" onClick={convertSelection} disabled={selLen === 0}>
-                {selLen > 0 ? `Convert selection (${fmt(selLen)})` : "Convert selection"}
-              </button>
-              <button type="button" className="tl-btn" onClick={() => change(convertCase(text, mode, opts))} disabled={!hasText}>
-                Use result as input
-              </button>
-            </div>
-            <span className="tl-small">Highlight part of your text, then tap a case to convert only that part.</span>
-          </div>
-
-          <div className="cc-pane">
-            <label htmlFor="cc-output" className="cc-label">Result · {currentLabel}</label>
-            <textarea
-              id="cc-output"
-              className="cc-textarea cc-textarea--out"
-              value={output}
-              readOnly
-              placeholder="Your converted text appears here…"
-              aria-live="polite"
-            />
-            <div className="cc-actions cc-actions--out">
-              <CopyButton text={output} disabled={!hasText} />
-              <button type="button" className="tl-btn" onClick={onDownload} disabled={!hasText}>
-                Download .txt
-              </button>
-            </div>
-          </div>
         </div>
 
         <span className="cc-private">
@@ -313,7 +308,7 @@ export default function CaseConverter() {
           <div className="cc-grid">
             {previews.map((p) => (
               <div key={p.mode} className={`cc-pv${mode === p.mode ? " is-on" : ""}`}>
-                <button type="button" className="cc-pv-main" aria-pressed={mode === p.mode} onClick={() => setMode(p.mode)}>
+                <button type="button" className="cc-pv-main" aria-pressed={mode === p.mode} onClick={() => pickMode(p.mode)}>
                   <span className="cc-pv-name">{p.label}</span>
                   <span className="cc-pv-text">{p.preview}</span>
                 </button>

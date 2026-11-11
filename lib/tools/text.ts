@@ -178,7 +178,7 @@ export const TITLE_STYLES: { id: TitleStyle; label: string; note: string }[] = [
 
 /** One list feeds the tool buttons, the all-cases preview AND the SEO table, so they can never disagree. */
 export const CASE_DEMO = "the quick brown fox";
-export const CASE_MODES: { mode: CaseMode; label: string; group: "text" | "code" }[] = [
+export const CASE_MODES: { mode: CaseMode; label: string; group: "text" | "format" | "code" }[] = [
   { mode: "upper", label: "UPPER CASE", group: "text" },
   { mode: "lower", label: "lower case", group: "text" },
   { mode: "title", label: "Title Case", group: "text" },
@@ -186,8 +186,8 @@ export const CASE_MODES: { mode: CaseMode; label: string; group: "text" | "code"
   { mode: "capitalized", label: "Capitalized Case", group: "text" },
   { mode: "alternating", label: "aLtErNaTiNg", group: "text" },
   { mode: "inverse", label: "iNVERSE", group: "text" },
-  { mode: "bold", label: "𝐁𝐨𝐥𝐝", group: "text" },
-  { mode: "italic", label: "𝐼𝑡𝑎𝑙𝑖𝑐", group: "text" },
+  { mode: "bold", label: "𝐁𝐨𝐥𝐝", group: "format" },
+  { mode: "italic", label: "𝐼𝑡𝑎𝑙𝑖𝑐", group: "format" },
   { mode: "camel", label: "camelCase", group: "code" },
   { mode: "pascal", label: "PascalCase", group: "code" },
   { mode: "snake", label: "snake_case", group: "code" },

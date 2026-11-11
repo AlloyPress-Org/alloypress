@@ -47,7 +47,7 @@
 .cc-label { font-size: var(--text-sm); font-weight: 700; color: var(--text-primary); }
 
 .cc-textarea {
-  width: 100%; min-height: 300px; resize: vertical;
+  width: 100%; height: clamp(280px, 50vh, 520px); resize: vertical; /* short enough that the case buttons stay on screen */
   padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md);
   background: var(--surface); color: var(--text-primary);
   font-size: 16px; /* 16px stops iOS zooming on focus */ line-height: 1.7;
@@ -55,7 +55,6 @@
 .cc-textarea::placeholder { color: var(--text-subtle); }
 .cc-textarea:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-soft); }
 .cc-textarea--out { background: var(--surface-2); }
-@media (min-width: 860px) { .cc-textarea { min-height: 420px; } }
 
 .cc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 @media (max-width: 859px) { .cc-actions--out > * { flex: 1 1 0; } } /* big Copy / Download buttons on phones */
@@ -79,3 +78,19 @@
 }
 .cc-pv-copy { flex: 0 0 auto; min-width: 64px; padding: 0 12px; border: 0; border-left: 1px solid var(--border-soft); background: none; color: var(--brand); font-size: var(--text-xs); font-weight: 700; }
 .cc-pv-copy:hover { background: var(--brand-soft); }
+
+/* ---------- compact layout: input + case buttons fit on one screen ---------- */
+.cc-card { gap: 14px; }
+.cc-head, .cc-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.cc-sel { font-weight: 600; color: var(--brand); }
+.cc-head .cc-actions .tl-btn { min-height: 36px; padding-inline: 12px; }
+
+.cc-choose { gap: 10px; }
+@media (min-width: 700px) {
+  .cc-group { flex-direction: row; align-items: center; gap: 14px; }
+  .cc-group-title { flex: 0 0 96px; }
+  .cc-options { margin-left: 110px; } /* lines up with the case buttons */
+}
+.cc-options { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 18px; padding: 10px 12px; }
+.cc-style { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.cc-seg button { min-height: 36px; }
