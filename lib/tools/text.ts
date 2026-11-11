@@ -163,31 +163,133 @@ export const formatNumber = (n: number) => n.toLocaleString("en-US");
 
 
 // ===== case conversion =====
-export type CaseMode = "upper" | "lower" | "title" | "sentence";
+export type CaseMode =
+  | "upper" | "lower" | "title" | "sentence" | "capitalized" | "alternating" | "inverse" | "bold" | "italic"
+  | "camel" | "pascal" | "snake" | "kebab" | "constant";
+export type TitleStyle = "ap" | "apa" | "chicago" | "mla";
+export type CaseOptions = { titleStyle?: TitleStyle; keepAcronyms?: boolean };
 
-const SMALL = new Set(["a","an","the","and","but","or","for","nor","on","at","to","by","of","in","up","as"]);
+export const TITLE_STYLES: { id: TitleStyle; label: string; note: string }[] = [
+  { id: "ap", label: "AP", note: "Words of 4+ letters are capitalised. Short a, an, the, and, but, or, for, nor and prepositions (up to 3 letters) stay lower case." },
+  { id: "apa", label: "APA", note: "Same rule as AP: words of 4+ letters are capitalised, short minor words stay lower case." },
+  { id: "chicago", label: "Chicago", note: "Articles, coordinating conjunctions and all prepositions stay lower case, whatever their length." },
+  { id: "mla", label: "MLA", note: "Like Chicago: articles, coordinating conjunctions and prepositions stay lower case." },
+];
 
-export function convertCase(text: string, mode: CaseMode): string {
+/** One list feeds the tool buttons, the all-cases preview AND the SEO table, so they can never disagree. */
+export const CASE_DEMO = "the quick brown fox";
+export const CASE_MODES: { mode: CaseMode; label: string; group: "text" | "code" }[] = [
+  { mode: "upper", label: "UPPER CASE", group: "text" },
+  { mode: "lower", label: "lower case", group: "text" },
+  { mode: "title", label: "Title Case", group: "text" },
+  { mode: "sentence", label: "Sentence case", group: "text" },
+  { mode: "capitalized", label: "Capitalized Case", group: "text" },
+  { mode: "alternating", label: "aLtErNaTiNg", group: "text" },
+  { mode: "inverse", label: "iNVERSE", group: "text" },
+  { mode: "bold", label: "𝐁𝐨𝐥𝐝", group: "text" },
+  { mode: "italic", label: "𝐼𝑡𝑎𝑙𝑖𝑐", group: "text" },
+  { mode: "camel", label: "camelCase", group: "code" },
+  { mode: "pascal", label: "PascalCase", group: "code" },
+  { mode: "snake", label: "snake_case", group: "code" },
+  { mode: "kebab", label: "kebab-case", group: "code" },
+  { mode: "constant", label: "CONSTANT_CASE", group: "code" },
+];
+
+const MINOR_SHORT = new Set(["a","an","the","and","but","or","nor","for","so","yet","as","at","by","in","of","off","on","out","per","to","up","via"]);
+const MINOR_LONG = new Set(["about","above","across","after","against","along","among","around","before","behind","below","beneath","beside","between","beyond","down","during","except","from","inside","into","like","near","onto","over","past","since","through","throughout","till","toward","towards","under","until","upon","with","within","without"]);
+const isMinor = (w: string, style: TitleStyle) =>
+  MINOR_SHORT.has(w) || ((style === "chicago" || style === "mla") && MINOR_LONG.has(w));
+
+const isAcronym = (w: string) => w.length > 1 && w === w.toUpperCase() && /\p{L}/u.test(w);
+/** Acronyms are only kept when the text is not already ALL CAPS (otherwise every word would look like one). */
+const hasLower = (text: string) => /\p{Ll}/u.test(text);
+
+function lowerKeep(text: string, keep: boolean): string {
+  if (!keep || !hasLower(text)) return text.toLowerCase();
+  return text.replace(/[\p{L}\p{N}]+/gu, (w) => (isAcronym(w) ? w : w.toLowerCase()));
+}
+
+const LETTER_AHEAD = /[^\n\p{L}\p{N}]*[\p{L}\p{N}]/uy; // sticky: is there another word on this line?
+
+function titleCase(text: string, style: TitleStyle, keep: boolean): string {
+  const canKeep = keep && hasLower(text);
+  let i = 0;
+  return text.replace(/[\p{L}\p{N}]+(?:['’][\p{L}]+)?/gu, (w, offset: number, full: string) => {
+    const first = i++ === 0;
+    if (canKeep && isAcronym(w)) return w;
+    const lower = w.toLowerCase();
+    LETTER_AHEAD.lastIndex = offset + w.length;
+    const last = !LETTER_AHEAD.test(full); // last word of its line
+    const afterBreak = /(?:[:.!?]\s+|\n\s*)$/.test(full.slice(Math.max(0, offset - 8), offset));
+    if (!first && !last && !afterBreak && isMinor(lower, style)) return lower;
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  });
+}
+
+export function convertCase(text: string, mode: CaseMode, opts: CaseOptions = {}): string {
+  const keep = !!opts.keepAcronyms;
   switch (mode) {
     case "upper":
       return text.toUpperCase();
     case "lower":
       return text.toLowerCase();
-    case "title": {
-      let i = 0;
-      return text.toLowerCase().replace(/[\p{L}\p{N}]+(?:['’][\p{L}]+)?/gu, (w, offset: number, full: string) => {
-        const first = i++ === 0;
-        const rest = full.slice(offset + w.length);
-        const last = !/[\p{L}\p{N}]/u.test(rest);
-        if (!first && !last && SMALL.has(w)) return w;
-        return w.charAt(0).toUpperCase() + w.slice(1);
-      });
-    }
+    case "title":
+      return titleCase(text, opts.titleStyle ?? "ap", keep);
     case "sentence":
-      return text
-        .toLowerCase()
+      return lowerKeep(text, keep)
         .replace(/(^\s*|[.!?…]\s+|\n\s*)(\p{L})/gu, (_m, pre: string, ch: string) => pre + ch.toUpperCase())
         .replace(/\bi\b/g, "I");
+    case "capitalized":
+      return lowerKeep(text, keep).replace(/(^|[^\p{L}\p{N}'’])(\p{L})/gu, (_m, pre: string, ch: string) => pre + ch.toUpperCase());
+    case "alternating": {
+      let n = 0;
+      return Array.from(text.toLowerCase(), (ch) =>
+        ch.toUpperCase() === ch.toLowerCase() ? ch : n++ % 2 ? ch.toUpperCase() : ch,
+      ).join("");
+    }
+    case "inverse":
+      return Array.from(text, (ch) => (ch === ch.toUpperCase() ? ch.toLowerCase() : ch.toUpperCase())).join("");
+    case "bold":
+      return styleLetters(text, false);
+    case "italic":
+      return styleLetters(text, true);
+    default:
+      // code cases work line by line, so each line becomes its own identifier
+      return text.split("\n").map((line) => joinWords(caseWords(line), mode)).join("\n");
+  }
+}
+
+/** Split into words: spaces, punctuation, _ - . / and camelCase boundaries all separate words. */
+function caseWords(line: string): string[] {
+  return (
+    line
+      .replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, "$1 $2")
+      .replace(/(\p{Lu})(\p{Lu}\p{Ll})/gu, "$1 $2")
+      .match(/[\p{L}\p{N}]+/gu) ?? []
+  ).map((w) => w.toLowerCase());
+}
+
+/** Bold / italic use Unicode math letters, so they paste into X, LinkedIn and Instagram (not real font styles). */
+function styleLetters(text: string, italic: boolean): string {
+  const [up, low, digit] = italic ? [0x1d434, 0x1d44e, 0] : [0x1d400, 0x1d41a, 0x1d7ce];
+  return Array.from(text, (ch) => {
+    const c = ch.codePointAt(0) as number;
+    if (c >= 65 && c <= 90) return String.fromCodePoint(up + c - 65);
+    if (c >= 97 && c <= 122) return italic && ch === "h" ? "\u210E" : String.fromCodePoint(low + c - 97);
+    if (digit && c >= 48 && c <= 57) return String.fromCodePoint(digit + c - 48);
+    return ch;
+  }).join("");
+}
+
+const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
+
+function joinWords(words: string[], mode: CaseMode): string {
+  switch (mode) {
+    case "camel": return words.map((w, i) => (i ? cap(w) : w)).join("");
+    case "pascal": return words.map(cap).join("");
+    case "snake": return words.join("_");
+    case "kebab": return words.join("-");
+    default: return words.join("_").toUpperCase(); // constant
   }
 }
 

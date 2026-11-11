@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -9,17 +10,13 @@ import {
   formatNumber as fmt,
   topKeywords,
 } from "@/lib/tools/text";
-import { convertCase, PLATFORM_LIMITS, type CaseMode } from "@/lib/tools/text";
+import { PLATFORM_LIMITS } from "@/lib/tools/text";
 import { CopyButton, StatBar } from "@/components/tools/ui";
 
 const STORAGE_KEY = "ap-tool:word-counter:v1";
 
-const CASES: { mode: CaseMode; label: string }[] = [
-  { mode: "upper", label: "UPPER" },
-  { mode: "lower", label: "lower" },
-  { mode: "title", label: "Title Case" },
-  { mode: "sentence", label: "Sentence" },
-];
+// "Change case" hands the text over to the Case Converter through its own saved state
+const CASE_TOOL_KEY = "ap-tool:case-converter:v2";
 
 function readStore(): { text: string; goal: number } | null {
   try {
@@ -46,8 +43,6 @@ export default function WordCounter() {
   const [ignoreCommon, setIgnoreCommon] = useState(true);
   const [longOnly, setLongOnly] = useState(false);
   const [showAll, setShowAll] = useState(false);
-  const [undoText, setUndoText] = useState<string | null>(null);
-  const [caseOpen, setCaseOpen] = useState(false);
   const loaded = useRef(false);
 
   // Restore after mount (avoids hydration mismatch)
@@ -105,16 +100,18 @@ export default function WordCounter() {
     URL.revokeObjectURL(url);
   };
 
-  const applyCase = (mode: CaseMode) => {
+  /** Runs before the link navigates: puts the current text into the Case Converter. */
+  const sendToCaseConverter = () => {
     if (!text) return;
-    setUndoText(text);
-    setText(convertCase(text, mode));
+    try {
+      const prev = JSON.parse(localStorage.getItem(CASE_TOOL_KEY) ?? "null") ?? {};
+      localStorage.setItem(CASE_TOOL_KEY, JSON.stringify({ ...prev, text }));
+    } catch {
+      /* storage blocked: the Case Converter still opens, just without the text */
+    }
   };
 
-  const onClear = () => {
-    setUndoText(null);
-    setText("");
-  };
+  const onClear = () => setText("");
 
   const hasText = text.length > 0;
 
@@ -146,7 +143,7 @@ export default function WordCounter() {
             id="wc-text"
             className="tl-textarea"
             value={text}
-            onChange={(e) => { setUndoText(null); setText(e.target.value); }}
+            onChange={(e) => setText(e.target.value)}
             placeholder="Start typing or paste your text here…"
             spellCheck
           />
@@ -156,25 +153,10 @@ export default function WordCounter() {
             <CopyButton text={text} disabled={!hasText} />
             <button type="button" className="tl-btn" onClick={onClear} disabled={!hasText}>Clear</button>
             <button type="button" className="tl-btn tl-btn--primary" onClick={onDownload} disabled={!hasText}>Download .txt</button>
-            <button type="button" className="tl-link-btn" aria-expanded={caseOpen} onClick={() => setCaseOpen((v) => !v)}>
-              Change case {caseOpen ? "↑" : "→"}
-            </button>
+            <Link href="/tools/case-converter" className="tl-link-btn" onClick={sendToCaseConverter}>
+              Change case →
+            </Link>
           </div>
-
-          {caseOpen && (
-            <div className="tl-seg" role="group" aria-label="Change case">
-              {CASES.map((c) => (
-                <button key={c.mode} type="button" onClick={() => applyCase(c.mode)} disabled={!hasText}>
-                  {c.label}
-                </button>
-              ))}
-              {undoText !== null && (
-                <button type="button" className="tl-seg-undo" onClick={() => { setText(undoText); setUndoText(null); }}>
-                  Undo
-                </button>
-              )}
-            </div>
-          )}
 
           <span className="tl-private">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>

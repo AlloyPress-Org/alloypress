@@ -36,10 +36,10 @@ export const TOOLS: ToolDef[] = [
   {
     slug: "case-converter",
     name: "Case Converter",
-    shortDescription: "UPPER, lower, Title, Sentence, camel and snake case.",
+    shortDescription: "Title (AP, APA, Chicago), camelCase, snake_case, bold and more.",
     category: "text",
     phase: 1,
-    status: "soon",
+    status: "live",
     keyword: "case converter",
     related: ["word-counter", "ai-text-cleaner"],
     updatedAt: "2026-11-10",

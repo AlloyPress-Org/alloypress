@@ -95,6 +95,9 @@ function Icon({ name }: { name: ToolIcon }) {
   );
 }
 
+/** Decorative icon per tool category, used on the "More free tools" cards. */
+const RELATED_ICON: Record<string, ToolIcon> = { text: "chart", markdown: "device", ai: "bolt", file: "limit", image: "device" };
+
 function Tick() {
   return (
     <svg className="tl-tick" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -423,11 +426,16 @@ export default function ToolPage({
         {related.length > 0 && (
           <section className="tl-section">
             <h2 className="tl-h2">More free tools</h2>
-            <div className="tl-cards">
+            <div className="tl-cards tl-cards--related">
               {related.map((t) => (
-                <Link key={t.slug} href={`/tools/${t.slug}`} className="tl-card tl-link-card">
+                <Link key={t.slug} href={`/tools/${t.slug}`} className="tl-card tl-link-card tl-related">
+                  <div className="tl-related-top">
+                    <Icon name={RELATED_ICON[t.category] ?? "bolt"} />
+                    <span className="tl-related-tag">Free tool</span>
+                  </div>
                   <h3>{t.name}</h3>
                   <p>{t.shortDescription}</p>
+                  <span className="tl-related-cta">Open tool <span aria-hidden="true">→</span></span>
                 </Link>
               ))}
             </div>

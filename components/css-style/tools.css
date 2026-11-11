@@ -210,3 +210,12 @@ a.tl-link-card:hover { border-color: var(--brand); transform: translateY(-2px); 
   .tl-body { gap: 52px; padding-top: 52px; }
   .tl-explain { padding: 22px; }
 }
+
+/* ---------- "More free tools" cards ---------- */
+.tl-cards--related { grid-template-columns: repeat(auto-fill, minmax(260px, 340px)); }
+.tl-link-card.tl-related { display: flex; flex-direction: column; gap: 8px; padding: 22px; }
+.tl-related-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+.tl-related-tag { padding: 3px 10px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.tl-related-cta { margin-top: auto; padding-top: 10px; color: var(--brand); font-size: var(--text-sm); font-weight: 700; }
+.tl-related-cta span { display: inline-block; transition: transform .2s; }
+a.tl-related:hover .tl-related-cta span { transform: translateX(4px); }
