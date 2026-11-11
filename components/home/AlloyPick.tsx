@@ -77,10 +77,13 @@ function getCategory(
   };
 }
 
-function getDisplayDate(post: Post): {
-  label: "Published" | "Updated";
-  date: string;
-  dateTime: string;
+const DAY = 24 * 60 * 60 * 1000;
+
+// Single source of truth: latest activity date for a post
+function getActivity(post: Post): {
+  isUpdated: boolean;
+  rawDate: string;
+  time: number;
 } | null {
   const published = post.publishedAt
     ? new Date(post.publishedAt).getTime()
@@ -90,28 +93,45 @@ function getDisplayDate(post: Post): {
     ? new Date(post.updatedAt).getTime()
     : 0;
 
-  const DAY = 24 * 60 * 60 * 1000;
-
   const isUpdated =
-    published > 0 &&
-    updated - published > DAY;
+    published > 0 && updated > 0 && updated - published > DAY;
 
-  const rawDate = isUpdated
-    ? post.updatedAt
-    : post.publishedAt;
+  const rawDate = isUpdated ? post.updatedAt : post.publishedAt;
 
   if (!rawDate) {
     return null;
   }
 
-  const parsed = new Date(rawDate);
+  const time = new Date(rawDate).getTime();
 
-  if (Number.isNaN(parsed.getTime())) {
+  if (Number.isNaN(time)) {
     return null;
   }
 
+  return { isUpdated, rawDate, time };
+}
+
+// Used for sorting
+function getActivityTime(post: Post): number {
+  return getActivity(post)?.time ?? 0;
+}
+
+// Used for display
+function getDisplayDate(post: Post): {
+  label: "Published" | "Updated";
+  date: string;
+  dateTime: string;
+} | null {
+  const activity = getActivity(post);
+
+  if (!activity) {
+    return null;
+  }
+
+  const parsed = new Date(activity.rawDate);
+
   return {
-    label: isUpdated ? "Updated" : "Published",
+    label: activity.isUpdated ? "Updated" : "Published",
     date: new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",
@@ -394,12 +414,8 @@ export default async function AlloyPick() {
   );
 
   const trendingPosts = publishedPosts
-    .filter(
-      (post) =>
-        !featuredIds.has(
-          String(post.id),
-        ),
-    )
+    .filter((post) => !featuredIds.has(String(post.id)))
+    .sort((a, b) => getActivityTime(b) - getActivityTime(a))
     .slice(0, TRENDING_POST_COUNT);
 
   // ==========================================================
