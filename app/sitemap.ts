@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { payloadFetch } from "@/lib/payload";
 import { buildSiteUrl } from "@/lib/seo/constants";
+import { liveTools } from "@/lib/tools/registry";
 
 // 1 hour cache. Publish hook /api/revalidate call pannina udane refresh aagum.
 export const revalidate = 3600;
@@ -40,6 +41,8 @@ const STATIC_PAGES = [
   "/do-not-sell-my-info",
   "/testing-partner",
   "/submit-your-ai-tool",
+  "/tools",
+  ...liveTools().map((t) => `/tools/${t.slug}`),
 ];
 
 type Category = {
@@ -140,19 +143,19 @@ async function fetchAll<T>(basePath: string, limit = 500): Promise<T[]> {
 const getPosts = () =>
   fetchAll<Post>(
     "/posts?depth=0" +
-      "&where[_status][equals]=published" +
-      "&select[slug]=true" +
-      "&select[category]=true" +
-      "&select[includeInSitemap]=true" +
-      "&select[updatedAt]=true" +
-      "&select[publishedAt]=true" +
-      "&select[legacy]=true",
+    "&where[_status][equals]=published" +
+    "&select[slug]=true" +
+    "&select[category]=true" +
+    "&select[includeInSitemap]=true" +
+    "&select[updatedAt]=true" +
+    "&select[publishedAt]=true" +
+    "&select[legacy]=true",
   );
 
 const getPages = () =>
   fetchAll<Page>(
     "/pages?where[status][equals]=published" +
-      "&select[slug]=true&select[updatedAt]=true",
+    "&select[slug]=true&select[updatedAt]=true",
     500,
   );
 
@@ -160,9 +163,9 @@ const getPages = () =>
 const getCategories = () =>
   fetchAll<Category>(
     "/categories?depth=0" +
-      "&select[slug]=true" +
-      "&select[parent]=true" +
-      "&select[updatedAt]=true",
+    "&select[slug]=true" +
+    "&select[parent]=true" +
+    "&select[updatedAt]=true",
     100,
   );
 

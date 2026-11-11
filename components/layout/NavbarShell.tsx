@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import cfLoader from "@/lib/imageLoader";
 import { usePathname, useRouter } from "next/navigation";
+import { liveTools } from "@/lib/tools/registry";
 
 type IconName =
   | "list"
@@ -145,7 +146,12 @@ const brandItems: MenuItem[] = [
   },
 ];
 
-const toolItems: MenuItem[] = [];
+const toolItems: MenuItem[] = liveTools().map((t) => ({
+  label: t.name,
+  description: t.shortDescription,
+  href: `/tools/${t.slug}`,
+  icon: "chart",
+}));
 
 const categoriesMenu: MegaMenu = {
   id: "categories",
@@ -192,13 +198,13 @@ const navEntries: NavEntry[] = [
     ? [{ kind: "menu", menu: toolsMenu } as NavEntry]
     : toolItems.length > 0
       ? [
-          {
-            kind: "link",
-            label: "Tools",
-            href: "/tools",
-            badge: "New",
-          } as NavEntry,
-        ]
+        {
+          kind: "link",
+          label: "Tools",
+          href: "/tools",
+          badge: "New",
+        } as NavEntry,
+      ]
       : []),
 ];
 
