@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import cfLoader from "@/lib/imageLoader";
 import { usePathname, useRouter } from "next/navigation";
+
 import { liveTools } from "@/lib/tools/registry";
 
 type IconName =
@@ -40,12 +41,14 @@ type MegaMenu = {
   label: string;
   items: MenuItem[];
   columns: 1 | 2 | 3;
+  badge?: string;
   featured?: boolean;
+  moreLabel?: string;
   intro?: {
     eyebrow: string;
     title: string;
     description: string;
-    cta: { label: string; href: string };
+    cta?: { label: string; href: string };
   };
   footnote?: string;
 };
@@ -176,17 +179,21 @@ const brandsMenu: MegaMenu = {
   footnote: "Fees cover testing time, never the verdict.",
 };
 
+// Tools uses the same wide panel and 3-card layout as For Brands.
 const toolsMenu: MegaMenu = {
   id: "tools",
   label: "Tools",
+  badge: "New",
   items: toolItems.slice(0, 6),
-  columns: 2,
+  columns: 3,
+  moreLabel: "Open tool",
   intro: {
-    eyebrow: "Tools",
+    eyebrow: "Free tools",
     title: "AlloyPress Tools",
-    description: "Free tools for working with AI. No sign-up.",
-    cta: { label: "All Tools", href: "/tools" },
+    description:
+      "Free tools for writing and working with AI. No sign-up, and your text stays in your browser.",
   },
+  footnote: "More free tools coming soon.",
 };
 
 const navEntries: NavEntry[] = [
@@ -194,18 +201,7 @@ const navEntries: NavEntry[] = [
   { kind: "link", ...howWeTestLink },
   { kind: "menu", menu: categoriesMenu },
   { kind: "menu", menu: brandsMenu },
-  ...(toolItems.length >= 6
-    ? [{ kind: "menu", menu: toolsMenu } as NavEntry]
-    : toolItems.length > 0
-      ? [
-        {
-          kind: "link",
-          label: "Tools",
-          href: "/tools",
-          badge: "New",
-        } as NavEntry,
-      ]
-      : []),
+  ...(toolItems.length > 0 ? [{ kind: "menu", menu: toolsMenu } as NavEntry] : []),
 ];
 
 const megaMenus: MegaMenu[] = navEntries.flatMap((entry) =>
@@ -213,7 +209,7 @@ const megaMenus: MegaMenu[] = navEntries.flatMap((entry) =>
 );
 
 const THEME_KEY = "alloypress-theme";
-const OPEN_DELAY = 100;
+const OPEN_DELAY = 60;
 const CLOSE_DELAY = 150;
 
 function isPathActive(pathname: string | null, href: string) {
@@ -454,6 +450,12 @@ export default function NavbarShell({ featuredArticle }: NavbarProps) {
     );
   }, []);
 
+  // Warm up tool pages as soon as the Tools menu opens, so the click feels instant.
+  useEffect(() => {
+    if (openMenu !== "tools") return;
+    toolItems.forEach((item) => router.prefetch(item.href));
+  }, [openMenu, router]);
+
   useEffect(() => {
     setOpenMenu(null);
     setMobileOpen(false);
@@ -654,6 +656,7 @@ export default function NavbarShell({ featuredArticle }: NavbarProps) {
                 onClick={() => onTriggerClick(menu.id)}
               >
                 {menu.label}
+                {menu.badge && <span className="nav-link-badge">{menu.badge}</span>}
                 <ChevronIcon />
               </button>
             );
@@ -766,17 +769,19 @@ export default function NavbarShell({ featuredArticle }: NavbarProps) {
                     <span className="mega-eyebrow">{menu.intro.eyebrow}</span>
                     <h3 className="mega-intro-title">{menu.intro.title}</h3>
                     <p className="mega-intro-desc">{menu.intro.description}</p>
-                    <Link
-                      href={menu.intro.cta.href}
-                      className="mega-intro-cta"
-                      onClick={() => {
-                        trackNav(menu.intro?.cta.label ?? "");
-                        closeMegaMenu();
-                      }}
-                    >
-                      {menu.intro.cta.label}
-                      <span aria-hidden="true">↗</span>
-                    </Link>
+                    {menu.intro.cta && (
+                      <Link
+                        href={menu.intro.cta.href}
+                        className="mega-intro-cta"
+                        onClick={() => {
+                          trackNav(menu.intro?.cta?.label ?? "");
+                          closeMegaMenu();
+                        }}
+                      >
+                        {menu.intro.cta.label}
+                        <span aria-hidden="true">↗</span>
+                      </Link>
+                    )}
                   </div>
                 )
               )}
@@ -812,7 +817,7 @@ export default function NavbarShell({ featuredArticle }: NavbarProps) {
                         <span className="mega-item-desc">{item.description}</span>
                         {menu.columns === 3 && (
                           <span className="mega-item-more" aria-hidden="true">
-                            Learn more <span>→</span>
+                            {menu.moreLabel ?? "Learn more"} <span>→</span>
                           </span>
                         )}
                       </span>

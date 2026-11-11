@@ -146,6 +146,9 @@ export const TOOLS: ToolDef[] = [
 ];
 
 export const liveTools = () => TOOLS.filter((t) => t.status === "live");
+/** The /tools hub stays unlisted (no nav link, no sitemap, noindex) until this many tools are live. */
+export const HUB_MIN_TOOLS = 6;
+export const hubIsPublic = () => liveTools().length >= HUB_MIN_TOOLS;
 export const hubTools = () => TOOLS.filter((t) => t.status !== "hidden");
 export const getTool = (slug: string) => TOOLS.find((t) => t.slug === slug);
 export const relatedTools = (tool: ToolDef) =>

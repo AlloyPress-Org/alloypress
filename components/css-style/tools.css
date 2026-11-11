@@ -29,20 +29,21 @@
 .tl-lead { max-width: 640px; margin: 14px auto 0; font-size: var(--text-lg); line-height: 1.6; color: var(--text-secondary); }
 
 /* ---------- Flow: tool + sections (left) | sticky ad 1 (right) ---------- */
-.tl-flow {
-  display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "tool" "aside" "rest";
-}
-.tl-flow-tool { grid-area: tool; min-width: 0; scroll-margin-top: var(--tl-nav); }
-.tl-flow-aside { grid-area: aside; min-width: 0; }
-.tl-flow-rest { grid-area: rest; min-width: 0; display: flex; flex-direction: column; gap: 56px; padding-top: 36px; }
+.tl-flow { display: flex; flex-direction: column; gap: 16px; }
+/* Mobile: main is transparent, so tool blocks, ad and sections stack in one column
+   (order: tool -> ad -> sections) and a sticky stat bar can follow the whole flow. */
+.tl-flow-main { display: contents; }
+.tl-flow-tool { display: contents; }
+.tl-flow-main .tl-tool { display: contents; }
+.tl-flow-aside { order: 1; min-width: 0; margin-top: 4px; }
+.tl-flow-rest { order: 2; min-width: 0; display: flex; flex-direction: column; gap: 56px; padding-top: 36px; margin-top: 4px; }
 .tl-sticky { position: static; }
 
 @media (min-width: 1100px) {
-  .tl-flow {
-    grid-template-columns: minmax(0, 1fr) 220px; column-gap: 24px; row-gap: 0;
-    grid-template-areas: "tool aside" "rest aside"; grid-template-rows: auto 1fr;
-  }
+  .tl-flow { display: grid; grid-template-columns: minmax(0, 1fr) 220px; column-gap: 24px; }
+  .tl-flow-main { display: flex; flex-direction: column; gap: 16px; grid-column: 1; grid-row: 1; min-width: 0; }
+  .tl-flow-rest { order: 0; margin-top: 4px; }
+  .tl-flow-aside { grid-column: 2; grid-row: 1; order: 0; margin-top: 0; }
   /* aside spans the whole flow, so the ad stays in view until the FAQ */
   .tl-sticky { position: sticky; top: var(--tl-nav); }
 }

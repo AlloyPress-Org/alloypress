@@ -1,0 +1,199 @@
+/* ==========================================================
+   Tools popover (desktop only)
+   Fully scoped to .tools-pop*, so Categories / For Brands
+   mega panels are not affected.
+   ========================================================== */
+
+.tools-pop {
+  --tp-bg: #ffffff;
+  --tp-border: rgba(15, 23, 42, 0.08);
+  --tp-text: #0f172a;
+  --tp-muted: #64748b;
+  --tp-accent: #16a34a;
+  --tp-hover: rgba(22, 163, 74, 0.08);
+
+  position: absolute;
+  top: 100%;
+  left: var(--anchor, 50%);
+  width: min(400px, calc(100vw - 32px));
+  padding-top: 8px; /* invisible hover bridge: no flicker moving from trigger */
+  transform: translate(-50%, -4px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 70;
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease,
+    visibility 0s linear 140ms;
+}
+
+[data-theme="dark"] .tools-pop {
+  --tp-bg: #0f1713;
+  --tp-border: rgba(255, 255, 255, 0.1);
+  --tp-text: #f1f5f9;
+  --tp-muted: #94a3b8;
+  --tp-hover: rgba(34, 197, 94, 0.12);
+}
+
+.tools-pop.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+  transition-delay: 0s;
+}
+
+.tools-pop-card {
+  background: var(--tp-bg);
+  border: 1px solid var(--tp-border);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px -12px rgba(15, 23, 42, 0.28);
+  overflow: hidden;
+}
+
+.tools-pop-head {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--tp-border);
+}
+
+.tools-pop-eyebrow {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tp-text);
+}
+
+.tools-pop-desc {
+  margin: 3px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--tp-muted);
+}
+
+.tools-pop-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  max-height: min(60vh, 380px);
+  overflow-y: auto;
+}
+
+.tools-pop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--tp-text);
+  transition: background-color 120ms ease;
+}
+
+.tools-pop-item:hover,
+.tools-pop-item:focus-visible,
+.tools-pop-item.is-current {
+  background: var(--tp-hover);
+  outline: none;
+}
+
+.tools-pop-item:focus-visible {
+  box-shadow: 0 0 0 2px var(--tp-accent) inset;
+}
+
+.tools-pop-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--tp-hover);
+  color: var(--tp-accent);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.tools-pop-item:hover .tools-pop-icon,
+.tools-pop-item:focus-visible .tools-pop-icon {
+  background: var(--tp-accent);
+  color: #fff;
+}
+
+.tools-pop-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.tools-pop-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.tools-pop-sub {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--tp-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tools-pop-arrow {
+  flex: none;
+  color: var(--tp-accent);
+  opacity: 0;
+  transform: translate(-4px, 4px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.tools-pop-item:hover .tools-pop-arrow,
+.tools-pop-item:focus-visible .tools-pop-arrow {
+  opacity: 1;
+  transform: none;
+}
+
+.tools-pop-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--tp-border);
+  font-size: 12.5px;
+}
+
+.tools-pop-soon {
+  color: var(--tp-muted);
+}
+
+.tools-pop-all {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--tp-accent);
+  text-decoration: none;
+}
+
+.tools-pop-all:hover,
+.tools-pop-all:focus-visible {
+  text-decoration: underline;
+}
+
+/* Mobile uses the accordion, so hide the popover. */
+@media (max-width: 900px) {
+  .tools-pop {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tools-pop,
+  .tools-pop-item,
+  .tools-pop-arrow,
+  .tools-pop-icon {
+    transition: none;
+  }
+}

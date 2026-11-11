@@ -143,3 +143,25 @@
 .wc-tokens span { padding: 4px 9px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--text-primary); background: var(--brand-soft); border: 1px solid var(--brand-subtle); }
 .wc-tokens span:nth-child(3n) { background: rgba(245, 185, 66, .16); border-color: rgba(245, 185, 66, .35); }
 .wc-tokens span:nth-child(3n + 1) { background: rgba(101, 168, 255, .16); border-color: rgba(101, 168, 255, .35); }
+
+/* ---------- Sticky stats bar (word-counter only; shared .tl-statbar stays static) ----------
+   Sits flush under the navbar (nav is 64px up to 1024px, 72px above) so nothing shows in a gap.
+   It follows the page until the FAQ (the layout in tools.css makes the whole flow its container). */
+.tl-tool .tl-statbar {
+  position: sticky; top: 63px; z-index: 20;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-md);
+}
+.tl-tool .tl-statbar-item { padding: 8px 6px; align-items: center; text-align: center; gap: 1px; min-width: 0; border-top: 0 !important; border-right: 1px solid var(--border-soft) !important; }
+.tl-tool .tl-statbar-item:last-child { border-right: 0 !important; }
+.tl-tool .tl-statbar-item b { font-size: 18px; line-height: 1.15; letter-spacing: -0.02em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.tl-tool .tl-statbar-item span { font-size: 10.5px; line-height: 1.2; max-width: 100%; }
+@media (min-width: 640px) {
+  .tl-tool .tl-statbar { border-radius: var(--radius-xl); }
+  .tl-tool .tl-statbar-item { padding: 14px 20px; align-items: flex-start; text-align: left; gap: 2px; }
+  .tl-tool .tl-statbar-item b { font-size: 28px; line-height: 1.1; letter-spacing: -0.03em; }
+  .tl-tool .tl-statbar-item span { font-size: var(--text-xs); line-height: inherit; }
+}
+@media (min-width: 1025px) {
+  .tl-tool .tl-statbar { top: 71px; }
+}

@@ -2,15 +2,19 @@ import type { Metadata } from "next";
 import "@/components/css-style/tools.css";
 import ToolsGrid from "@/components/tools/ToolsGrid";
 
-import { hubTools } from "@/lib/tools/registry";
+import { hubIsPublic, hubTools } from "@/lib/tools/registry";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = buildPageMetadata({
+export const metadata: Metadata = {
+  ...buildPageMetadata({
   title: "Free AI & Writing Tools – No Sign-up | AlloyPress",
   description:
     "Free online tools for writing and working with AI: word counter, case converter, Markdown tools and more. No sign-up, and your text never leaves your browser.",
   canonicalPath: "/tools",
-});
+  }),
+  // Hub is unlisted until enough tools are live (see HUB_MIN_TOOLS).
+  ...(hubIsPublic() ? {} : { robots: { index: false, follow: true } }),
+};
 
 export default function ToolsHub() {
   const tools = hubTools();

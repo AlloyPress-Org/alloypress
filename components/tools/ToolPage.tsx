@@ -13,7 +13,7 @@ import { postHref } from "@/lib/post-href";
 import { SITE_URL } from "@/lib/seo/constants";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { createBreadcrumbSchema, createFAQSchema } from "@/lib/seo/schema";
-import { getTool, relatedTools } from "@/lib/tools/registry";
+import { getTool, hubIsPublic, relatedTools } from "@/lib/tools/registry";
 
 /* =========================================================
    Content types (one object per tool, lives in its page.tsx)
@@ -374,7 +374,7 @@ export default function ToolPage({
     createBreadcrumbSchema(
       [
         { name: "Home", url: "/" },
-        { name: "Free tools", url: "/tools" },
+        ...(hubIsPublic() ? [{ name: "Free tools", url: "/tools" }] : []),
         { name: tool.name, url: `/tools/${slug}` },
       ],
       url,
@@ -391,7 +391,7 @@ export default function ToolPage({
       {/* Heading + paragraph, then the tool starts */}
       <header className="tl-hero">
         <nav className="tl-crumbs" aria-label="Breadcrumb">
-          <Link href="/">Home</Link> / <Link href="/tools">Free tools</Link> / <span>{tool.name}</span>
+          <Link href="/">Home</Link> / {hubIsPublic() && (<><Link href="/tools">Free tools</Link> / </>)}<span>{tool.name}</span>
         </nav>
         <h1 className="tl-h1">
           {before}
@@ -404,17 +404,19 @@ export default function ToolPage({
       {/* Tool + sections on the left, ad 1 sticks on the right until the FAQ.
           Mobile order: tool → ad → sections. */}
       <div className="tl-flow">
-        <div className="tl-flow-tool" id="tool">{children}</div>
+        <div className="tl-flow-main">
+          <div className="tl-flow-tool" id="tool">{children}</div>
+
+          <div className="tl-flow-rest">
+            {content.sections.map((s, i) => <Section key={i} s={s} widgets={widgets} />)}
+          </div>
+        </div>
 
         <aside className="tl-flow-aside" aria-label="Advertisement">
           <div className="tl-sticky">
             <ToolAd slot={1} tall />
           </div>
         </aside>
-
-        <div className="tl-flow-rest">
-          {content.sections.map((s, i) => <Section key={i} s={s} widgets={widgets} />)}
-        </div>
       </div>
 
       <div className="tl-body">
