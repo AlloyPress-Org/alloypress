@@ -350,6 +350,11 @@ const PasteImagesPlugin = () => {
       event.preventDefault()
       event.stopImmediatePropagation()
 
+      // stopImmediatePropagation above also blocks the link plugin's own paste listener,
+      // so arm the "new tab" window here and mark every pasted anchor explicitly.
+      linkPasteUntil = Date.now() + PASTE_WINDOW_MS
+      doc.querySelectorAll('a[href]').forEach((a) => a.setAttribute('target', '_blank'))
+
       const items: Item[] = fileOnly
         ? files.map((file, i) => {
             const img = doc.createElement('img')
