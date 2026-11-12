@@ -261,12 +261,11 @@ export function convertCase(text: string, mode: CaseMode, opts: CaseOptions = {}
 
 /** Split into words: spaces, punctuation, _ - . / and camelCase boundaries all separate words. */
 function caseWords(line: string): string[] {
-  return (
-    line
-      .replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, "$1 $2")
-      .replace(/(\p{Lu})(\p{Lu}\p{Ll})/gu, "$1 $2")
-      .match(/[\p{L}\p{N}]+/gu) ?? []
-  ).map((w) => w.toLowerCase());
+  // ALL CAPS (e.g. USER_FIRST_NAME) has no camelCase humps to split
+  const split = /\p{Ll}/u.test(line)
+    ? line.replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, "$1 $2").replace(/(\p{Lu})(\p{Lu}\p{Ll})/gu, "$1 $2")
+    : line;
+  return (split.match(/[\p{L}\p{N}]+/gu) ?? []).map((w) => w.toLowerCase());
 }
 
 /** Bold / italic use Unicode math letters, so they paste into X, LinkedIn and Instagram (not real font styles). */

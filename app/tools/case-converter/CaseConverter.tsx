@@ -9,6 +9,7 @@ import {
   convertCase,
   formatNumber as fmt,
   type CaseMode,
+  type CaseOptions,
   type TitleStyle,
 } from "@/lib/tools/text";
 import { CopyButton } from "@/components/tools/ui";
@@ -18,7 +19,23 @@ const HISTORY_LIMIT = 30;
 const SAMPLE =
   "the quick brown fox jumps over the lazy dog. NASA and the UK use it to test a title: it's a simple sample text to try every case.";
 
-type Saved = { text: string; mode: CaseMode; titleStyle: TitleStyle; keepAcronyms: boolean };
+// The picked case is NOT saved: a fresh visit starts with no case selected.
+type Saved = { text: string; titleStyle: TitleStyle; keepAcronyms: boolean };
+
+/** Converts text but keeps trailing spaces/new lines as typed, so code cases do not eat the space you just typed. */
+function convertKeep(str: string, m: CaseMode, o: CaseOptions): string {
+  const body = str.trimEnd();
+  return convertCase(body, m, o) + str.slice(body.length);
+}
+
+/** Inverse flips every letter, so live typing may only flip what changed (not the whole text again). */
+function inverseChanged(prev: string, next: string): string {
+  let s = 0;
+  while (s < prev.length && s < next.length && prev[s] === next[s]) s++;
+  let e = 0;
+  while (e < prev.length - s && e < next.length - s && prev[prev.length - 1 - e] === next[next.length - 1 - e]) e++;
+  return next.slice(0, s) + convertCase(next.slice(s, next.length - e), "inverse") + next.slice(next.length - e);
+}
 
 function readStore(): Saved | null {
   try {
@@ -40,7 +57,8 @@ function writeStore(value: Saved) {
 
 export default function CaseConverter() {
   const [text, setText] = useState("");
-  const [mode, setMode] = useState<CaseMode>("title");
+  const [mode, setMode] = useState<CaseMode | null>(null); // case that is applied live while typing
+  const [picked, setPicked] = useState<CaseMode | null>(null); // last case clicked (decides which options show)
   const [titleStyle, setTitleStyle] = useState<TitleStyle>("ap");
   const [keepAcronyms, setKeepAcronyms] = useState(true);
   const [past, setPast] = useState<string[]>([]);
@@ -59,7 +77,6 @@ export default function CaseConverter() {
     const saved = readStore();
     if (saved) {
       setText(saved.text ?? "");
-      if (CASE_MODES.some((c) => c.mode === saved.mode)) setMode(saved.mode);
       if (TITLE_STYLES.some((s) => s.id === saved.titleStyle)) setTitleStyle(saved.titleStyle);
       if (typeof saved.keepAcronyms === "boolean") setKeepAcronyms(saved.keepAcronyms);
     }
@@ -68,9 +85,9 @@ export default function CaseConverter() {
 
   useEffect(() => {
     if (!loaded.current) return;
-    const id = setTimeout(() => writeStore({ text, mode, titleStyle, keepAcronyms }), 400);
+    const id = setTimeout(() => writeStore({ text, titleStyle, keepAcronyms }), 400);
     return () => clearTimeout(id);
-  }, [text, mode, titleStyle, keepAcronyms]);
+  }, [text, titleStyle, keepAcronyms]);
 
   const opts = useMemo(() => ({ titleStyle, keepAcronyms }), [titleStyle, keepAcronyms]);
 
@@ -86,8 +103,8 @@ export default function CaseConverter() {
   }, [deferred, opts]);
 
   const hasText = text.length > 0;
-  const showStyles = mode === "title";
-  const showAcronyms = mode === "title" || mode === "sentence" || mode === "capitalized";
+  const showStyles = picked === "title";
+  const showAcronyms = picked === "title" || picked === "sentence" || picked === "capitalized";
   const styleNote = TITLE_STYLES.find((s) => s.id === titleStyle)?.note;
 
   /* ---------- history (undo / redo) ---------- */
@@ -139,11 +156,33 @@ export default function CaseConverter() {
     setSelLen(end - start);
   };
 
+  /** The active case applied to new text (typed, pasted or sample). No case picked = text stays as typed. */
+  const fit = (next: string, prev: string) => {
+    if (!mode) return next;
+    if (mode === "inverse") return inverseChanged(prev, next);
+    // typing one letter into already-UPPER text: lower it first so "NAm" is not read as two words
+    if (mode === "constant" && next.length === prev.length + 1) return convertKeep(next.toLowerCase(), mode, opts);
+    return convertKeep(next, mode, opts);
+  };
+
+  const onType = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const el = e.currentTarget;
+    const raw = el.value;
+    if (!mode || (e.nativeEvent as InputEvent).isComposing) return change(raw, true);
+    const next = fit(raw, text);
+    change(next, true);
+    if (next !== raw) {
+      const caret = next.length === raw.length ? el.selectionStart : fit(raw.slice(0, el.selectionStart), "").length;
+      requestAnimationFrame(() => el.setSelectionRange(caret, caret));
+    }
+  };
+
   /** Converts the highlighted part, or the whole text when nothing is highlighted. */
-  const applyMode = (m: CaseMode, o: { titleStyle: TitleStyle; keepAcronyms: boolean } = opts) => {
+  const applyMode = (m: CaseMode, o: CaseOptions = opts) => {
     const { start, end } = sel.current;
     const part = end > start && end <= text.length;
-    const converted = convertCase(part ? text.slice(start, end) : text, m, o);
+    const convert = (str: string) => (m === "inverse" ? convertCase(str, m, o) : convertKeep(str, m, o));
+    const converted = convert(part ? text.slice(start, end) : text);
     change(part ? text.slice(0, start) + converted + text.slice(end) : converted);
     if (part) {
       const newEnd = start + converted.length;
@@ -154,8 +193,18 @@ export default function CaseConverter() {
   };
 
   const pickMode = (m: CaseMode) => {
+    setPicked(m);
+    const { start, end } = sel.current;
+    if (end > start && end <= text.length) return applyMode(m); // only the highlighted part, no live case
+    if (mode === m) return setMode(null); // tap the active case again to switch it off
     setMode(m);
     applyMode(m);
+  };
+
+  const onClearAll = () => {
+    change("");
+    setMode(null);
+    setPicked(null);
   };
 
   const pickStyle = (id: TitleStyle) => {
@@ -167,7 +216,7 @@ export default function CaseConverter() {
   const onPaste = async () => {
     try {
       const clip = await navigator.clipboard.readText();
-      if (clip) change(text + clip);
+      if (clip) change(fit(text + clip, text));
     } catch {
       /* permission denied: user can paste with Ctrl/Cmd+V */
     }
@@ -223,7 +272,7 @@ export default function CaseConverter() {
             <div className="cc-actions">
               <button type="button" className="tl-btn" onClick={undo} disabled={!past.length} aria-label="Undo">Undo</button>
               <button type="button" className="tl-btn" onClick={redo} disabled={!future.length} aria-label="Redo">Redo</button>
-              <button type="button" className="tl-btn" onClick={() => change("")} disabled={!hasText}>Clear</button>
+              <button type="button" className="tl-btn" onClick={onClearAll} disabled={!hasText && !mode}>Clear</button>
             </div>
           </div>
           <textarea
@@ -231,7 +280,7 @@ export default function CaseConverter() {
             ref={inputRef}
             className="cc-textarea"
             value={text}
-            onChange={(e) => change(e.target.value, true)}
+            onChange={onType}
             onSelect={onSelect}
             onKeyDown={onKeyDown}
             placeholder="Type or paste your text, then tap a case below. Highlight part of it to convert only that part."
@@ -240,7 +289,7 @@ export default function CaseConverter() {
           <div className="cc-foot">
             <div className="cc-actions">
               <button type="button" className="tl-btn" onClick={onPaste}>Paste</button>
-              <button type="button" className="tl-btn" onClick={() => change(SAMPLE)}>Sample</button>
+              <button type="button" className="tl-btn" onClick={() => change(fit(SAMPLE, ""))}>Sample</button>
             </div>
             <div className="cc-actions">
               <CopyButton text={text} disabled={!hasText} />
