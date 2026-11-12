@@ -1,5 +1,7 @@
 import type { Access, CollectionConfig, Endpoint } from 'payload'
 
+import { fetchImageSafely, ImportError } from '../utils/safeFetchImage'
+
 const isAdmin: Access = ({ req }) => {
   return req.user?.role === 'admin'
 }
@@ -47,20 +49,7 @@ const slugifyFilename = (original: string): string => {
 /* POST /api/media/import-from-url  { url, alt }  ->  { id }                  */
 /* -------------------------------------------------------------------------- */
 
-// Server will only download from these hosts (SSRF protection).
-// Add more domains here if you paste from other sources.
-const ALLOWED_HOST_SUFFIXES = [
-  'googleusercontent.com',
-  'google.com',
-  'gstatic.com',
-  'googleapis.com',
-]
-
-const isAllowedHost = (host: string) =>
-  ALLOWED_HOST_SUFFIXES.some(
-    (suffix) => host === suffix || host.endsWith(`.${suffix}`),
-  )
-
+// Any public http(s) host is allowed; SSRF protection lives in utils/safeFetchImage.
 const MAX_IMPORT_BYTES = 15 * 1024 * 1024
 
 const EXT_BY_MIME: Record<string, string> = {
@@ -69,7 +58,6 @@ const EXT_BY_MIME: Record<string, string> = {
   'image/gif': 'gif',
   'image/webp': 'webp',
   'image/avif': 'avif',
-  'image/svg+xml': 'svg',
 }
 
 const importFromUrl: Endpoint = {
@@ -104,48 +92,28 @@ const importFromUrl: Endpoint = {
       if (src.startsWith('data:image/')) {
         const match = src.match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i)
 
-        if (!match) throw new Error('Invalid data URL')
+        if (!match) throw new ImportError('Invalid data URL', 400)
 
         mimetype = match[1].toLowerCase()
         buffer = Buffer.from(match[2], 'base64')
       } else {
-        const url = new URL(src)
+        ;({ buffer, mimetype } = await fetchImageSafely(src, {
+          maxBytes: MAX_IMPORT_BYTES,
+        }))
+      }
 
-        if (
-          !['http:', 'https:'].includes(url.protocol) ||
-          !isAllowedHost(url.hostname)
-        ) {
-          return Response.json({ error: 'Host not allowed' }, { status: 400 })
-        }
-
-        const res = await fetch(url, {
-          signal: AbortSignal.timeout(20000),
-          headers: { 'User-Agent': 'Mozilla/5.0 (AlloyPress importer)' },
-        })
-
-        if (!res.ok) throw new Error(`Source responded with ${res.status}`)
-
-        if (!isAllowedHost(new URL(res.url).hostname)) {
-          throw new Error('Redirect target not allowed')
-        }
-
-        mimetype = (res.headers.get('content-type') || '')
-          .split(';')[0]
-          .trim()
-          .toLowerCase()
-
-        if (!mimetype.startsWith('image/')) throw new Error('Not an image')
-
-        buffer = Buffer.from(await res.arrayBuffer())
+      // SVG can carry scripts -> never import it from a paste
+      if (!EXT_BY_MIME[mimetype]) {
+        throw new ImportError(`Unsupported image type: ${mimetype}`, 415)
       }
 
       if (buffer.length > MAX_IMPORT_BYTES) {
-        throw new Error('Image is too large')
+        throw new ImportError('Image is too large')
       }
     } catch (error) {
       return Response.json(
         { error: error instanceof Error ? error.message : 'Download failed' },
-        { status: 422 },
+        { status: error instanceof ImportError ? error.status : 422 },
       )
     }
 
@@ -156,7 +124,8 @@ const importFromUrl: Endpoint = {
     try {
       const doc = await req.payload.create({
         collection: 'media',
-        data: { alt },
+        // Google Docs alt text doubles as the caption (editable later in Media)
+        data: { alt, ...(body.alt?.trim() ? { caption: alt } : {}) },
         file: {
           data: buffer,
           mimetype,
@@ -165,6 +134,7 @@ const importFromUrl: Endpoint = {
         },
         user: req.user,
         overrideAccess: false,
+        depth: 0,
       })
 
       return Response.json({ id: doc.id })
