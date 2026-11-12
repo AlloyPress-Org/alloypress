@@ -3,9 +3,9 @@ import Image from "next/image";
 export type ProofStat = readonly [value: string, label: string];
 
 export const defaultProofStats: readonly ProofStat[] = [
-  ["280K+", "Citations in Google AI Overviews & AI Mode (last 6 months)"],
+  ["300K+", "Citations in Google AI Overviews & AI Mode (last 6 months)"],
   ["11K+", "Citations in Microsoft Copilot (last 3 months)"],
-  ["250+", "AI tools tested and published"],
+  ["300+", "AI tools tested and published"],
   ["1,000+", "Hours of hands-on testing"],
 ];
 

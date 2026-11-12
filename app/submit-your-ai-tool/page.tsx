@@ -71,10 +71,10 @@ const principles = [
 
 // Rendered by the shared <ProofStrip /> component.
 const proofStats: readonly ProofStat[] = [
-  ["280K+", "Citations in Google AI Overviews & AI Mode (last 6 months)"],
+  ["300K+", "Citations in Google AI Overviews & AI Mode (last 6 months)"],
   ["11K+", "Citations in Microsoft Copilot (last 3 months)"],
   ["2.3M+", "Google Search visibility for our Best AI Image Generators list"],
-  ["250+", "AI tools tested and published"],
+  ["300+", "AI tools tested and published"],
 ];
 
 type ListType = "List" | "Alternatives";

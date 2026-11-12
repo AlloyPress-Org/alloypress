@@ -85,8 +85,8 @@ const paths = [
 ];
 
 const heroStats = [
-  ["250+", "AI tools tested"],
-  ["280k+", "Google AI citations"],
+  ["300+", "AI tools tested"],
+  ["300k+", "Google AI citations"],
   ["1 to 3 days", "Response time"],
   ["Global", "Open to work with"],
 ];

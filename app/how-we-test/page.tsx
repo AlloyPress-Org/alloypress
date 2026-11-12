@@ -73,8 +73,8 @@ const breadcrumbSchema = {
 // ============================================================
 
 const stats = [
-  ["250+", "AI tools tested hands-on"],
-  ["280K+", "Citations in Google AI Overviews and AI Mode, last 6 months"],
+  ["300+", "AI tools tested hands-on"],
+  ["300K+", "Citations in Google AI Overviews and AI Mode, last 6 months"],
   ["190+", "Countries our readers come from"],
   ["0%", "Paid rankings or verdicts. Ever."],
 ] as const;

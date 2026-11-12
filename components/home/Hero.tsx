@@ -723,7 +723,7 @@ export default function Hero() {
               </div>
 
               <div>
-                <strong>250+</strong>
+                <strong>300+</strong>
                 <span>AI tools tested hands-on by our team</span>
               </div>
             </div>
@@ -737,7 +737,7 @@ export default function Hero() {
               </div>
 
               <div>
-                <strong>280k+</strong>
+                <strong>300k+</strong>
                 <span>Citations in Google AI Overviews and AI Mode, last 6 months</span>
               </div>
             </div>
