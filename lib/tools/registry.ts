@@ -47,13 +47,13 @@ export const TOOLS: ToolDef[] = [
   {
     slug: "ai-text-cleaner",
     name: "AI Text Cleaner",
-    shortDescription: "Remove hidden characters and Markdown symbols from AI text.",
+    shortDescription: "Clean Markdown, hidden characters, extra breaks and dashes from AI text.",
     category: "text",
     phase: 1,
-    status: "soon",
+    status: "live",
     keyword: "chatgpt text cleaner",
     related: ["word-counter", "case-converter"],
-    updatedAt: "2026-11-10",
+    updatedAt: "2026-11-12",
   },
   {
     slug: "text-diff",

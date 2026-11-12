@@ -1,0 +1,99 @@
+/* AI Text Cleaner: tool-specific styles (shared shell + primitives live in components/css-style/tools.css) */
+
+.atc-root { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.atc-card {
+  display: flex; flex-direction: column; gap: 16px; padding: 20px; min-width: 0;
+  border: 1px solid var(--border); border-radius: var(--radius-xl);
+  background: var(--card); box-shadow: var(--shadow-md);
+}
+.atc-card .tl-btn { min-height: 36px; padding-inline: 14px; font-size: 13px; }
+.atc-hint { margin: 0; font-size: var(--text-sm); color: var(--text-muted); }
+
+/* ---------- presets (right corner) ---------- */
+.atc-modes { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.atc-modes .atc-hint { flex: 1 1 220px; }
+.atc-seg { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.atc-seg button {
+  min-height: 38px; padding: 0 16px; border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--text-primary); font-size: var(--text-sm); font-weight: 650; white-space: nowrap;
+  transition: background .15s, border-color .15s;
+}
+.atc-seg button:hover { background: var(--brand-soft); border-color: var(--brand); }
+.atc-seg button.is-on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.atc-seg button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+@media (max-width: 639px) { .atc-seg { width: 100%; margin-left: 0; } .atc-seg button { flex: 1 1 calc(50% - 4px); } }
+
+/* ---------- panes ---------- */
+.atc-panes { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.atc-pane { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.atc-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; min-height: 36px; }
+.atc-label { font-size: var(--text-base); font-weight: 700; color: var(--text-primary); }
+.atc-count { font-size: var(--text-xs); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.atc-btns { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: auto; }
+
+.atc-textarea {
+  width: 100%; height: clamp(320px, 52vh, 560px); resize: vertical;
+  padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--text-primary);
+  font-size: 16px; line-height: 1.7;
+}
+.atc-textarea::placeholder { color: var(--text-subtle); }
+.atc-textarea:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-soft); }
+.atc-textarea--out { background: var(--surface-2); }
+
+/* two panes share rows (subgrid) so headers, boxes and counts always line up */
+@media (min-width: 900px) {
+  .atc-panes { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto auto; column-gap: 20px; row-gap: 10px; }
+  .atc-pane { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 10px; }
+}
+
+.atc-private { display: flex; align-items: center; gap: 7px; margin: 0; font-size: var(--text-xs); font-weight: 600; color: var(--brand); }
+
+/* ---------- stats ---------- */
+.atc-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 640px) { .atc-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.atc-stat { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border: 1px solid var(--border-soft); border-radius: var(--radius-md); background: var(--surface); }
+.atc-stat span { font-size: var(--text-xs); color: var(--text-muted); }
+.atc-stat b { font-size: 22px; line-height: 1.2; font-weight: 750; color: var(--brand); font-variant-numeric: tabular-nums; }
+
+.atc-changes { display: flex; flex-wrap: wrap; gap: 8px; }
+.atc-chip { padding: 3px 10px; border: 1px solid var(--border-soft); border-radius: 999px; background: var(--surface); color: var(--text-secondary); font-size: var(--text-xs); font-weight: 600; }
+.atc-chip b { color: var(--brand); }
+
+/* ---------- options ---------- */
+.atc-h { margin: 0 0 2px; font-size: var(--text-lg); font-weight: 750; color: var(--text-primary); }
+.atc-h3 { margin: 0 0 2px; font-size: var(--text-base); font-weight: 700; color: var(--text-primary); }
+.atc-opts-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
+
+.atc-checks { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px 20px; }
+@media (min-width: 640px) { .atc-checks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .atc-checks { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.atc-check {
+  display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 8px; margin: 0 -8px;
+  border-radius: var(--radius-md); cursor: pointer; font-size: var(--text-sm); color: var(--text-primary);
+}
+.atc-check:hover { background: var(--brand-soft); }
+.atc-check input { flex: 0 0 auto; width: 18px; height: 18px; margin: 0; accent-color: var(--brand); cursor: pointer; }
+.atc-check input:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* selects use the same columns as the checkboxes above */
+.atc-selects { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px 20px; padding-top: 16px; border-top: 1px solid var(--border-soft); }
+@media (min-width: 640px) { .atc-selects { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .atc-selects { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.atc-select { display: flex; flex-direction: column; gap: 6px; font-size: var(--text-sm); }
+.atc-select label { font-weight: 650; color: var(--text-primary); }
+.atc-select select, .atc-rule > input[type="text"], .atc-rule > input:not([type]) {
+  min-height: 42px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--text-primary); font-size: 16px; min-width: 0; width: 100%;
+}
+.atc-select select:focus, .atc-rule > input:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-soft); }
+
+/* custom rules (always visible, at the bottom) */
+.atc-rules { display: flex; flex-direction: column; gap: 10px; padding-top: 16px; border-top: 1px solid var(--border-soft); }
+.atc-rules-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; }
+.atc-rule { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-items: center; }
+@media (min-width: 640px) { .atc-rule { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto; } }
+.atc-rule-re { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-sm); color: var(--text-secondary); }
+.atc-rule-re input { accent-color: var(--brand); width: 18px; height: 18px; }
