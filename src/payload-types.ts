@@ -520,7 +520,7 @@ export interface HomepageSetting {
   createdAt: string;
 }
 /**
- * Own poster images shown on all blog posts (below TOC on desktop, above the badge on mobile).
+ * Own posters shown on all blog posts (below TOC on desktop, above the badge on mobile). One enabled slot = static poster, several enabled slots = scrolling carousel (oldest first).
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "image-slots".
@@ -532,7 +532,7 @@ export interface ImageSlot {
    */
   name: string;
   /**
-   * Untick to hide without deleting.
+   * Untick to hide without deleting. All enabled slots scroll as a carousel.
    */
   enabled?: boolean | null;
   image: number | Media;

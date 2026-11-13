@@ -7,11 +7,13 @@ const isAdmin = ({ req }: { req: { user?: { role?: string } | null } }) =>
   req.user?.role === 'admin'
 
 /**
- * Image Slots = own poster shown on EVERY blog post.
- * The frontend places it automatically (fixed positions):
+ * Image Slots = own posters shown on EVERY blog post.
+ * The frontend places them automatically (fixed positions):
  *   Desktop -> below the TOC | Tablet -> right sidebar | Mobile -> above the badge
- * If several slots are enabled, the most recently updated one is shown.
- * To switch the poster: create a new slot and untick "Enabled" on the old one.
+ *
+ * - 1 enabled slot   -> one static poster.
+ * - 2+ enabled slots -> a swipe / auto-scrolling carousel (max 8), oldest first.
+ * To remove a poster from the carousel: untick "Enabled" (or delete it).
  */
 export const ImageSlots: CollectionConfig = {
   slug: 'image-slots',
@@ -20,7 +22,7 @@ export const ImageSlots: CollectionConfig = {
     useAsTitle: 'name',
     defaultColumns: ['name', 'enabled', 'updatedAt'],
     description:
-      'Own poster images shown on all blog posts (below TOC on desktop, above the badge on mobile).',
+      'Own posters shown on all blog posts (below TOC on desktop, above the badge on mobile). One enabled slot = static poster, several enabled slots = scrolling carousel (oldest first).',
   },
 
   hooks: {
@@ -47,7 +49,10 @@ export const ImageSlots: CollectionConfig = {
       type: 'checkbox',
       defaultValue: true,
       index: true,
-      admin: { position: 'sidebar', description: 'Untick to hide without deleting.' },
+      admin: {
+        position: 'sidebar',
+        description: 'Untick to hide without deleting. All enabled slots scroll as a carousel.',
+      },
     },
     {
       name: 'image',
