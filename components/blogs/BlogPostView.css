@@ -6205,3 +6205,35 @@ html[data-theme="dark"] .single-post .ai-panel {
 @media (max-width: 820px) {
   .ap-slot-after-tldr { display: block; margin: 20px 0; }
 }
+
+.ap-slot-dots {
+  display: none;
+}
+
+
+.post-image-slot-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+}
+
+.post-image-slot-bar .post-image-slot-badge {
+  position: relative;
+  top: auto;
+  right: auto;
+  left: auto;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.post-image-slot-bar .post-image-slot-badge-tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: auto;
+  width: max-content;
+  max-width: min(240px, 80vw);
+  z-index: 10;
+}

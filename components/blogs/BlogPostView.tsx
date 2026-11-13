@@ -2362,7 +2362,7 @@ function ArticleRenderer({
 /* Image slot carousel (2+ enabled posters)                                   */
 /* -------------------------------------------------------------------------- */
 
-const SLOT_AUTOPLAY_MS = 5000;
+const SLOT_AUTOPLAY_MS = 15000;
 
 function ImageSlotCarousel({
   slot,

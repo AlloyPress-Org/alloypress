@@ -34,17 +34,20 @@ export default function PostImageSlot({
 
   const attrs = slot.href
     ? buildLinkAttrs({
-        url: slot.href,
-        newTab: true,
-        followMode: slot.followMode,
-        sponsored: slot.sponsored,
-      })
+      url: slot.href,
+      newTab: true,
+      followMode: slot.followMode,
+      sponsored: slot.sponsored,
+    })
     : null;
 
   return (
     <div className={`post-image-slot post-image-slot--${device}`} data-slot-id={slot.id}>
-      {/* relative wrapper = anchor for the Ad badge (inline style beats any CSS order) */}
-      <div className="post-image-slot-media" style={{ position: "relative" }}>
+      <div className="post-image-slot-bar">
+        <SlotAdBadge />
+      </div>
+
+      <div className="post-image-slot-media">
         {attrs ? (
           <a href={attrs.href} target={attrs.target} rel={attrs.rel} className="post-image-slot-link">
             {img}
@@ -52,8 +55,6 @@ export default function PostImageSlot({
         ) : (
           img
         )}
-
-        <SlotAdBadge />
       </div>
     </div>
   );
