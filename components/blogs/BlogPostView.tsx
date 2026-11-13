@@ -2,7 +2,7 @@
 import Image from "next/image";
 import cfLoader from '@/lib/imageLoader'
 import Link from "next/link";
-import { Fragment, useEffect, useMemo, useRef, useState, useId } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useId, type ReactNode } from "react";
 import {
   Check,
   Copy,
@@ -717,6 +717,14 @@ function buildHeadingIndex(
   walk(nodes);
 
   return { headings, idsByNode };
+}
+
+function isTldrNode(node: any): boolean {
+  return (
+    node?.type === "block" &&
+    node?.fields?.blockType === "styledBox" &&
+    /t[lI];?dr/i.test(node?.fields?.heading || "")
+  );
 }
 
 function extractSummary(
@@ -1934,13 +1942,16 @@ function normalizeArticleContent(nodes: any[] = []): any[] {
 function ArticleRenderer({
   content,
   headingIds,
+  afterTldr,
 }: {
   content: any;
   headingIds: Map<any, string>;
+  afterTldr?: ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const children = normalizeArticleContent(content?.root?.children || []);
 
+  const tldrIndex = children.findIndex(isTldrNode);
 
   const h2Indexes = children.flatMap((node: any, index: number) => {
     const tag = String(node?.tag || "h2").toLowerCase();
@@ -2337,12 +2348,180 @@ function ArticleRenderer({
             index={i}
             headingIds={headingIds}
           />
+
+          {i === tldrIndex && afterTldr ? (
+            <div className="ap-slot-after-tldr">{afterTldr}</div>
+          ) : null}
         </Fragment>
       ))}
     </div>
   );
 
 }
+/* -------------------------------------------------------------------------- */
+/* Image slot carousel (2+ enabled posters)                                   */
+/* -------------------------------------------------------------------------- */
+
+const SLOT_AUTOPLAY_MS = 5000;
+
+function ImageSlotCarousel({
+  slot,
+  device,
+}: {
+  slot: ImageSlot | null;
+  device: "desktop" | "tablet" | "mobile";
+}) {
+  const slides = slot?.slides;
+
+  if (!slides || slides.length < 2) {
+    return <PostImageSlot slot={slot} device={device} />;
+  }
+
+  return <SlotCarousel slides={slides} device={device} />;
+}
+
+function SlotCarousel({
+  slides,
+  device,
+}: {
+  slides: ImageSlot[];
+  device: "desktop" | "tablet" | "mobile";
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef(0);
+  const pausedUntilRef = useRef(0);
+  const [active, setActive] = useState(0);
+  // <PostImageSlot> hides the variant that does not belong to this viewport,
+  // so dots / autoplay only run while this carousel is really visible.
+  const [visible, setVisible] = useState(false);
+
+  const goTo = useCallback((index: number) => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    el.scrollTo({
+      left: index * el.clientWidth,
+      behavior: reduce ? "auto" : "smooth",
+    });
+  }, []);
+
+  const pause = useCallback((ms: number) => {
+    pausedUntilRef.current = Date.now() + ms;
+  }, []);
+
+  /* visibility + keep the current slide aligned when the width changes */
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(() => {
+      setVisible(el.offsetWidth > 0 && el.offsetHeight > 0);
+      el.scrollLeft = activeRef.current * el.clientWidth;
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  /* autoplay: always the NEXT slide (the last one moves on to the clone of the first) */
+  useEffect(() => {
+    if (!visible) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const timer = window.setInterval(() => {
+      if (document.hidden || Date.now() < pausedUntilRef.current) return;
+      goTo(activeRef.current + 1);
+    }, SLOT_AUTOPLAY_MS);
+
+    return () => window.clearInterval(timer);
+  }, [visible, goTo]);
+
+  function onScroll() {
+    const el = trackRef.current;
+    if (!el || !el.clientWidth) return;
+
+    const width = el.clientWidth;
+
+    // the clone of the first slide is fully in view -> jump to the real first slide
+    if (el.scrollLeft >= slides.length * width - 1) {
+      el.style.scrollSnapType = "none";
+      el.scrollLeft = 0;
+      requestAnimationFrame(() => {
+        el.style.scrollSnapType = "";
+      });
+
+      activeRef.current = 0;
+      setActive(0);
+      return;
+    }
+
+    const index = Math.round(el.scrollLeft / width);
+
+    if (index !== activeRef.current) {
+      activeRef.current = index;
+      setActive(index);
+    }
+  }
+
+  return (
+    <div
+      className={`ap-slot-carousel ap-slot-carousel--${device}`}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label="Featured posters"
+      onPointerEnter={() => pause(Number.MAX_SAFE_INTEGER)}
+      onPointerLeave={() => pause(1500)}
+      onTouchStart={() => pause(8000)}
+      onFocus={() => pause(Number.MAX_SAFE_INTEGER)}
+      onBlur={() => pause(1500)}
+    >
+      <div className="ap-slot-track" ref={trackRef} onScroll={onScroll}>
+        {slides.map((item, i) => (
+          <div
+            className="ap-slot-slide"
+            key={item.id}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={`${i + 1} of ${slides.length}`}
+          >
+            <PostImageSlot slot={item} device={device} />
+          </div>
+        ))}
+
+        {/* clone of slide 1: makes the last -> first move also go right -> left */}
+        <div
+          className="ap-slot-slide"
+          key={`clone-${slides[0].id}`}
+          aria-hidden="true"
+          {...({ inert: true } as object)}
+        >
+          <PostImageSlot slot={slides[0]} device={device} />
+        </div>
+      </div>
+
+      {visible ? (
+        <div className="ap-slot-dots">
+          {slides.map((item, i) => (
+            <button
+              type="button"
+              key={item.id}
+              className="ap-slot-dot"
+              aria-label={`Show poster ${i + 1} of ${slides.length}`}
+              aria-current={i === active}
+              onClick={() => {
+                pause(8000);
+                goTo(i);
+              }}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 
 /* -------------------------------------------------------------------------- */
 /* Page                                                                       */
@@ -2642,6 +2821,8 @@ export default function BlogPostView({
     }
   }
 
+  const hasTldr = normalizeArticleContent(post?.content?.root?.children || []).some(isTldrNode);
+
   return (
     <>
 
@@ -2934,7 +3115,7 @@ export default function BlogPostView({
                 )}
               </div>
 
-              <PostImageSlot slot={imageSlot} device="desktop" />
+              <ImageSlotCarousel slot={imageSlot} device="desktop" />
 
             </aside>
             {/* Center: article */}
@@ -2943,6 +3124,7 @@ export default function BlogPostView({
               <ArticleRenderer
                 content={post?.content}
                 headingIds={headingIds}
+                afterTldr={hasTldr ? <ImageSlotCarousel slot={imageSlot} device="mobile" /> : null}
               />
 
               {/* Desktop-only featured badge banner (above Article tags) */}
@@ -3004,7 +3186,7 @@ export default function BlogPostView({
                     ))}
                 </div>
 
-                <PostImageSlot slot={imageSlot} device="mobile" />
+                {!hasTldr && <ImageSlotCarousel slot={imageSlot} device="mobile" />}
 
                 {/* Mobile AlloyPress Badge */}
                 <div className="mobile-alloypress-badge">

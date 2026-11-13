@@ -1,13 +1,15 @@
 import CfImage from "@/components/CfImage";
 import { buildLinkAttrs } from "@/lib/linkRel";
 import type { ImageSlot } from "@/lib/api/imageSlots";
+import SlotAdBadge from "./SlotAdBadge";
 
 /**
  * Own poster. `device` decides where CSS shows it:
  *  - "desktop": >= 1181px  (left rail, below TOC)
  *  - "tablet" : 821-1180px (right sidebar, TOC is hidden there)
- *  - "mobile" : <= 820px   (above the badge)
+ *  - "mobile" : <= 820px   (below the TL;DR box)
  * Size is fixed in CSS (.post-image-slot--*), not from the CMS.
+ * Every poster carries an "Ad" label + (i) disclosure in its top-right corner.
  */
 export default function PostImageSlot({
   slot,
@@ -41,13 +43,18 @@ export default function PostImageSlot({
 
   return (
     <div className={`post-image-slot post-image-slot--${device}`} data-slot-id={slot.id}>
-      {attrs ? (
-        <a href={attrs.href} target={attrs.target} rel={attrs.rel} className="post-image-slot-link">
-          {img}
-        </a>
-      ) : (
-        img
-      )}
+      {/* relative wrapper = anchor for the Ad badge (inline style beats any CSS order) */}
+      <div className="post-image-slot-media" style={{ position: "relative" }}>
+        {attrs ? (
+          <a href={attrs.href} target={attrs.target} rel={attrs.rel} className="post-image-slot-link">
+            {img}
+          </a>
+        ) : (
+          img
+        )}
+
+        <SlotAdBadge />
+      </div>
     </div>
   );
 }

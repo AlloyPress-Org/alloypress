@@ -27,6 +27,12 @@ export const proofBrands = [
   { name: "InVideo", src: "/logos/invideo.png" },
 ] as const;
 
+/**
+ * Logos are rendered twice so the marquee can loop seamlessly.
+ * The 2nd copy is aria-hidden (and hidden entirely for reduced-motion users).
+ */
+const marqueeBrands = [...proofBrands, ...proofBrands];
+
 type BrandLogosProps = {
   /** Text label above the logos. Pass "" to hide it. */
   label?: string;
@@ -42,19 +48,28 @@ export function BrandLogos({
       <style dangerouslySetInnerHTML={{ __html: proofStyles }} />
       <div className={`ps-brands ${className}`.trim()}>
         {label && <span className="ps-label">{label}</span>}
-        <ul className="ps-logo-grid" aria-label={label || "Tools we've tested"}>
-          {proofBrands.map((brand) => (
-            <li className="ps-logo-cell" key={brand.name}>
-              <Image
-                className="ps-logo"
-                src={brand.src}
-                alt={brand.name}
-                width={240}
-                height={80}
-              />
-            </li>
-          ))}
-        </ul>
+        <div className="ps-marquee">
+          <ul className="ps-logo-grid" aria-label={label || "Tools we've tested"}>
+            {marqueeBrands.map((brand, i) => {
+              const isDuplicate = i >= proofBrands.length;
+              return (
+                <li
+                  className={`ps-logo-cell${isDuplicate ? " ps-dup" : ""}`}
+                  key={`${brand.name}-${i}`}
+                  aria-hidden={isDuplicate || undefined}
+                >
+                  <Image
+                    className="ps-logo"
+                    src={brand.src}
+                    alt={isDuplicate ? "" : brand.name}
+                    width={240}
+                    height={80}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </div>
     </>
   );
@@ -129,6 +144,12 @@ const proofStyles = `
   margin-inline: auto;
 }
 
+/* Grid children must be allowed to shrink, otherwise the marquee
+   would stretch the page horizontally. */
+.ps-container > * {
+  min-width: 0;
+}
+
 .ps-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -185,12 +206,13 @@ const proofStyles = `
   text-transform: uppercase;
 }
 
-/* ---------- Brand logos: single line, no cards/borders ---------- */
+/* ---------- Brand logos: single line, auto-scrolling marquee ---------- */
 .ps-brands {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
   gap: 28px;
+  min-width: 0;
 }
 
 .ps-brands .ps-label {
@@ -199,25 +221,53 @@ const proofStyles = `
   white-space: nowrap;
 }
 
+/* Clipping window with soft fade on both edges */
+.ps-marquee {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+/* Moving track */
 .ps-logo-grid {
   display: flex;
-  flex: 1;
+  flex: none;
   flex-wrap: nowrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 20px;
+  justify-content: flex-start;
+  width: max-content;
+  gap: 0;
   margin: 0;
   padding: 0;
   list-style: none;
+  animation: ps-marquee 30s linear infinite;
+  will-change: transform;
 }
 
+/* Each cell has its own right margin (no flex gap), so the track width is
+   exactly 2 x (one set). Moving by -50% = one full set = seamless loop. */
 .ps-logo-cell {
   display: flex;
-  flex: 1 1 0;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  min-width: 0;
+  width: 140px;
   height: 40px;
+  margin-right: 48px;
+}
+
+/* Pause while the user hovers / touches */
+.ps-marquee:hover .ps-logo-grid,
+.ps-marquee:active .ps-logo-grid {
+  animation-play-state: paused;
+}
+
+@keyframes ps-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 .ps-logo {
@@ -269,6 +319,7 @@ html[data-theme="dark"] .ps-logo:hover {
   font: 600 var(--text-sm)/1.2 var(--font-ui);
 }
 
+/* ---------- Tablet / mobile ---------- */
 @media (max-width: 900px) {
   .ps-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -278,18 +329,17 @@ html[data-theme="dark"] .ps-logo:hover {
     flex-direction: column;
     align-items: flex-start;
     gap: 18px;
+    width: 100%;
   }
 
-  .ps-logo-grid {
+  .ps-marquee {
+    flex: none;
     width: 100%;
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 22px 36px;
   }
 
   .ps-logo-cell {
-    flex: 0 0 auto;
     width: 120px;
+    margin-right: 36px;
   }
 }
 
@@ -307,17 +357,36 @@ html[data-theme="dark"] .ps-logo:hover {
     width: 100%;
   }
 
-  .ps-logo-grid {
-    gap: 18px 28px;
-  }
-
   .ps-logo-cell {
     width: 100px;
     height: 32px;
+    margin-right: 28px;
   }
 
   .ps-logo {
     max-height: 28px;
+  }
+}
+
+/* ---------- Reduced motion: no animation, manual swipe instead ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .ps-marquee {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .ps-marquee::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ps-logo-grid {
+    animation: none;
+  }
+
+  .ps-dup {
+    display: none;
   }
 }
 `;

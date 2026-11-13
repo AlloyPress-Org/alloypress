@@ -196,12 +196,17 @@ const toolsMenu: MegaMenu = {
   footnote: "More free tools coming soon.",
 };
 
+// Tools menu ippo hide. Meendum kaattanum na true pannunga.
+const SHOW_TOOLS = false;
+
 const navEntries: NavEntry[] = [
   { kind: "link", ...homeLink },
   { kind: "link", ...howWeTestLink },
   { kind: "menu", menu: categoriesMenu },
   { kind: "menu", menu: brandsMenu },
-  ...(toolItems.length > 0 ? [{ kind: "menu", menu: toolsMenu } as NavEntry] : []),
+  ...(SHOW_TOOLS && toolItems.length > 0
+    ? [{ kind: "menu", menu: toolsMenu } as NavEntry]
+    : []),
 ];
 
 const megaMenus: MegaMenu[] = navEntries.flatMap((entry) =>
