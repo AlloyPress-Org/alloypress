@@ -459,7 +459,7 @@ const contentField: Field = {
                 },
                 admin: {
                   description:
-                    'Optional. If set, the image becomes a clickable link. The URL is also shown on hover.',
+                    'Optional. If set, the image becomes a clickable link. The URL is also shown on hover. To edit Alt text and Caption, close this and click the file name under the image.',
                 },
               },
 
@@ -719,6 +719,60 @@ const contentField: Field = {
                 admin: {
                   description:
                     'e.g. "1.5px". Taken from the original inline border-width style when present.',
+                },
+              },
+            ],
+          },
+
+          // Quote with MULTIPLE paragraphs + links (the default "Quote" from the slash
+          // menu is a single-paragraph blockquote and cannot hold more than one).
+          {
+            slug: 'quoteBlock',
+
+            labels: {
+              singular: 'Quote Block',
+              plural: 'Quote Blocks',
+            },
+
+            fields: [
+              {
+                name: 'bodyRich',
+                type: 'richText',
+                label: 'Quote',
+                required: true,
+
+                editor: lexicalEditor({
+                  features: [
+                    ParagraphFeature(),
+                    BoldFeature(),
+                    ItalicFeature(),
+                    UnderlineFeature(),
+                    LinkFeature({
+                      fields: buildLinkFeatureFields,
+                    }),
+                    InlineToolbarFeature(),
+                  ],
+                }),
+
+                admin: {
+                  description:
+                    'Press Enter for a new paragraph. Select words and click the link icon to add a link.',
+                },
+              },
+
+              {
+                name: 'author',
+                type: 'text',
+                label: 'Author / Speaker',
+              },
+
+              {
+                name: 'source',
+                type: 'text',
+                label: 'Role / Source',
+
+                admin: {
+                  description: 'Optional. Example: "CEO, Acme" or "Interview, March 2026".',
                 },
               },
             ],
