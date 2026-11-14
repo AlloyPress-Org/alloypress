@@ -77,15 +77,25 @@ const content: ToolContent = {
         "The tool first compares the two texts line by line and finds the smallest set of lines to remove and add. Where one line changed into another, it then compares the two lines word by word, so you see which words changed.",
         "Added and removed counts show lines that exist in only one text. A line that was edited counts once as removed and once as added.",
       ],
+      chips: [
+        "Step 1 → Compare line by line",
+        "Step 2 → Compare word by word",
+        "Line only in original → Removed",
+        "Line only in changed text → Added",
+        "Edited line → 1 removed + 1 added",
+      ],
     },
     {
       kind: "prose",
       id: "share",
       title: "Share links and privacy",
-      paragraphs: [
-        "A share link stores both texts inside the link itself, after the # sign. That part of a link is never sent to a server, so we never receive or store your text.",
-        "It also means that anyone who has the link can read both texts. Only share it with people who should see them. Very long texts do not fit in a link, so use Copy diff or Download for those.",
+      bullets: [
+        "Your files and text are compared in your browser. Nothing is uploaded.",
+        "A share link keeps both texts after the # sign, which browsers never send to a server.",
+        "Anyone who has the link can read both texts, so only send it to people who should see them.",
+        "Very long texts do not fit in a link. Use Copy diff, Copy added or removed lines, or Download .txt instead.",
       ],
+      note: "Tip: if the text is private, copy the diff instead of sharing a link.",
     },
   ],
 
@@ -107,11 +117,11 @@ const content: ToolContent = {
   blogSlugs: ["best-ai-blog-writing-tools", "what-is-chat-gpt", "ai-hallucinations-explained"],
 };
 
-export const metadata = toolMetadata("text-diff", content);
+export const metadata = toolMetadata("text-compare", content);
 
 export default function TextDiffPage() {
   return (
-    <ToolPage slug="text-diff" content={content}>
+    <ToolPage slug="text-compare" content={content}>
       <TextDiff />
     </ToolPage>
   );

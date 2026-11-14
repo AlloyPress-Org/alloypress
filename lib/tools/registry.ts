@@ -30,7 +30,7 @@ export const TOOLS: ToolDef[] = [
     phase: 1,
     status: "live",
     keyword: "word counter",
-    related: ["case-converter", "ai-text-cleaner", "ai-token-counter"],
+    related: ["case-converter", "ai-text-cleaner", "text-compare", "ai-token-counter"],
     updatedAt: "2026-11-10",
   },
   {
@@ -41,7 +41,7 @@ export const TOOLS: ToolDef[] = [
     phase: 1,
     status: "live",
     keyword: "case converter",
-    related: ["word-counter", "ai-text-cleaner"],
+    related: ["word-counter", "ai-text-cleaner", "text-compare"],
     updatedAt: "2026-11-10",
   },
   {
@@ -52,11 +52,11 @@ export const TOOLS: ToolDef[] = [
     phase: 1,
     status: "live",
     keyword: "chatgpt text cleaner",
-    related: ["word-counter", "case-converter"],
+    related: ["word-counter", "case-converter", "text-compare"],
     updatedAt: "2026-11-12",
   },
   {
-    slug: "text-diff",
+    slug: "text-compare",
     name: "Text Compare",
     shortDescription: "See every added, removed and changed word between two texts.",
     category: "text",

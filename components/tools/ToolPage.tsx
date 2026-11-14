@@ -138,7 +138,7 @@ function ToolAd({ slot, tall = false }: { slot: 1 | 2; tall?: boolean }) {
 function Section({ s, widgets }: { s: ToolSection; widgets: Record<string, ReactNode> }) {
   switch (s.kind) {
     case "ad":
-      return <ToolAd slot={2} />;
+      return null;
 
     case "steps":
       return (
