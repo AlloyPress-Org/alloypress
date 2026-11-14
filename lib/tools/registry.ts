@@ -58,13 +58,13 @@ export const TOOLS: ToolDef[] = [
   {
     slug: "text-diff",
     name: "Text Compare",
-    shortDescription: "See what changed between two versions of a text.",
+    shortDescription: "See every added, removed and changed word between two texts.",
     category: "text",
     phase: 2,
-    status: "soon",
+    status: "live",
     keyword: "text compare",
-    related: ["word-counter"],
-    updatedAt: "2026-11-10",
+    related: ["word-counter", "case-converter", "ai-text-cleaner"],
+    updatedAt: "2026-11-12",
   },
   {
     slug: "markdown-viewer",

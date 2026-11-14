@@ -1,27 +1,15 @@
-/** Shared text logic for all text tools (pure functions, no React/DOM). */
-
-// ===== counting =====
-/**
- * Pure text analysis. No React, no DOM. Safe to unit-test and to reuse in
- * Word Counter, Token Counter, Case Converter, Text Cleaner…
- */
-
 export const READING_WPM = 238;
 export const SPEAKING_WPM = 150;
 export const LONG_SENTENCE_WORDS = 25;
 
-// URL | email | number (3.5, 1,000) | word (letters/numbers/marks, inner ' ’ - kept together).
-// \p{M} matters: Tamil, Hindi etc. use combining vowel signs.
 const WORD_RE =
   /(?:https?:\/\/|www\.)[^\s]+|[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.\p{L}{2,}|\p{N}+(?:[.,]\p{N}+)+|[\p{L}\p{N}\p{M}]+(?:['’-][\p{L}\p{N}\p{M}]+)*/gu;
-
-const PLAIN_WORD_RE = /\p{N}+(?:[.,]\p{N}+)+|[\p{L}\p{N}\p{M}]+(?:['’-][\p{L}\p{N}\p{M}]+)*/gu;
 
 const SENTENCE_END_RE = /[.!?…।]+["'”’)\]]*(?=\s|$)/g;
 
 const ABBREVIATIONS = new Set([
   "mr", "mrs", "ms", "dr", "prof", "sr", "jr", "vs", "etc", "fig",
-  "inc", "ltd", "st", "no", "e.g", "i.e", "approx", "dept",
+  "inc", "ltd", "e.g", "i.e", "approx", "dept",
 ]);
 
 export type Sentence = { text: string; words: number };
@@ -51,8 +39,17 @@ export const EMPTY_STATS: TextStats = {
 };
 
 export function countCodePoints(text: string): number {
-  let n = 0;
-  for (const _ of text) n++; // eslint-disable-line @typescript-eslint/no-unused-vars
+  let n = text.length;
+  for (let i = 0; i < text.length; i++) {
+    const hi = text.charCodeAt(i);
+    if (hi >= 0xd800 && hi <= 0xdbff) {
+      const lo = text.charCodeAt(i + 1);
+      if (lo >= 0xdc00 && lo <= 0xdfff) {
+        n--;
+        i++;
+      }
+    }
+  }
   return n;
 }
 
@@ -60,8 +57,8 @@ export function extractWords(text: string): string[] {
   return text.match(WORD_RE) ?? [];
 }
 
-function countPlainWords(text: string): number {
-  return (text.match(PLAIN_WORD_RE) ?? []).length;
+function countWords(text: string): number {
+  return (text.match(WORD_RE) ?? []).length;
 }
 
 function isAbbreviation(before: string): boolean {
@@ -70,7 +67,6 @@ function isAbbreviation(before: string): boolean {
   return ABBREVIATIONS.has(m[1].replace(/\.$/, "").toLowerCase());
 }
 
-/** A sentence ends at . ! ? … (or ।) followed by space/end, or at a blank line. */
 export function splitSentences(text: string): Sentence[] {
   const out: Sentence[] = [];
   const paragraphs = text.split(/\n\s*\n/);
@@ -79,15 +75,14 @@ export function splitSentences(text: string): Sentence[] {
     let start = 0;
     const push = (end: number) => {
       const s = para.slice(start, end).trim();
-      if (s && /[\p{L}\p{N}]/u.test(s)) out.push({ text: s, words: countPlainWords(s) });
+      if (s && /[\p{L}\p{N}]/u.test(s)) out.push({ text: s, words: countWords(s) });
       start = end;
     };
 
-    SENTENCE_END_RE.lastIndex = 0;
+    const re = new RegExp(SENTENCE_END_RE.source, SENTENCE_END_RE.flags);
     let m: RegExpExecArray | null;
-    while ((m = SENTENCE_END_RE.exec(para))) {
+    while ((m = re.exec(para))) {
       const end = m.index + m[0].length;
-      // "Dr. Smith", "e.g. this" are not sentence ends
       if (m[0] === "." && isAbbreviation(para.slice(start, m.index))) continue;
       push(end);
     }
@@ -106,24 +101,32 @@ export function analyzeText(text: string): TextStats {
   const sentenceList = splitSentences(text);
   const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim()).length;
 
-  const counts = sentenceList.map((s) => s.words);
-  const longest = counts.length ? Math.max(...counts) : 0;
-  const shortest = counts.length ? Math.min(...counts) : 0;
-  const avg = counts.length ? Math.round(counts.reduce((a, b) => a + b, 0) / counts.length) : 0;
+  let longest = 0;
+  let shortest = Infinity;
+  let sum = 0;
+  let longCount = 0;
+  for (const s of sentenceList) {
+    const w = s.words;
+    if (w > longest) longest = w;
+    if (w < shortest) shortest = w;
+    sum += w;
+    if (w > LONG_SENTENCE_WORDS) longCount++;
+  }
+  const n = sentenceList.length;
 
   return {
     words,
     characters,
     charactersNoSpaces,
-    sentences: sentenceList.length,
+    sentences: n,
     paragraphs,
     readingSeconds: Math.round((words / READING_WPM) * 60),
     speakingSeconds: Math.round((words / SPEAKING_WPM) * 60),
     tokensEstimate: Math.ceil(characters / 4),
-    avgSentenceWords: avg,
+    avgSentenceWords: n ? Math.round(sum / n) : 0,
     longestSentenceWords: longest,
-    shortestSentenceWords: shortest,
-    longSentences: counts.filter((c) => c > LONG_SENTENCE_WORDS).length,
+    shortestSentenceWords: n ? shortest : 0,
+    longSentences: longCount,
     sentenceList,
     wordList,
   };
@@ -161,8 +164,6 @@ export function formatDuration(totalSeconds: number): string {
 
 export const formatNumber = (n: number) => n.toLocaleString("en-US");
 
-
-// ===== case conversion =====
 export type CaseMode =
   | "upper" | "lower" | "title" | "sentence" | "capitalized" | "alternating" | "inverse" | "bold" | "italic"
   | "camel" | "pascal" | "snake" | "kebab" | "constant";
@@ -176,7 +177,6 @@ export const TITLE_STYLES: { id: TitleStyle; label: string; note: string }[] = [
   { id: "mla", label: "MLA", note: "Like Chicago: articles, coordinating conjunctions and prepositions stay lower case." },
 ];
 
-/** One list feeds the tool buttons, the all-cases preview AND the SEO table, so they can never disagree. */
 export const CASE_DEMO = "the quick brown fox";
 export const CASE_MODES: { mode: CaseMode; label: string; group: "text" | "format" | "code" }[] = [
   { mode: "upper", label: "UPPER CASE", group: "text" },
@@ -201,32 +201,73 @@ const isMinor = (w: string, style: TitleStyle) =>
   MINOR_SHORT.has(w) || ((style === "chicago" || style === "mla") && MINOR_LONG.has(w));
 
 const isAcronym = (w: string) => w.length > 1 && w === w.toUpperCase() && /\p{L}/u.test(w);
-/** Acronyms are only kept when the text is not already ALL CAPS (otherwise every word would look like one). */
 const hasLower = (text: string) => /\p{Ll}/u.test(text);
 
 function lowerKeep(text: string, keep: boolean): string {
   if (!keep || !hasLower(text)) return text.toLowerCase();
-  return text.replace(/[\p{L}\p{N}]+/gu, (w) => (isAcronym(w) ? w : w.toLowerCase()));
+  return text.replace(/[\p{L}\p{N}\p{M}]+/gu, (w) => (isAcronym(w) ? w : w.toLowerCase()));
 }
 
-const LETTER_AHEAD = /[^\n\p{L}\p{N}]*[\p{L}\p{N}]/uy; // sticky: is there another word on this line?
+const LETTER_AHEAD = /[^\n\p{L}\p{N}]*[\p{L}\p{N}]/uy;
 
 function titleCase(text: string, style: TitleStyle, keep: boolean): string {
   const canKeep = keep && hasLower(text);
   let i = 0;
-  return text.replace(/[\p{L}\p{N}]+(?:['’][\p{L}]+)?/gu, (w, offset: number, full: string) => {
+  return text.replace(/[\p{L}\p{N}\p{M}]+(?:['’][\p{L}\p{M}]+)?/gu, (w, offset: number, full: string) => {
     const first = i++ === 0;
     if (canKeep && isAcronym(w)) return w;
     const lower = w.toLowerCase();
     LETTER_AHEAD.lastIndex = offset + w.length;
-    const last = !LETTER_AHEAD.test(full); // last word of its line
+    const last = !LETTER_AHEAD.test(full);
     const afterBreak = /(?:[:.!?]\s+|\n\s*)$/.test(full.slice(Math.max(0, offset - 8), offset));
     if (!first && !last && !afterBreak && isMinor(lower, style)) return lower;
     return lower.charAt(0).toUpperCase() + lower.slice(1);
   });
 }
 
-export function convertCase(text: string, mode: CaseMode, opts: CaseOptions = {}): string {
+const PRONOUN_I = /(^|[^\p{L}\p{N}\p{M}_.'’-])i(?=['’]\p{L}|(?![\p{L}\p{N}\p{M}_-])(?!\.\p{L}))/gu;
+
+function sentenceCase(text: string, keep: boolean): string {
+  return lowerKeep(text, keep)
+    .replace(
+      /(^\s*|[.!?…।]\s+|\n\s*)(["'“‘(\[]*)(\p{L})/gu,
+      (m: string, pre: string, open: string, ch: string, offset: number, full: string) => {
+        if (!pre.includes("\n") && pre.trim().endsWith(".") && isAbbreviation(full.slice(0, offset))) return m;
+        return pre + open + ch.toUpperCase();
+      },
+    )
+    .replace(PRONOUN_I, "$1I");
+}
+
+const LETTERLIKE = new Map<number, string>([
+  [0x210a, "g"], [0x210b, "H"], [0x210c, "H"], [0x210d, "H"], [0x210e, "h"],
+  [0x2110, "I"], [0x2111, "I"], [0x2112, "L"], [0x2113, "l"], [0x211b, "R"],
+  [0x211c, "R"], [0x211d, "R"], [0x2124, "Z"], [0x2128, "Z"], [0x212c, "B"],
+  [0x212f, "e"], [0x2130, "E"], [0x2131, "F"], [0x2133, "M"], [0x2134, "o"],
+]);
+
+const STYLED_RE = /[\u210A-\u2134\u{1D400}-\u{1D7FF}]/u;
+
+export function unstyleText(text: string): string {
+  if (!STYLED_RE.test(text)) return text;
+  let out = "";
+  for (const ch of text) {
+    const c = ch.codePointAt(0) as number;
+    if (c >= 0x1d400 && c <= 0x1d6a3) {
+      const i = (c - 0x1d400) % 52;
+      out += String.fromCharCode(i < 26 ? 65 + i : 97 + i - 26);
+    } else if (c >= 0x1d7ce && c <= 0x1d7ff) {
+      out += String.fromCharCode(48 + ((c - 0x1d7ce) % 10));
+    } else {
+      const mapped = c >= 0x210a && c <= 0x2134 ? LETTERLIKE.get(c) : undefined;
+      out += mapped ?? ch;
+    }
+  }
+  return out;
+}
+
+export function convertCase(input: string, mode: CaseMode, opts: CaseOptions = {}): string {
+  const text = unstyleText(input);
   const keep = !!opts.keepAcronyms;
   switch (mode) {
     case "upper":
@@ -236,11 +277,12 @@ export function convertCase(text: string, mode: CaseMode, opts: CaseOptions = {}
     case "title":
       return titleCase(text, opts.titleStyle ?? "ap", keep);
     case "sentence":
-      return lowerKeep(text, keep)
-        .replace(/(^\s*|[.!?…]\s+|\n\s*)(\p{L})/gu, (_m, pre: string, ch: string) => pre + ch.toUpperCase())
-        .replace(/\bi\b/g, "I");
+      return sentenceCase(text, keep);
     case "capitalized":
-      return lowerKeep(text, keep).replace(/(^|[^\p{L}\p{N}'’])(\p{L})/gu, (_m, pre: string, ch: string) => pre + ch.toUpperCase());
+      return lowerKeep(text, keep).replace(
+        /(^|[^\p{L}\p{N}\p{M}'’])(\p{L})/gu,
+        (_m, pre: string, ch: string) => pre + ch.toUpperCase(),
+      );
     case "alternating": {
       let n = 0;
       return Array.from(text.toLowerCase(), (ch) =>
@@ -254,21 +296,17 @@ export function convertCase(text: string, mode: CaseMode, opts: CaseOptions = {}
     case "italic":
       return styleLetters(text, true);
     default:
-      // code cases work line by line, so each line becomes its own identifier
       return text.split("\n").map((line) => joinWords(caseWords(line), mode)).join("\n");
   }
 }
 
-/** Split into words: spaces, punctuation, _ - . / and camelCase boundaries all separate words. */
 function caseWords(line: string): string[] {
-  // ALL CAPS (e.g. USER_FIRST_NAME) has no camelCase humps to split
   const split = /\p{Ll}/u.test(line)
     ? line.replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, "$1 $2").replace(/(\p{Lu})(\p{Lu}\p{Ll})/gu, "$1 $2")
     : line;
-  return (split.match(/[\p{L}\p{N}]+/gu) ?? []).map((w) => w.toLowerCase());
+  return (split.match(/[\p{L}\p{N}\p{M}]+/gu) ?? []).map((w) => w.toLowerCase());
 }
 
-/** Bold / italic use Unicode math letters, so they paste into X, LinkedIn and Instagram (not real font styles). */
 function styleLetters(text: string, italic: boolean): string {
   const [up, low, digit] = italic ? [0x1d434, 0x1d44e, 0] : [0x1d400, 0x1d41a, 0x1d7ce];
   return Array.from(text, (ch) => {
@@ -288,17 +326,10 @@ function joinWords(words: string[], mode: CaseMode): string {
     case "pascal": return words.map(cap).join("");
     case "snake": return words.join("_");
     case "kebab": return words.join("-");
-    default: return words.join("_").toUpperCase(); // constant
+    default: return words.join("_").toUpperCase();
   }
 }
 
-
-// ===== platform limits =====
-/**
- * Platform character limits. One list feeds the interactive checker AND the
- * SEO table, so they can never disagree.
- * TODO(before launch): re-verify every number and update LIMITS_CHECKED.
- */
 export type PlatformLimit = {
   id: string;
   name: string;
