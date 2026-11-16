@@ -165,7 +165,7 @@ export function formatDuration(totalSeconds: number): string {
 export const formatNumber = (n: number) => n.toLocaleString("en-US");
 
 export type CaseMode =
-  | "upper" | "lower" | "title" | "sentence" | "capitalized" | "alternating" | "inverse" | "bold" | "italic"
+  | "upper" | "lower" | "title" | "sentence" | "capitalized" | "alternating" | "inverse"
   | "camel" | "pascal" | "snake" | "kebab" | "constant";
 export type TitleStyle = "ap" | "apa" | "chicago" | "mla";
 export type CaseOptions = { titleStyle?: TitleStyle; keepAcronyms?: boolean };
@@ -177,8 +177,8 @@ export const TITLE_STYLES: { id: TitleStyle; label: string; note: string }[] = [
   { id: "mla", label: "MLA", note: "Like Chicago: articles, coordinating conjunctions and prepositions stay lower case." },
 ];
 
-export const CASE_DEMO = "the quick brown fox";
-export const CASE_MODES: { mode: CaseMode; label: string; group: "text" | "format" | "code" }[] = [
+export const CASE_DEMO = "Will AI be the future of writing?";
+export const CASE_MODES: { mode: CaseMode; label: string; group: "text" | "code" }[] = [
   { mode: "upper", label: "UPPER CASE", group: "text" },
   { mode: "lower", label: "lower case", group: "text" },
   { mode: "title", label: "Title Case", group: "text" },
@@ -186,8 +186,6 @@ export const CASE_MODES: { mode: CaseMode; label: string; group: "text" | "forma
   { mode: "capitalized", label: "Capitalized Case", group: "text" },
   { mode: "alternating", label: "aLtErNaTiNg", group: "text" },
   { mode: "inverse", label: "iNVERSE", group: "text" },
-  { mode: "bold", label: "𝐁𝐨𝐥𝐝", group: "format" },
-  { mode: "italic", label: "𝐼𝑡𝑎𝑙𝑖𝑐", group: "format" },
   { mode: "camel", label: "camelCase", group: "code" },
   { mode: "pascal", label: "PascalCase", group: "code" },
   { mode: "snake", label: "snake_case", group: "code" },
@@ -195,27 +193,45 @@ export const CASE_MODES: { mode: CaseMode; label: string; group: "text" | "forma
   { mode: "constant", label: "CONSTANT_CASE", group: "code" },
 ];
 
-const MINOR_SHORT = new Set(["a","an","the","and","but","or","nor","for","so","yet","as","at","by","in","of","off","on","out","per","to","up","via"]);
-const MINOR_LONG = new Set(["about","above","across","after","against","along","among","around","before","behind","below","beneath","beside","between","beyond","down","during","except","from","inside","into","like","near","onto","over","past","since","through","throughout","till","toward","towards","under","until","upon","with","within","without"]);
+const MINOR_SHORT = new Set(["a", "an", "the", "and", "but", "or", "nor", "for", "so", "yet", "as", "at", "by", "in", "of", "off", "on", "out", "per", "to", "up", "via"]);
+const MINOR_LONG = new Set(["about", "above", "across", "after", "against", "along", "among", "around", "before", "behind", "below", "beneath", "beside", "between", "beyond", "down", "during", "except", "from", "inside", "into", "like", "near", "onto", "over", "past", "since", "through", "throughout", "till", "toward", "towards", "under", "until", "upon", "with", "within", "without"]);
 const isMinor = (w: string, style: TitleStyle) =>
   MINOR_SHORT.has(w) || ((style === "chicago" || style === "mla") && MINOR_LONG.has(w));
 
 const isAcronym = (w: string) => w.length > 1 && w === w.toUpperCase() && /\p{L}/u.test(w);
 const hasLower = (text: string) => /\p{Ll}/u.test(text);
 
+const KNOWN_ACRONYMS = new Set([
+  "nasa", "seo", "api", "html", "css", "js", "uk", "usa", "eu", "ai", "ml", "llm", "gpu", "cpu",
+  "url", "uri", "pdf", "faq", "json", "xml", "sql", "http", "https", "ui", "ux", "sdk", "ios",
+  "ceo", "cto", "cfo", "kpi", "roi", "saas", "b2b", "b2c", "gdp", "gps", "fbi", "cia", "usb",
+  "tv", "pc", "dns", "vpn", "ssl", "aws", "ide", "cms", "crm", "cdn", "rss", "gif", "png", "jpg",
+]);
+
+/** Returns the acronym form of a word, or null when the word is not an acronym. */
+function acronymForm(w: string, typedMixed: boolean): string | null {
+  if (typedMixed && isAcronym(w)) return w; // typed in capitals inside normal text: keep as typed
+  if (KNOWN_ACRONYMS.has(w.toLowerCase())) return w.toUpperCase(); // known acronym: fix to capitals
+  return null;
+}
+
 function lowerKeep(text: string, keep: boolean): string {
-  if (!keep || !hasLower(text)) return text.toLowerCase();
-  return text.replace(/[\p{L}\p{N}\p{M}]+/gu, (w) => (isAcronym(w) ? w : w.toLowerCase()));
+  if (!keep) return text.toLowerCase();
+  const typedMixed = hasLower(text);
+  return text.replace(/[\p{L}\p{N}\p{M}]+/gu, (w) => acronymForm(w, typedMixed) ?? w.toLowerCase());
 }
 
 const LETTER_AHEAD = /[^\n\p{L}\p{N}]*[\p{L}\p{N}]/uy;
 
 function titleCase(text: string, style: TitleStyle, keep: boolean): string {
-  const canKeep = keep && hasLower(text);
+  const typedMixed = hasLower(text);
   let i = 0;
   return text.replace(/[\p{L}\p{N}\p{M}]+(?:['’][\p{L}\p{M}]+)?/gu, (w, offset: number, full: string) => {
     const first = i++ === 0;
-    if (canKeep && isAcronym(w)) return w;
+    if (keep) {
+      const a = acronymForm(w, typedMixed);
+      if (a) return a;
+    }
     const lower = w.toLowerCase();
     LETTER_AHEAD.lastIndex = offset + w.length;
     const last = !LETTER_AHEAD.test(full);
@@ -291,10 +307,6 @@ export function convertCase(input: string, mode: CaseMode, opts: CaseOptions = {
     }
     case "inverse":
       return Array.from(text, (ch) => (ch === ch.toUpperCase() ? ch.toLowerCase() : ch.toUpperCase())).join("");
-    case "bold":
-      return styleLetters(text, false);
-    case "italic":
-      return styleLetters(text, true);
     default:
       return text.split("\n").map((line) => joinWords(caseWords(line), mode)).join("\n");
   }
@@ -305,17 +317,6 @@ function caseWords(line: string): string[] {
     ? line.replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, "$1 $2").replace(/(\p{Lu})(\p{Lu}\p{Ll})/gu, "$1 $2")
     : line;
   return (split.match(/[\p{L}\p{N}\p{M}]+/gu) ?? []).map((w) => w.toLowerCase());
-}
-
-function styleLetters(text: string, italic: boolean): string {
-  const [up, low, digit] = italic ? [0x1d434, 0x1d44e, 0] : [0x1d400, 0x1d41a, 0x1d7ce];
-  return Array.from(text, (ch) => {
-    const c = ch.codePointAt(0) as number;
-    if (c >= 65 && c <= 90) return String.fromCodePoint(up + c - 65);
-    if (c >= 97 && c <= 122) return italic && ch === "h" ? "\u210E" : String.fromCodePoint(low + c - 97);
-    if (digit && c >= 48 && c <= 57) return String.fromCodePoint(digit + c - 48);
-    return ch;
-  }).join("");
 }
 
 const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);

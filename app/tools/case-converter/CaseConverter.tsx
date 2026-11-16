@@ -321,7 +321,7 @@ export default function CaseConverter() {
     }
   };
 
-  const renderGroup = (group: "text" | "format" | "code", title: string) => (
+  const renderGroup = (group: "text" | "code", title: string) => (
     <div className="cc-group">
       <p className="cc-group-title">{title}</p>
       <div className="cc-modes" role="group" aria-label={title}>
@@ -386,7 +386,6 @@ export default function CaseConverter() {
         {/* ---------- 2. Pick a case (below the input) ---------- */}
         <div className="cc-choose">
           {renderGroup("text", "Text case")}
-          {renderGroup("format", "Formatting")}
           {renderGroup("code", "Code case")}
 
           {(showStyles || showAcronyms) && (

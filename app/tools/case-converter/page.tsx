@@ -1,17 +1,32 @@
 import ToolPage, { toolMetadata, type ToolContent } from "@/components/tools/ToolPage";
-import { CASE_DEMO, CASE_MODES, convertCase } from "@/lib/tools/text";
+import { CASE_DEMO, CASE_MODES, convertCase, type CaseMode } from "@/lib/tools/text";
 
 import "./case-converter.css";
 import CaseConverter from "./CaseConverter";
 
+const WHEN_TO_USE: Record<CaseMode, string> = {
+  upper: "Short labels, warnings, buttons",
+  lower: "Hashtags, casual text, cleaning up caps-lock text",
+  title: "Headlines, blog titles, book and article names",
+  sentence: "Emails, paragraphs, website buttons and menus",
+  capitalized: "Names, product listings, simple headings",
+  alternating: "Memes and jokes",
+  inverse: "Fixing text typed with caps lock on",
+  camel: "JavaScript variables and functions",
+  pascal: "Class names, React components",
+  snake: "Python, database columns, file names",
+  kebab: "URLs (slugs), CSS classes",
+  constant: "Environment variables, fixed settings",
+};
+
 const content: ToolContent = {
-  metaTitle: "Case Converter – UPPER, Title, camelCase, snake_case",
+  metaTitle: "Case Converter: Convert to UPPER, lower, Title and More",
   metaDescription:
-    "Free online case converter: UPPERCASE, Title Case (AP, APA, Chicago, MLA), camelCase, snake_case, bold and italic text. Live, private, no sign-up.",
+    "Convert text to UPPER, lower, Title Case, Sentence case, camelCase, snake_case and more. Free, instant and private. Your text never leaves your browser.",
   h1: "Free Online Case Converter",
   h1Accent: "Case Converter",
   intro:
-    "Convert text to 14 case formats as you type, from Title Case to camelCase and snake_case. Runs in your browser, so your text is never uploaded.",
+    "Convert text to 12 case formats as you type, from Title Case to camelCase and snake_case. Runs in your browser, so your text is never uploaded.",
 
   sections: [
     {
@@ -25,7 +40,7 @@ const content: ToolContent = {
         {
           title: "Text cases for writers",
           text: "Clean up headlines, captions, emails and copy that came in the wrong case.",
-          list: ["UPPER, lower and Sentence case", "Title Case in AP, APA, Chicago or MLA style", "Keeps acronyms like NASA", "Bold and italic for social posts"],
+          list: ["UPPER, lower and Sentence case", "Title Case in AP, APA, Chicago or MLA style", "Keeps acronyms like NASA"],
         },
         {
           icon: "bolt",
@@ -36,7 +51,7 @@ const content: ToolContent = {
         },
         {
           icon: "free",
-          title: "No sign-ups, limits or paywalls",
+          title: "No sign-ups or paywalls",
           text: "Free, with no account and no text limit. Your text stays on your device.",
           list: ["100% free", "Live conversion as you type", "Tap a case again to remove it", "Nothing uploaded", "Built for mobile"],
         },
@@ -49,7 +64,7 @@ const content: ToolContent = {
       title: "How to use the case converter",
       items: [
         { title: "Type or paste", text: "Write in the box or paste from Google Docs, Word or ChatGPT." },
-        { title: "Pick a case", text: "Choose a text case or a code case. It turns green and the result updates as you type. Tap it again to get your original text back. The preview shows all 14 formats at once." },
+        { title: "Pick a case", text: "Choose a text case or a code case. It turns green and the result updates as you type. Tap it again to get your original text back. The preview shows all 12 formats at once." },
         { title: "Copy or download", text: "Copy the result or save it as a .txt file. To change only part of your text, highlight that part and pick a case." },
       ],
     },
@@ -57,9 +72,13 @@ const content: ToolContent = {
       kind: "table",
       id: "cases",
       title: "All the cases, with examples",
-      intro: `Every case below is applied to the same text: “${CASE_DEMO}”.`,
-      head: ["Case", "Result"],
-      rows: CASE_MODES.map((c) => [c.label, convertCase(CASE_DEMO, c.mode)]),
+      intro: `Every case below is applied to the same text: “${CASE_DEMO}”. Title Case is shown in AP style with Keep acronyms on.`,
+      head: ["Case", "Result", "When to use it"],
+      rows: CASE_MODES.map((c) => [
+        c.label,
+        convertCase(CASE_DEMO, c.mode, { keepAcronyms: true }),
+        WHEN_TO_USE[c.mode],
+      ]),
     },
     {
       kind: "prose",
@@ -71,8 +90,8 @@ const content: ToolContent = {
         "Sentence case capitalises only the first letter of each sentence and the word “I”. Capitalized Case capitalises every word.",
       ],
       chips: [
-        "AP: “a tale from the moon” → A Tale From the Moon",
-        "Chicago: “a tale from the moon” → A Tale from the Moon",
+        "AP Title Case: “a tale from the moon” → A Tale From the Moon",
+        "Chicago Title Case: “a tale from the moon” → A Tale from the Moon",
         "“HELLO. HOW ARE YOU?” → Hello. How are you?",
       ],
     },
@@ -81,14 +100,11 @@ const content: ToolContent = {
       id: "code-case",
       title: "camelCase, snake_case and other code cases",
       paragraphs: [
-        "Code cases join words with no spaces so they can be used as variable, function, file or URL names. Spaces, punctuation and existing camelCase or snake_case are all treated as word breaks, so you can convert from one code case to another.",
-        "Each line is converted on its own, so you can paste a list of names and get a list back.",
+        "Code cases join words without spaces, for variable, file and URL names. Spaces, punctuation and existing camelCase or snake_case are treated as word breaks, and each line converts separately, so you can paste a whole list.",
       ],
       chips: [
         "camelCase: “user first name” → userFirstName",
-        "snake_case: “user first name” → user_first_name",
         "kebab-case: “user first name” → user-first-name",
-        "CONSTANT_CASE: “userFirstName” → USER_FIRST_NAME",
       ],
     },
     {
@@ -98,31 +114,22 @@ const content: ToolContent = {
       bullets: [
         "UPPER and lower case change every letter, including accented letters.",
         "Title, Sentence and Capitalized Case first lower the text. With “Keep acronyms” on, words already in capitals (NASA, SEO) are kept.",
+        "Sentence case lowers every word except the first, so names and places (like John, London, OpenAI) become lower case. Fix them after converting, or turn on ‘Keep acronyms’ to keep words like AI and NASA.",
         "Code cases keep only letters and numbers. Symbols and punctuation are removed.",
         "Line breaks are kept in every case.",
-        "Bold and italic use Unicode letters, so they paste into X, LinkedIn and Instagram. They are not real font styles, and screen readers may read them badly.",
-        "Bold or italic text can be converted again: every case turns those letters back to plain ones first.",
       ],
     },
   ],
 
   faq: [
     { question: "Is my text uploaded anywhere?", answer: "No. Everything is converted in your browser. Open your browser’s network tab while you type and you’ll see no requests carrying your text." },
-    { question: "Is it really free?", answer: "Yes, with no sign-up and no text limit." },
-    { question: "Do I need an account?", answer: "No. There is no login and nothing to install." },
+    { question: "Is it free, and do I need an account?", answer: "It is free, with no text limit. There is no login, no sign-up and nothing to install." },
     { question: "What is the difference between Title Case and Sentence case?", answer: "Title Case capitalises the main words of a headline. Sentence case capitalises only the first word of each sentence and the word “I”." },
-    { question: "Why did my acronym change to lower case?", answer: "Turn on “Keep acronyms”. It leaves words already in capitals, such as “NASA” or “SEO”, as typed. It cannot tell acronyms apart when your whole text is in capitals." },
     { question: "Which title case style should I use?", answer: "Use AP for news and most web headlines, APA for academic papers, and Chicago or MLA for books and essays. When you are not sure, check the guide your publisher or school follows." },
-    { question: "Can I convert only part of my text?", answer: "Yes. Highlight the part you want to change and pick a case. The rest of your text stays as it is. This is a one-time change, so use Undo to revert it." },
-    { question: "How do I remove a case?", answer: "Tap the green case again and your original text comes back. Undo and Redo also work, and so do Ctrl+Z and Ctrl+Shift+Z." },
-    { question: "Can I turn bold or italic text back to normal?", answer: "Yes. Tap the green Bold or Italic button again to restore your text, or pick any other case. Every case turns bold and italic letters back to plain ones first." },
-    { question: "What is the all cases preview?", answer: "A grid that shows your text in all 14 formats at once. Tap a card to select that case, or copy it straight from the card." },
-    { question: "What is camelCase?", answer: "camelCase joins words with no spaces and capitalises every word except the first, like “userFirstName”. PascalCase is the same but capitalises the first word too." },
-    { question: "What is the difference between snake_case and kebab-case?", answer: "snake_case joins words with underscores and kebab-case joins them with hyphens. Snake case is common in Python and databases. Kebab case is common in URLs and CSS." },
-    { question: "Can I convert a whole list at once?", answer: "Yes. Code cases convert each line separately, so a list of names comes back as a list of identifiers." },
-    { question: "Does it keep my line breaks?", answer: "Yes, in every case." },
-    { question: "Will I lose my text if I refresh?", answer: "No. It is saved in this browser until you press Clear." },
-    { question: "Does it work on my phone?", answer: "Yes, in any modern mobile browser." },
+    { question: "Why did an acronym or a name change to lower case?", answer: "Sentence case lowers every word except the first, so names like John or London become lower case. Turn on “Keep acronyms” to keep words already in capitals, such as NASA or AI. It cannot tell acronyms apart when your whole text is in capitals." },
+    { question: "Can I convert only part of my text, or undo a case?", answer: "Yes. Highlight the part you want to change and pick a case. The rest stays as it is. To remove a case, tap the green button again and your original text comes back. Undo and Redo also work, and so do Ctrl+Z and Ctrl+Shift+Z." },
+    { question: "What is the difference between camelCase, snake_case and kebab-case?", answer: "camelCase joins words with no spaces and capitalises every word except the first, like “userFirstName”. snake_case uses underscores and kebab-case uses hyphens. Snake case is common in Python and databases, kebab case in URLs and CSS." },
+    { question: "Will I lose my text if I refresh, and does it work on my phone?", answer: "Your text is saved in this browser until you press Clear. It works in any modern mobile browser." },
   ],
 
   // Posts shown as "From the AlloyPress blog". Slugs that do not exist are skipped; the section hides itself when empty.

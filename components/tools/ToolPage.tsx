@@ -26,13 +26,13 @@ export type ToolFaqItem = { question: string; answer: string };
 export type ToolSection =
   | { kind: "steps"; id?: string; title: string; items: { title: string; text: string }[] }
   | {
-      kind: "cards";
-      id?: string;
-      title: string;
-      intro?: string;
-      eyebrow?: string;
-      items: { title: string; text: string; icon?: ToolIcon; list?: string[]; highlight?: boolean; visual?: ReactNode }[];
-    }
+    kind: "cards";
+    id?: string;
+    title: string;
+    intro?: string;
+    eyebrow?: string;
+    items: { title: string; text: string; icon?: ToolIcon; list?: string[]; highlight?: boolean; visual?: ReactNode }[];
+  }
   /** paragraphs + optional rules (bullets) + optional examples ("input → result" chips) */
   | { kind: "prose"; id?: string; title: string; paragraphs?: string[]; bullets?: string[]; chips?: string[]; note?: string }
   | { kind: "table"; id?: string; title: string; intro?: string; head: string[]; rows: string[][]; note?: string }
@@ -216,8 +216,8 @@ function Section({ s, widgets }: { s: ToolSection; widgets: Record<string, React
               {s.paragraphs?.map((p) => <p key={p}>{p}</p>)}
             </div>
             <div className="tl-examples">
-              {examples.map((e) => (
-                <div key={e.input} className="tl-example">
+              {examples.map((e, index) => (
+                <div key={index} className="tl-example">
                   <span>{e.input}</span>
                   {e.result && <b>{e.result}</b>}
                 </div>
@@ -311,7 +311,7 @@ async function RelatedBlogs({ slugs }: { slugs: string[] }) {
         {posts.map((p) => {
           const cat = typeof p.category === "object" && p.category ? p.category : null;
           const img = imageUrl(p.featuredImage);
-          const desc = p.excerpt || p.meta?.description || "";
+          const desc = p.meta?.description || p.excerpt || "";
           return (
             <Link key={p.slug} href={postHref(cat?.slug, p.slug)} className="tl-card tl-blog">
               <span className="tl-blog-media">
@@ -446,7 +446,6 @@ export default function ToolPage({
           <div className="tl-faq-side">
             <h2 id="tl-faq-h" className="tl-h2">Frequently Asked Questions</h2>
             <p className="tl-muted">Free, private, runs in your browser.</p>
-            <Link href="/contact-us" className="btn-primary tl-faq-cta">Contact us</Link>
           </div>
           <div className="tl-faq-list">
             {content.faq.map((f, i) => (

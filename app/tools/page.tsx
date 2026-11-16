@@ -7,13 +7,11 @@ import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = {
   ...buildPageMetadata({
-  title: "Free AI & Writing Tools – No Sign-up | AlloyPress",
-  description:
-    "Free online tools for writing and working with AI: word counter, case converter, Markdown tools and more. No sign-up, and your text never leaves your browser.",
-  canonicalPath: "/tools",
+    title: "Free Online Tools for Text, AI & Files",
+    description: "Free word counter, case converter, AI text cleaner and more. No sign-up, and your text never leaves your device. Your privacy matters.",
+    canonicalPath: "/tools",
   }),
   // Hub is unlisted until enough tools are live (see HUB_MIN_TOOLS).
-  ...(hubIsPublic() ? {} : { robots: { index: false, follow: true } }),
 };
 
 export default function ToolsHub() {
@@ -22,7 +20,7 @@ export default function ToolsHub() {
     <div className="tl-page">
       <header className="tl-hero">
         <h1 className="tl-h1">Free <span className="tl-accent">AI &amp; Writing Tools</span></h1>
-        <p className="tl-lead">Simple tools that run in your browser. No sign-up, no uploads, no limits.</p>
+        <p className="tl-lead">Simple tools for text, AI, files and photos. Free, no sign-up. Your text and files stay on your device.</p>
       </header>
       <div className="tl-body">
         <ToolsGrid tools={tools} />

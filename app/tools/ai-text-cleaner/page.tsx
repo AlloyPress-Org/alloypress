@@ -4,9 +4,9 @@ import "./ai-text-cleaner.css";
 import AiTextCleaner from "./AiTextCleaner";
 
 const content: ToolContent = {
-  metaTitle: "AI Text Cleaner – Remove Markdown & Hidden Characters",
+  metaTitle: "AI Text Cleaner: Remove Markdown, Em Dashes & Hidden Characters",
   metaDescription:
-    "Free AI text cleaner. Remove Markdown, hidden characters, extra line breaks and em dashes from ChatGPT, Claude and Gemini text. Private, in your browser.",
+    "Clean ChatGPT, Claude or Gemini text: remove Markdown, hidden characters, em dashes & extra line breaks. Your wording stays the same. Free & quick cleaning.",
   h1: "Free AI Text Cleaner",
   h1Accent: "AI Text Cleaner",
   intro:
@@ -24,13 +24,13 @@ const content: ToolContent = {
           icon: "bolt",
           title: "Formatting leftovers",
           text: "Turn chat formatting into clean text.",
-          list: ["**bold**, ## headings and backticks", "Extra blank lines and double spaces", "Bullet lists to plain lists", "HTML to readable text"],
+          list: ["**bold**, ## headings and backticks", "Extra blank lines and double spaces", "Bullet lists to plain lists", "HTML to readable text", "Em dashes and curly quotes"],
         },
         {
           icon: "search",
           title: "Hidden characters",
           text: "Find characters you cannot see.",
-          list: ["Zero-width spaces and BOM", "Non-breaking and odd spaces", "Hidden direction marks", "Em dashes and curly quotes"],
+          list: ["Zero-width spaces and BOM", "Non-breaking and odd spaces", "Hidden direction marks", "Soft hyphens and control characters"],
           highlight: true,
         },
         {
@@ -48,9 +48,9 @@ const content: ToolContent = {
       title: "How to clean AI text",
       items: [
         { title: "Paste your text", text: "Paste from any AI chat, website or document. The cleaned version appears next to it as you type." },
-        { title: "Pick a preset", text: "Choose AI Text, Plain Text or Professional, or switch steps on and off yourself." },
-        { title: "Check the summary", text: "A line under the boxes shows exactly what was removed, such as hidden characters and Markdown symbols." },
-        { title: "Copy or download", text: "Copy plain text, copy with formatting, or save a .txt file." },
+        { title: "Pick a preset", text: "Choose AI Text, Plain Text or Professional. Open Customize steps to switch individual steps on and off." },
+        { title: "Check the summary", text: "A line under the boxes shows exactly what was removed. Turn on Show changes to see it marked in red." },
+        { title: "Copy or download", text: "Use Copy for plain text, Copy Formatted to keep headings, bold and lists, or Download for a .txt file." },
       ],
     },
     {
@@ -90,7 +90,7 @@ const content: ToolContent = {
         { title: "Where they come from", text: "Zero-width spaces are usually left over from web pages, documents and apps." },
         { title: "What they break", text: "They can break search, spell checks, code and form fields, which is why cleaning them is useful." },
         { title: "No invisible watermark", text: "Plain text from ChatGPT, Claude or Gemini has no hidden watermark made of invisible characters, so cleaning is not removing one." },
-        { title: "Statistical marks", text: "Some research systems mark text through word choice. A text cleaner cannot find or remove that, and this tool does not claim to." },
+        { title: "SynthID and word-choice marks", text: "Google applies SynthID text watermarking to Gemini output. It sits in the choice of words, not in hidden characters, so no text cleaner can remove it, and this tool does not claim to." },
       ],
     },
     {
@@ -110,14 +110,14 @@ const content: ToolContent = {
     { question: "Is my text uploaded anywhere?", answer: "No. Everything runs in your browser. Open your browser’s network tab while you type and you’ll see no requests carrying your text." },
     { question: "Does it change my wording?", answer: "No. It only removes formatting, hidden characters and extra whitespace. The optional intro and closing line removal deletes whole lines, and it is off by default." },
     { question: "Does it make AI text undetectable?", answer: "No, and it is not meant to. Detectors look at writing patterns, not formatting, so cleaning does not change the result. It is a cleanup tool." },
-    { question: "Is there a hidden watermark in ChatGPT, Claude or Gemini text?", answer: "Not one made of invisible characters. Hidden characters in pasted text usually come from web pages and apps. Statistical watermarks, which are based on word choice, cannot be removed by a cleaner." },
+    { question: "Is there a hidden watermark in ChatGPT, Claude or Gemini text?", answer: "Not one made of invisible characters. Hidden characters in pasted text usually come from web pages and apps. Google applies SynthID text watermarking to Gemini output, and it sits in word choice, so a cleaner cannot remove it." },
     { question: "What are zero-width characters?", answer: "Characters that take up no space on screen, like the zero-width space and the byte order mark (BOM). They can break search, code and forms, so it helps to remove them." },
     { question: "Why replace em dashes?", answer: "Some styles and systems prefer a plain hyphen or a comma. It is optional. Choose “Keep” if you want your dashes left alone." },
-    { question: "Can I keep my formatting when I copy?", answer: "Yes. “Copy with formatting” puts headings, bold text and lists on your clipboard as real formatting, so they keep their look in Word, Google Docs and email." },
+    { question: "Can I keep my formatting when I copy?", answer: "Yes. The “Copy Formatted” button puts headings, bold text and lists on your clipboard as real formatting, so they keep their look in Word, Google Docs and email. “Copy” gives plain text." },
     { question: "What do the presets do?", answer: "AI Text cleans the usual chat formatting. Plain Text also removes list markers and joins broken lines. Professional also removes intro and closing lines and repeated paragraphs. Custom is for your own choices." },
     { question: "Will it break my code or links?", answer: "No, when “Keep URLs, emails and code untouched” is on, which is the default. Code in backticks and code blocks, URLs and emails are left exactly as they are." },
-    { question: "Can I undo a change?", answer: "Your original text stays in the left box, so nothing is lost. If you use “Use as original”, press Undo to go back." },
-    { question: "Can I add my own rules?", answer: "Yes. Add up to six find and replace rules, with an optional regular expression switch." },
+    { question: "Can I undo a change?", answer: "Your original text stays in the left box and is never changed, so nothing is lost. Turn on “Show changes” to see exactly what was removed." },
+    { question: "Can I add my own rules?", answer: "Yes. Open “Customize steps” and add up to six find and replace rules, with an optional regular expression switch." },
   ],
 
   // Shown as cards at the end of the page. Slugs that do not exist are skipped. The humanizer slug is a guess (several spellings are listed): keep only the real one.

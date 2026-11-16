@@ -24,7 +24,7 @@ export type ToolDef = {
 export const TOOLS: ToolDef[] = [
   {
     slug: "word-counter",
-    name: "Word & Sentence Counter",
+    name: "Word Counter",
     shortDescription: "Words, characters, sentences, reading time and AI tokens.",
     category: "text",
     phase: 1,
@@ -36,7 +36,7 @@ export const TOOLS: ToolDef[] = [
   {
     slug: "case-converter",
     name: "Case Converter",
-    shortDescription: "Title (AP, APA, Chicago), camelCase, snake_case, bold and more.",
+    shortDescription: "Title (AP, APA, Chicago), camelCase, snake_case and more.",
     category: "text",
     phase: 1,
     status: "live",
@@ -147,9 +147,9 @@ export const TOOLS: ToolDef[] = [
 
 export const liveTools = () => TOOLS.filter((t) => t.status === "live");
 /** The /tools hub stays unlisted (no nav link, no sitemap, noindex) until this many tools are live. */
-export const HUB_MIN_TOOLS = 6;
+export const HUB_MIN_TOOLS = 4;
 export const hubIsPublic = () => liveTools().length >= HUB_MIN_TOOLS;
-export const hubTools = () => TOOLS.filter((t) => t.status !== "hidden");
+export const hubTools = () => TOOLS.filter((t) => t.status === "live");
 export const getTool = (slug: string) => TOOLS.find((t) => t.slug === slug);
 export const relatedTools = (tool: ToolDef) =>
   tool.related

@@ -1,6 +1,7 @@
 "use client";
 
-import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
   CLEAN_PRESETS,
@@ -14,11 +15,17 @@ import {
   type DashMode,
   type ListMode,
 } from "@/lib/tools/clean";
+import { diffTexts } from "@/lib/tools/diff";
 import { formatNumber as fmt } from "@/lib/tools/text";
 
 const STORAGE_KEY = "ap-tool:ai-text-cleaner:v1";
 /** Very large pastes are not saved (keeps typing fast and avoids storage quota errors). */
 const MAX_SAVED_CHARS = 200_000;
+/** Set this to the real URL of your "Best AI Humanizers" post. */
+const HUMANIZER_HREF = "/blogs/best-ai-humanizer";
+/** Invisible characters are shown as ▯ in "Show changes" so the removal is visible. */
+const INVISIBLE = /[\u200B-\u200F\u2060\u180E\uFEFF\u00AD\u202A-\u202E\u2066-\u2069\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]/g;
+const show = (s: string) => s.replace(INVISIBLE, "▯");
 
 const SAMPLE = [
   "Sure! Here’s a quick summary of the plan:",
@@ -99,6 +106,8 @@ export default function AiTextCleaner() {
   const [options, setOptions] = useState<CleanOptions>(DEFAULT_OPTIONS);
   const [preset, setPreset] = useState("ai");
   const [copied, setCopied] = useState<"" | "plain" | "rich">("");
+  const [customize, setCustomize] = useState(false);
+  const [showChanges, setShowChanges] = useState(false);
   const loaded = useRef(false);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -109,6 +118,7 @@ export default function AiTextCleaner() {
       setText(saved.text ?? "");
       setOptions({ ...DEFAULT_OPTIONS, ...saved.options, custom: Array.isArray(saved.options?.custom) ? saved.options.custom : [] });
       if (CLEAN_PRESETS.some((p) => p.id === saved.preset)) setPreset(saved.preset);
+      if (saved.preset === "custom") setCustomize(true);
     }
     loaded.current = true;
     return () => clearTimeout(copyTimer.current);
@@ -127,6 +137,29 @@ export default function AiTextCleaner() {
   const words = useMemo(() => (result.text.match(/\S+/g) || []).length, [result.text]);
   const hasText = text.length > 0;
 
+  // "Show changes": original text with the removed characters marked
+  const marked = useMemo(
+    () => (showChanges && deferred ? diffTexts(deferred, result.text, { ignoreCase: false, ignoreWhitespace: false }) : null),
+    [showChanges, deferred, result.text],
+  );
+
+  const renderMarked = () => {
+    if (!marked) return null;
+    const out: ReactNode[] = [];
+    marked.rows.forEach((r, i) => {
+      if (r.kind === "add") return;
+      if (r.kind === "eq") out.push(<span key={i}>{r.left.text}{"\n"}</span>);
+      else if (r.kind === "del") out.push(<span key={i}><del className="atc-del">{show(r.left.text) || "¶"}</del>{"\n"}</span>);
+      else out.push(
+        <span key={i}>
+          {(r.left.parts ?? []).map((p, j) => (p.changed ? <del key={j} className="atc-del">{show(p.text)}</del> : <span key={j}>{p.text}</span>))}
+          {"\n"}
+        </span>,
+      );
+    });
+    return out;
+  };
+
   const activeSteps =
     [options.hidden, options.html, options.markdown, options.spaces, options.blankLines, options.joinWrapped, options.quotes,
       options.introPhrases, options.closingPhrases, options.dupLines, options.dupParagraphs, options.trim].filter(Boolean).length +
@@ -141,6 +174,7 @@ export default function AiTextCleaner() {
     const p = CLEAN_PRESETS.find((x) => x.id === id);
     if (!p) return;
     if (id !== "custom") setOptions({ ...p.options, custom: options.custom });
+    if (id === "custom") setCustomize(true);
     setPreset(id);
   };
 
@@ -263,7 +297,7 @@ export default function AiTextCleaner() {
                   {copied === "plain" ? "Copied ✓" : "Copy"}
                 </button>
                 <button type="button" className="tl-btn" onClick={copyRich} disabled={!hasText} title="Keeps headings, bold and lists as real formatting">
-                  {copied === "rich" ? "Copied ✓" : "Formatted"}
+                  {copied === "rich" ? "Copied ✓" : "Copy Formatted"}
                 </button>
                 <button type="button" className="tl-btn" onClick={onDownload} disabled={!hasText}>Download</button>
               </div>
@@ -285,6 +319,22 @@ export default function AiTextCleaner() {
           <div className="atc-stat"><span>Words</span><b>{fmt(words)}</b></div>
         </div>
 
+        <div className="atc-togrow">
+          <button type="button" className={`atc-tog${showChanges ? " is-on" : ""}`} aria-pressed={showChanges} onClick={() => setShowChanges((v) => !v)} disabled={!hasText}>
+            Show changes
+          </button>
+          <button type="button" className="atc-tog" aria-expanded={customize} onClick={() => setCustomize((v) => !v)}>
+            {customize ? "Hide steps ▴" : "Customize steps ▾"}
+          </button>
+        </div>
+
+        {showChanges && hasText && (
+          <div className="atc-marked">
+            <p className="atc-hint">Your original text. Removed characters are in red. ▯ marks an invisible character.</p>
+            <div className="atc-marked-text">{renderMarked()}</div>
+          </div>
+        )}
+
         <div className="atc-changes" aria-live="polite">
           {!hasText && <span className="atc-hint">Paste your text, or try the Sample. Every change is listed here.</span>}
           {hasText && changes.length === 0 && <span className="atc-hint">Nothing to clean with these settings.</span>}
@@ -292,60 +342,67 @@ export default function AiTextCleaner() {
         </div>
       </div>
 
-      {/* ================= Options ================= */}
-      <section className="atc-card" aria-labelledby="atc-opts-h">
-        <div className="atc-opts-head">
-          <div>
-            <h2 id="atc-opts-h" className="atc-h">Cleaning options</h2>
-            <p className="atc-hint">{activeSteps} steps on. Switch any step on or off.</p>
-          </div>
-          <button type="button" className="tl-btn" onClick={resetSteps}>Reset steps</button>
-        </div>
+      <aside className="atc-promo">
+        <span>Need to rewrite AI text, not just clean it?</span>
+        <Link href={HUMANIZER_HREF}>See our tested Best AI Humanizers →</Link>
+      </aside>
 
-        <div className="atc-checks">
-          <Check label="Remove Markdown" hint="**bold**, ## headings, backticks, links" checked={options.markdown} onChange={(v) => set("markdown", v)} />
-          <Check label="Remove invisible characters" hint="Zero-width spaces, BOM, odd spaces" checked={options.hidden} onChange={(v) => set("hidden", v)} />
-          <Check label="Trim start and end" checked={options.trim} onChange={(v) => set("trim", v)} />
-          <Check label="Fix extra spaces and tabs" checked={options.spaces} onChange={(v) => set("spaces", v)} />
-          <Check label="Convert HTML to plain text" checked={options.html} onChange={(v) => set("html", v)} />
-          <Check label="Straighten quotes and ellipsis" hint="Curly quotes and … become plain ones" checked={options.quotes} onChange={(v) => set("quotes", v)} />
-          <Check label="Collapse extra blank lines" checked={options.blankLines} onChange={(v) => set("blankLines", v)} />
-          <Check label="Join broken lines" hint="Fixes hard-wrapped paragraphs" checked={options.joinWrapped} onChange={(v) => set("joinWrapped", v)} />
-          <Check label="Remove repeated lines" checked={options.dupLines} onChange={(v) => set("dupLines", v)} />
-          <Check label="Remove repeated paragraphs" checked={options.dupParagraphs} onChange={(v) => set("dupParagraphs", v)} />
-          <Check label="Remove intro line" hint="“Sure! Here’s …”" checked={options.introPhrases} onChange={(v) => set("introPhrases", v)} />
-          <Check label="Remove closing line" hint="“Let me know if …”" checked={options.closingPhrases} onChange={(v) => set("closingPhrases", v)} />
-          <Check label="Keep URLs, emails and code untouched" checked={options.preserve} onChange={(v) => set("preserve", v)} />
-        </div>
-
-        <div className="atc-selects">
-          <Select id="atc-lists" label="Lists" value={options.lists} onChange={(v: ListMode) => set("lists", v)}
-            items={[["keep", "Keep as written"], ["plain", "Plain list (- item)"], ["remove", "Remove markers"]]} />
-          <Select id="atc-dashes" label="Em and en dashes" value={options.dashes} onChange={(v: DashMode) => set("dashes", v)}
-            items={[["keep", "Keep"], ["hyphen", "Spaced hyphen ( - )"], ["comma", "Comma"]]} />
-        </div>
-
-        <div className="atc-rules">
-          <div className="atc-rules-head">
+      {/* ================= Options (hidden until "Customize steps") ================= */}
+      {customize && (
+        <section className="atc-card" aria-labelledby="atc-opts-h">
+          <div className="atc-opts-head">
             <div>
-              <h3 className="atc-h3">Custom rules (advanced)</h3>
-              <p className="atc-hint">Replace any text with your own. Leave “Replace with” empty to delete it.</p>
+              <h2 id="atc-opts-h" className="atc-h">Cleaning options</h2>
+              <p className="atc-hint">{activeSteps} steps on. Switch any step on or off.</p>
             </div>
-            <button type="button" className="tl-btn" disabled={options.custom.length >= MAX_CUSTOM_RULES}
-              onClick={() => set("custom", [...options.custom, { find: "", replace: "", regex: false }])}>
-              + Add rule
-            </button>
+            <button type="button" className="tl-btn" onClick={resetSteps}>Reset steps</button>
           </div>
-          {options.custom.map((r, i) => (
-            <div className="atc-rule" key={i}>
-              <input aria-label={`Find ${i + 1}`} placeholder="Find" value={r.find} onChange={(e) => setRule(i, { find: e.target.value })} />
-              <input aria-label={`Replace with ${i + 1}`} placeholder="Replace with" value={r.replace} onChange={(e) => setRule(i, { replace: e.target.value })} />
-              <label className="atc-rule-re"><input type="checkbox" checked={r.regex} onChange={(e) => setRule(i, { regex: e.target.checked })} /> Regex</label>
-              <button type="button" className="tl-btn" aria-label={`Remove rule ${i + 1}`} onClick={() => set("custom", options.custom.filter((_, n) => n !== i))}>✕</button>
+
+          <div className="atc-checks">
+            <Check label="Remove Markdown" hint="**bold**, ## headings, backticks, links" checked={options.markdown} onChange={(v) => set("markdown", v)} />
+            <Check label="Remove invisible characters" hint="Zero-width spaces, BOM, odd spaces" checked={options.hidden} onChange={(v) => set("hidden", v)} />
+            <Check label="Trim start and end" checked={options.trim} onChange={(v) => set("trim", v)} />
+            <Check label="Fix extra spaces and tabs" checked={options.spaces} onChange={(v) => set("spaces", v)} />
+            <Check label="Convert HTML to plain text" checked={options.html} onChange={(v) => set("html", v)} />
+            <Check label="Straighten quotes and ellipsis" hint="Curly quotes and … become plain ones" checked={options.quotes} onChange={(v) => set("quotes", v)} />
+            <Check label="Collapse extra blank lines" checked={options.blankLines} onChange={(v) => set("blankLines", v)} />
+            <Check label="Join broken lines" hint="Fixes hard-wrapped paragraphs" checked={options.joinWrapped} onChange={(v) => set("joinWrapped", v)} />
+            <Check label="Remove repeated lines" checked={options.dupLines} onChange={(v) => set("dupLines", v)} />
+            <Check label="Remove repeated paragraphs" checked={options.dupParagraphs} onChange={(v) => set("dupParagraphs", v)} />
+            <Check label="Remove intro line" hint="“Sure! Here’s …”" checked={options.introPhrases} onChange={(v) => set("introPhrases", v)} />
+            <Check label="Remove closing line" hint="“Let me know if …”" checked={options.closingPhrases} onChange={(v) => set("closingPhrases", v)} />
+            <Check label="Keep URLs, emails and code untouched" checked={options.preserve} onChange={(v) => set("preserve", v)} />
+          </div>
+
+          <div className="atc-selects">
+            <Select id="atc-lists" label="Lists" value={options.lists} onChange={(v: ListMode) => set("lists", v)}
+              items={[["keep", "Keep as written"], ["plain", "Plain list (- item)"], ["remove", "Remove markers"]]} />
+            <Select id="atc-dashes" label="Em and en dashes" value={options.dashes} onChange={(v: DashMode) => set("dashes", v)}
+              items={[["keep", "Keep"], ["hyphen", "Spaced hyphen ( - )"], ["comma", "Comma"]]} />
+          </div>
+
+          <div className="atc-rules">
+            <div className="atc-rules-head">
+              <div>
+                <h3 className="atc-h3">Custom rules (advanced)</h3>
+                <p className="atc-hint">Replace any text with your own. Leave “Replace with” empty to delete it.</p>
+              </div>
+              <button type="button" className="tl-btn" disabled={options.custom.length >= MAX_CUSTOM_RULES}
+                onClick={() => set("custom", [...options.custom, { find: "", replace: "", regex: false }])}>
+                + Add rule
+              </button>
             </div>
-          ))}
-        </div>
-      </section>
+            {options.custom.map((r, i) => (
+              <div className="atc-rule" key={i}>
+                <input aria-label={`Find ${i + 1}`} placeholder="Find" value={r.find} onChange={(e) => setRule(i, { find: e.target.value })} />
+                <input aria-label={`Replace with ${i + 1}`} placeholder="Replace with" value={r.replace} onChange={(e) => setRule(i, { replace: e.target.value })} />
+                <label className="atc-rule-re"><input type="checkbox" checked={r.regex} onChange={(e) => setRule(i, { regex: e.target.checked })} /> Regex</label>
+                <button type="button" className="tl-btn" aria-label={`Remove rule ${i + 1}`} onClick={() => set("custom", options.custom.filter((_, n) => n !== i))}>✕</button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

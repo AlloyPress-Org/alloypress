@@ -5,86 +5,15 @@ import "./word-counter.css";
 import WordCounter, { PageEstimator } from "./WordCounter";
 
 const content: ToolContent = {
-  metaTitle: "Word Counter, Character & Sentence Counter – Free Online Tool",
+  metaTitle: "Free Word Counter: Count Words, Characters & Sentences",
   metaDescription:
-    "Free word counter, character counter and sentence counter. See words, characters, sentences, reading time and AI tokens as you type. No sign-up, nothing uploaded.",
-  h1: "Free Word & Character Counter",
-  h1Accent: "Character Counter",
+    "Count words, characters (with and without spaces) and sentences as you type. See reading time, platform limits and AI tokens. Free, no sign-up.",
+  h1: "Free Word Counter",
+  h1Accent: "Free Word Counter",
   intro:
     "Count words, characters, sentences and AI tokens as you type. Runs in your browser, so your text is never uploaded.",
 
   sections: [
-    {
-      kind: "cards",
-      id: "why",
-      eyebrow: "Why use it",
-      title: "The Writing Limits Every Writer Faces",
-      intro:
-        "Turning a draft into something you can publish is a hygiene job. This counter shows every limit at once, so you can trim, fix and publish smarter.",
-      items: [
-        {
-          icon: "search",
-          title: "SEO & meta limits",
-          text: "Titles and descriptions get cut off in search when they run long. Check how much room you have before you publish.",
-          list: ["SEO title: about 60 characters", "Meta description: about 160", "See the cut-off before Google does"],
-        },
-        {
-          icon: "bolt",
-          title: "One counter, everything at once",
-          text: "Words, characters, sentences, reading time and AI tokens update together. No switching tools, no manual counting.",
-          list: ["Words and characters", "Sentences and reading time", "AI token estimate"],
-          highlight: true,
-        },
-        {
-          icon: "free",
-          title: "No sign-ups, limits or paywalls",
-          text: "Many counters ask you to log in or cap how much text you can paste. This one is free, with no account and no word limit.",
-          list: ["100% free", "No login or sign-up", "No word limit", "Nothing uploaded", "Works on any device"],
-        },
-      ],
-    },
-    { kind: "ad" },
-    {
-      kind: "cards",
-      id: "features",
-      title: "Everything You Need for Cleaner Writing",
-      intro: "A word counter, character counter and sentence counter in one place. Paste your text, check the limits and trim until it fits.",
-      items: [
-        {
-          title: "Live platform limits",
-          text: "Bars for X, SEO titles, meta descriptions, Instagram, LinkedIn and YouTube show how close you are.",
-          visual: <div className="wc-bars">{[42, 66, 92, 54, 78].map((h) => <i key={h} style={{ height: `${h}%` }} />)}</div>,
-        },
-        {
-          title: "Sentence counter & length check",
-          text: "See how many sentences you have, the average length and which sentences run too long.",
-          visual: (
-            <div className="wc-sentbars">
-              <div><span style={{ width: "34%" }} /><b>8 words</b></div>
-              <div><span style={{ width: "58%" }} /><b>14 words</b></div>
-              <div className="is-long"><span style={{ width: "96%" }} /><b>31 · long</b></div>
-            </div>
-          ),
-        },
-        {
-          title: "Keyword insights",
-          text: "Your most-used words with count and density. Switch common words off to focus on real keywords.",
-          visual: (
-            <div className="wc-kwvis">
-              <div>design<span style={{ width: "92%" }} /><em>5.7%</em></div>
-              <div>writing<span style={{ width: "68%" }} /><em>3.8%</em></div>
-              <div>tools<span style={{ width: "46%" }} /><em>2.6%</em></div>
-              <div>content<span style={{ width: "30%" }} /><em>1.9%</em></div>
-            </div>
-          ),
-        },
-        {
-          title: "AI token estimate",
-          text: "A quick estimate before you paste into ChatGPT, Claude or Gemini.",
-          visual: <div className="wc-tokens">{["Write", "a", "short", "prompt", "for", "AI", "tools"].map((t) => <span key={t}>{t}</span>)}</div>,
-        },
-      ],
-    },
     {
       kind: "steps",
       id: "how",
@@ -95,6 +24,35 @@ const content: ToolContent = {
         { title: "Check limits", text: "Pick a platform or set a word goal, then trim until it fits." },
       ],
     },
+    {
+      kind: "cards",
+      id: "why",
+      eyebrow: "Why use it",
+      title: "Why use this word counter",
+      intro: "Paste your text, see every count and limit at once, and trim until it fits.",
+      items: [
+        {
+          icon: "search",
+          title: "Every limit at once",
+          text: "Titles and descriptions get cut off in search when they run long. Check how much room you have before you publish.",
+          list: ["SEO title: about 60 characters", "Meta description: 155–160 characters", "X, LinkedIn, Instagram and YouTube limits"],
+        },
+        {
+          icon: "bolt",
+          title: "Live counts as you type",
+          text: "Everything updates together, so there is no switching tools and no manual counting.",
+          list: ["Words and characters", "Sentences and reading time", "AI token estimate", "Keywords and long sentences"],
+          highlight: true,
+        },
+        {
+          icon: "free",
+          title: "Free and private",
+          text: "No account and no word limit. Your text stays in your browser.",
+          list: ["100% free", "No login or sign-up", "No word limit", "Nothing uploaded"],
+        },
+      ],
+    },
+    { kind: "ad" },
     {
       kind: "prose",
       id: "characters",

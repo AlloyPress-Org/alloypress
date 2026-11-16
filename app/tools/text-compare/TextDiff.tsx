@@ -21,6 +21,14 @@ import { analyzeText, formatNumber as fmt } from "@/lib/tools/text";
 const STORAGE_KEY = "ap-tool:text-diff:v1";
 const ACCEPT = ".txt,.md,.csv,.tsv,.json,.xml,.html,.htm,.css,.js,.jsx,.ts,.tsx,.py,.java,.c,.cpp,.cs,.go,.rb,.php,.sql,.yml,.yaml,.log,.ini,.cfg,.env,.sh,.rtf,.docx,text/*";
 
+const UPLOAD_TYPES = [
+    { label: "Text & Markdown", ext: ".txt, .md, .log", accept: ".txt,.md,.log,.rtf,text/plain" },
+    { label: "Word document", ext: ".docx", accept: ".docx" },
+    { label: "Data files", ext: ".csv, .tsv, .json, .xml, .yml", accept: ".csv,.tsv,.json,.xml,.yml,.yaml,.ini,.cfg,.env" },
+    { label: "Code files", ext: ".html, .css, .js, .ts, .py, .java…", accept: ".html,.htm,.css,.js,.jsx,.ts,.tsx,.py,.java,.c,.cpp,.cs,.go,.rb,.php,.sql,.sh" },
+    { label: "All supported files", ext: "", accept: ACCEPT },
+];
+
 const SAMPLE_A = [
     "Our team meets every Monday at 10 AM.",
     "Please send your weekly report before the meeting.",
@@ -99,6 +107,22 @@ export default function TextDiff() {
     const [banner, setBanner] = useState("");
     const [copied, setCopied] = useState("");
     const [drag, setDrag] = useState<"a" | "b" | "">("");
+    const [menu, setMenu] = useState<"a" | "b" | "">("");
+
+    // Close the upload menu on outside click or Escape
+    useEffect(() => {
+        if (!menu) return;
+        const onDown = (e: PointerEvent) => {
+            if (!(e.target as Element).closest?.(".tc-upwrap")) setMenu("");
+        };
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenu(""); };
+        document.addEventListener("pointerdown", onDown);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("pointerdown", onDown);
+            document.removeEventListener("keydown", onKey);
+        };
+    }, [menu]);
     const loaded = useRef(false);
     const fromShare = useRef(false);
     const fileA = useRef<HTMLInputElement>(null);
@@ -152,7 +176,17 @@ export default function TextDiff() {
     const sb = useMemo(() => analyzeText(db), [db]);
     const linesA = useMemo(() => splitLines(da).length, [da]);
     const linesB = useMemo(() => splitLines(db).length, [db]);
+
     useEffect(() => setCur(null), [diff]);
+    const counts = useMemo(() => {
+        let changed = 0, added = 0, removed = 0;
+        for (const r of diff.rows) {
+            if (r.kind === "chg") changed++;
+            else if (r.kind === "add") added++;
+            else if (r.kind === "del") removed++;
+        }
+        return { changed, added, removed };
+    }, [diff]);
 
     const hasBoth = a.length > 0 && b.length > 0;
     const hasAny = a.length > 0 || b.length > 0;
@@ -226,6 +260,14 @@ export default function TextDiff() {
             </button>
         ) : null;
 
+    const pickType = (side: "a" | "b", accept: string) => {
+        const el = (side === "a" ? fileA : fileB).current;
+        if (!el) return;
+        el.accept = accept;
+        setMenu("");
+        el.click();
+    };
+
     const swap = () => { editA(b); editB(a); };
     const clearAll = () => { editA(""); editB(""); setFileMsg(null); };
     const sample = () => { editA(SAMPLE_A); editB(SAMPLE_B); };
@@ -241,7 +283,7 @@ export default function TextDiff() {
     const copyLink = async () => {
         const code = await encodeShare({ a, b, ic: opts.ignoreCase, iw: opts.ignoreWhitespace });
         if (code.length > MAX_SHARE_CODE) {
-            setShare({ ok: false, text: "These texts are too long to fit in a link. Use Copy diff or Download instead." });
+            setShare({ ok: false, text: "Too long for a link. Use Copy diff or Download instead." });
             return;
         }
         const url = `${window.location.origin}${window.location.pathname}#d=${code}`;
@@ -315,10 +357,24 @@ export default function TextDiff() {
                 <div className="tc-head">
                     <label htmlFor={`tc-${side}`} className="tc-label"><span className={`tc-dot ${isA ? "tc-dot--del" : "tc-dot--add"}`} />{isA ? "Original text" : "Changed text"}</label>
                     <div className="tc-actions">
-                        <button type="button" className="tl-btn tc-up" onClick={() => ref.current?.click()}>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4" /><path d="M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" /></svg>
-                            Upload file
-                        </button>
+                        <div className="tc-upwrap">
+                            <button type="button" className="tl-btn tc-up" aria-haspopup="menu" aria-expanded={menu === side} onClick={() => setMenu(menu === side ? "" : side)}>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4" /><path d="M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" /></svg>
+                                Upload file
+                            </button>
+                            {menu === side && (
+                                <div className="tc-menu" role="menu">
+                                    <p className="tc-menu-t">Choose a file type</p>
+                                    {UPLOAD_TYPES.map((t) => (
+                                        <button key={t.label} type="button" role="menuitem" className="tc-menu-i" onClick={() => pickType(side, t.accept)}>
+                                            <b>{t.label}</b>
+                                            {t.ext && <span>{t.ext}</span>}
+                                        </button>
+                                    ))}
+                                    <p className="tc-menu-n">PDF and old .doc are not supported. Max 5 MB.</p>
+                                </div>
+                            )}
+                        </div>
                         <button type="button" className="tl-btn" onClick={pasteInto(edt)}>Paste</button>
                         <button type="button" className="tl-btn" onClick={() => copy(`in-${side}`, value)} disabled={!value}>{label(`in-${side}`, "Copy")}</button>
                         <button type="button" className="tl-btn" onClick={() => edt("")} disabled={!value}>Clear</button>
@@ -358,6 +414,7 @@ export default function TextDiff() {
                     </div>
                     <button type="button" className="tl-btn tl-btn--primary tc-share" onClick={copyLink} disabled={!hasBoth}>Copy share link</button>
                 </div>
+                <p className="tc-types">Upload works with .txt, .md, .csv, .json, .docx and code files (.html, .css, .js, .ts, .py and more). Up to 5 MB.</p>
                 {fileMsg && <p className={`tc-msg${fileMsg.ok ? " is-ok" : " is-bad"}`} role="status">{fileMsg.text}</p>}
                 {share && <p className={`tc-msg${share.ok ? " is-ok" : " is-bad"}`} role="status">{share.text}</p>}
 
@@ -386,8 +443,9 @@ export default function TextDiff() {
                 {hasAny ? (
                     <>
                         <div className="tc-summary" aria-live="polite">
-                            <span className="tc-badge tc-badge--del">−{fmt(diff.removed)} removed</span>
-                            <span className="tc-badge tc-badge--add">+{fmt(diff.added)} added</span>
+                            <span className="tc-badge">
+                                <b>{fmt(counts.changed)}</b> {counts.changed === 1 ? "line" : "lines"} changed · <b className="is-up">{fmt(counts.added)}</b> added · <b className="is-down">{fmt(counts.removed)}</b> removed
+                            </span>
                             <span className="tc-badge">Words {fmt(sa.words)} → {fmt(sb.words)} <b className={wordDelta > 0 ? "is-up" : wordDelta < 0 ? "is-down" : ""}>({delta(wordDelta)})</b></span>
                             <span className="tc-badge">Characters {fmt(sa.characters)} → {fmt(sb.characters)} <b className={charDelta > 0 ? "is-up" : charDelta < 0 ? "is-down" : ""}>({delta(charDelta)})</b></span>
                         </div>
@@ -408,12 +466,12 @@ export default function TextDiff() {
 
                         <div className="tc-sides">
                             <div className="tc-side tc-side--del">
-                                <span className="tc-side-t">−{fmt(diff.removed)} removals</span>
+                                <span className="tc-side-t">Original</span>
                                 <span className="tc-side-n">{fmt(linesA)} {linesA === 1 ? "line" : "lines"}</span>
                                 <button type="button" className="tl-btn" onClick={() => copy("res-a", a)} disabled={!a}>{label("res-a", "Copy")}</button>
                             </div>
                             <div className="tc-side tc-side--add">
-                                <span className="tc-side-t">+{fmt(diff.added)} additions</span>
+                                <span className="tc-side-t">Changed</span>
                                 <span className="tc-side-n">{fmt(linesB)} {linesB === 1 ? "line" : "lines"}</span>
                                 <button type="button" className="tl-btn" onClick={() => copy("res-b", b)} disabled={!b}>{label("res-b", "Copy")}</button>
                             </div>
