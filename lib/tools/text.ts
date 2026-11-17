@@ -316,7 +316,7 @@ function caseWords(line: string): string[] {
   const split = /\p{Ll}/u.test(line)
     ? line.replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, "$1 $2").replace(/(\p{Lu})(\p{Lu}\p{Ll})/gu, "$1 $2")
     : line;
-  return (split.match(/[\p{L}\p{N}\p{M}]+/gu) ?? []).map((w) => w.toLowerCase());
+  return split.split(/[\s_-]+/).filter(Boolean).map((w) => w.toLowerCase());
 }
 
 const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);

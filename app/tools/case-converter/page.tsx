@@ -99,7 +99,7 @@ const content: ToolContent = {
       id: "code-case",
       title: "camelCase, snake_case and other code cases",
       paragraphs: [
-        "Code cases join words without spaces, for variable, file and URL names. Spaces, punctuation and existing camelCase or snake_case are treated as word breaks, and each line converts separately, so you can paste a whole list.",
+        "Code cases join words without spaces, for variable, file and URL names. Spaces, hyphens, underscores and existing camelCase or snake_case are treated as word breaks, and each line converts separately, so you can paste a whole list.",
       ],
       chips: [
         "camelCase: “user first name” → userFirstName",
@@ -114,7 +114,7 @@ const content: ToolContent = {
         "UPPER and lower case change every letter, including accented letters.",
         "Title, Sentence and Capitalized Case first lower the text. With “Keep acronyms” on, words already in capitals (NASA, SEO) are kept.",
         "Sentence case lowers every word except the first, so names and places (like John, London, OpenAI) become lower case. Fix them after converting, or turn on ‘Keep acronyms’ to keep words like AI and NASA.",
-        "Code cases keep only letters and numbers. Symbols and punctuation are removed.",
+        "Code cases split words at spaces, underscores and hyphens. Other symbols stay as you typed them.",
         "Line breaks are kept in every case.",
       ],
     },
