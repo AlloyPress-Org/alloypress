@@ -171,8 +171,8 @@ export type TitleStyle = "ap" | "apa" | "chicago" | "mla";
 export type CaseOptions = { titleStyle?: TitleStyle; keepAcronyms?: boolean };
 
 export const TITLE_STYLES: { id: TitleStyle; label: string; note: string }[] = [
-  { id: "ap", label: "AP", note: "Words of 4+ letters are capitalised. Short a, an, the, and, but, or, for, nor and prepositions (up to 3 letters) stay lower case." },
-  { id: "apa", label: "APA", note: "Same rule as AP: words of 4+ letters are capitalised, short minor words stay lower case." },
+  { id: "ap", label: "AP", note: "Words of 4+ letters are capitalized. Short a, an, the, and, but, or, for, nor and prepositions (up to 3 letters) stay lower case." },
+  { id: "apa", label: "APA", note: "Same rule as AP: words of 4+ letters are capitalized, short minor words stay lower case." },
   { id: "chicago", label: "Chicago", note: "Articles, coordinating conjunctions and all prepositions stay lower case, whatever their length." },
   { id: "mla", label: "MLA", note: "Like Chicago: articles, coordinating conjunctions and prepositions stay lower case." },
 ];

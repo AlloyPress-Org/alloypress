@@ -31,7 +31,6 @@ const content: ToolContent = {
           title: "Made for everyday use",
           text: "Simple controls for the checks people actually do.",
           list: ["Upload files or drag and drop", "Copy each text, both texts or the diff", "Copy share link", "Ignore case and whitespace"],
-          highlight: true,
         },
         {
           icon: "lock",
@@ -113,7 +112,6 @@ const content: ToolContent = {
     { question: "How are changed, added and removed lines counted?", answer: "By line. An edited line is counted as changed. A line only in the changed text is counted as added, and a line only in the original is counted as removed." },
     { question: "What do the word and character numbers mean?", answer: "They compare the whole original and changed texts, so you can see at a glance if the text got longer or shorter, for example +5 words." },
     { question: "Can I compare code?", answer: "Yes, it works on any plain text, including code. It is not a Git tool, so it does not know about files or branches." },
-        { question: "Can I compare Word or PDF files?", answer: "Word .docx files, yes: the text is read in your browser and loaded into the box. Old .doc files and PDFs are not supported, so copy the text from them and paste it. Plain text, .md, .csv, .json and code files all work, up to 5 MB." },
     { question: "Will I lose my text if I refresh?", answer: "No. Your two texts and options are saved in this browser until you press Clear all." },
   ],
 

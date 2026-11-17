@@ -122,3 +122,13 @@
 }
 .atc-promo a { color: var(--brand); font-weight: 750; text-decoration: none; }
 .atc-promo a:hover { text-decoration: underline; }
+
+
+/* Same color for all feature cards (no "selected" look) */
+.tl-feature.is-highlight { background: var(--card); border-color: var(--border); box-shadow: var(--shadow-sm); }
+.tl-feature.is-highlight h3,
+.tl-feature.is-highlight .tl-checklist li { color: var(--text-primary); }
+.tl-feature.is-highlight p { color: var(--text-secondary); opacity: 1; }
+.tl-feature.is-highlight .tl-ic { color: var(--brand); background: var(--brand-soft); border-color: var(--brand-subtle); }
+.tl-feature.is-highlight .tl-checklist { border-top-color: var(--border-soft); }
+.tl-feature.is-highlight .tl-tick { color: var(--brand); }

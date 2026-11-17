@@ -13,7 +13,7 @@ import { postHref } from "@/lib/post-href";
 import { SITE_URL } from "@/lib/seo/constants";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 import { createBreadcrumbSchema, createFAQSchema } from "@/lib/seo/schema";
-import { getTool, hubIsPublic, relatedTools } from "@/lib/tools/registry";
+import { getTool, relatedTools } from "@/lib/tools/registry";
 
 /* =========================================================
    Content types (one object per tool, lives in its page.tsx)
@@ -36,6 +36,16 @@ export type ToolSection =
   /** paragraphs + optional rules (bullets) + optional examples ("input → result" chips) */
   | { kind: "prose"; id?: string; title: string; paragraphs?: string[]; bullets?: string[]; chips?: string[]; note?: string }
   | { kind: "table"; id?: string; title: string; intro?: string; head: string[]; rows: string[][]; note?: string }
+  /** Two columns: what stays safe vs. what to keep in mind */
+  | {
+    kind: "dos";
+    id?: string;
+    title: string;
+    intro?: string;
+    good: { title: string; items: string[] };
+    care: { title: string; items: string[] };
+    note?: string;
+  }
   /** `widget` is a key into the `widgets` prop that the tool's page.tsx passes to <ToolPage>. */
   | { kind: "widget"; id?: string; title: string; intro?: string; widget: string }
   | { kind: "ad" };
@@ -95,6 +105,15 @@ function Icon({ name }: { name: ToolIcon }) {
   );
 }
 
+/** Schema.org applicationCategory per tool category. */
+const SCHEMA_CATEGORY: Record<string, string> = {
+  text: "UtilitiesApplication",
+  markdown: "UtilitiesApplication",
+  file: "UtilitiesApplication",
+  image: "MultimediaApplication",
+  ai: "DeveloperApplication", // CLAUDE.md generator. Add a per-slug override if another "ai" tool is not for developers.
+};
+
 /** Decorative icon per tool category, used on the "More free tools" cards. */
 const RELATED_ICON: Record<string, ToolIcon> = { text: "chart", markdown: "device", ai: "bolt", file: "limit", image: "device" };
 
@@ -109,10 +128,10 @@ function Tick() {
 
 /* ---------- Ads (2 slots only) ----------
    Slot 1 = sticky sidebar that follows the page until the FAQ.
-   Slot 2 = one in-content ad. Both stay away from inputs and buttons. */
+   Slot 2 = one in-content ad (disabled for now). Both stay away from inputs and buttons. */
 
 const AD_SLOTS: Record<number, string | undefined> = {
-  1: process.env.NEXT_PUBLIC_ADSENSE_SLOT_TOOL_1,
+  1: process.env.NEXT_PUBLIC_ADSENSE_SIDEBAR_SLOT_ID,//NEXT_PUBLIC_ADSENSE_SLOT_TOOL_1,
   2: process.env.NEXT_PUBLIC_ADSENSE_SLOT_TOOL_2,
 };
 
@@ -138,7 +157,7 @@ function ToolAd({ slot, tall = false }: { slot: 1 | 2; tall?: boolean }) {
 function Section({ s, widgets }: { s: ToolSection; widgets: Record<string, ReactNode> }) {
   switch (s.kind) {
     case "ad":
-      return null;
+      return null; // slot 2 disabled for now
 
     case "steps":
       return (
@@ -243,6 +262,25 @@ function Section({ s, widgets }: { s: ToolSection; widgets: Record<string, React
                 ))}
               </tbody>
             </table>
+          </div>
+          {s.note && <p className="tl-note">{s.note}</p>}
+        </section>
+      );
+
+    case "dos":
+      return (
+        <section className="tl-section" id={s.id}>
+          <h2 className="tl-h2">{s.title}</h2>
+          {s.intro && <p className="tl-muted">{s.intro}</p>}
+          <div className="tl-dos">
+            <div className="tl-dos-col is-good">
+              <h3><span className="tl-dos-ic" aria-hidden="true">✓</span>{s.good.title}</h3>
+              <ul>{s.good.items.map((t) => <li key={t}>{t}</li>)}</ul>
+            </div>
+            <div className="tl-dos-col is-care">
+              <h3><span className="tl-dos-ic" aria-hidden="true">!</span>{s.care.title}</h3>
+              <ul>{s.care.items.map((t) => <li key={t}>{t}</li>)}</ul>
+            </div>
           </div>
           {s.note && <p className="tl-note">{s.note}</p>}
         </section>
@@ -362,13 +400,15 @@ export default function ToolPage({
 
   const graph = [
     {
-      "@type": "SoftwareApplication",
+      "@type": "WebApplication",
       name: tool.name,
       url,
-      applicationCategory: "UtilitiesApplication",
-      operatingSystem: "Any (web browser)",
+      applicationCategory: SCHEMA_CATEGORY[tool.category] ?? "UtilitiesApplication",
+      operatingSystem: "Any",
       description: content.metaDescription,
+      isAccessibleForFree: true,
       offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      publisher: { "@type": "Organization", name: "AlloyPress", url: SITE_URL },
     },
     createFAQSchema(
       content.faq.map((f) => ({ question: f.question, answer: f.answer })),
@@ -377,7 +417,7 @@ export default function ToolPage({
     createBreadcrumbSchema(
       [
         { name: "Home", url: "/" },
-        ...(hubIsPublic() ? [{ name: "Free tools", url: "/tools" }] : []),
+        { name: "Free Tools", url: "/tools" },
         { name: tool.name, url: `/tools/${slug}` },
       ],
       url,
@@ -394,7 +434,7 @@ export default function ToolPage({
       {/* Heading + paragraph, then the tool starts */}
       <header className="tl-hero">
         <nav className="tl-crumbs" aria-label="Breadcrumb">
-          <Link href="/">Home</Link> / {hubIsPublic() && (<><Link href="/tools">Free tools</Link> / </>)}<span>{tool.name}</span>
+          <Link href="/">Home</Link> / <Link href="/tools">Free Tools</Link> / <span>{tool.name}</span>
         </nav>
         <h1 className="tl-h1">
           {before}

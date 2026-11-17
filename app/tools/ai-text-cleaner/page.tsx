@@ -16,7 +16,7 @@ const content: ToolContent = {
     {
       kind: "cards",
       id: "why",
-      eyebrow: "What it cleans",
+      eyebrow: "Why use it",
       title: "Make AI Text Ready to Paste Anywhere",
       intro: "AI chat tools copy a lot of formatting you cannot see or do not want. Clean it in one click, then paste into Word, Google Docs, your CMS or an email.",
       items: [
@@ -31,7 +31,6 @@ const content: ToolContent = {
           title: "Hidden characters",
           text: "Find characters you cannot see.",
           list: ["Zero-width spaces and BOM", "Non-breaking and odd spaces", "Hidden direction marks", "Soft hyphens and control characters"],
-          highlight: true,
         },
         {
           icon: "lock",

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Check, Copy } from "lucide-react";
+import { liveTools } from "@/lib/tools/registry";
 import {
   FaYoutube,
   FaInstagram,
@@ -65,6 +66,8 @@ const brandLinks: FooterLink[] = [
   { label: "Submit Your AI Tool", href: "/submit-your-ai-tool" },
   { label: "AI Testing Partnership", href: "/testing-partner" },
 ];
+
+const toolLinks: FooterLink[] = liveTools().map((t) => ({ label: t.name, href: `/tools/${t.slug}` }));
 
 /* Start here: label -> category page, title -> article */
 const startHereLinks = [
@@ -331,6 +334,8 @@ export default function Footer() {
 
             {/* Learn */}
             <FooterColumn title="Learn" links={learnLinks} />
+
+            <FooterColumn title="Free Tools" links={toolLinks} />
 
             {/* Company + For AI Brands */}
             <div className="footer-stack">

@@ -47,7 +47,6 @@ const content: ToolContent = {
           title: "Code cases for developers",
           text: "Turn a phrase into a variable, file or URL name without retyping it.",
           list: ["camelCase and PascalCase", "snake_case and kebab-case", "CONSTANT_CASE"],
-          highlight: true,
         },
         {
           icon: "free",
@@ -85,9 +84,9 @@ const content: ToolContent = {
       id: "title-case",
       title: "Title Case: AP, APA, Chicago and MLA",
       paragraphs: [
-        "Title Case capitalises the main words of a headline. Style guides disagree on the small words. AP and APA capitalise every word of four letters or more and keep short articles, conjunctions and prepositions lower case. Chicago and MLA keep all prepositions lower case, whatever their length.",
-        "The first and last word, and the first word after a colon, are always capitalised. Turn on “Keep acronyms” to leave words like NASA or SEO as typed. It only works when your text is not already all in capitals.",
-        "Sentence case capitalises only the first letter of each sentence and the word “I”. Capitalized Case capitalises every word.",
+        "Title Case capitalizes the main words of a headline. Style guides disagree on the small words. AP and APA capitalize every word of four letters or more and keep short articles, conjunctions and prepositions lower case. Chicago and MLA keep all prepositions lower case, whatever their length.",
+        "The first and last word, and the first word after a colon, are always capitalized. Turn on “Keep acronyms” to leave words like NASA or SEO as typed. It only works when your text is not already all in capitals.",
+        "Sentence case capitalizes only the first letter of each sentence and the word “I”. Capitalized Case capitalizes every word.",
       ],
       chips: [
         "AP Title Case: “a tale from the moon” → A Tale From the Moon",
@@ -124,11 +123,11 @@ const content: ToolContent = {
   faq: [
     { question: "Is my text uploaded anywhere?", answer: "No. Everything is converted in your browser. Open your browser’s network tab while you type and you’ll see no requests carrying your text." },
     { question: "Is it free, and do I need an account?", answer: "It is free, with no text limit. There is no login, no sign-up and nothing to install." },
-    { question: "What is the difference between Title Case and Sentence case?", answer: "Title Case capitalises the main words of a headline. Sentence case capitalises only the first word of each sentence and the word “I”." },
+    { question: "What is the difference between Title Case and Sentence case?", answer: "Title Case capitalizes the main words of a headline. Sentence case capitalizes only the first word of each sentence and the word “I”." },
     { question: "Which title case style should I use?", answer: "Use AP for news and most web headlines, APA for academic papers, and Chicago or MLA for books and essays. When you are not sure, check the guide your publisher or school follows." },
     { question: "Why did an acronym or a name change to lower case?", answer: "Sentence case lowers every word except the first, so names like John or London become lower case. Turn on “Keep acronyms” to keep words already in capitals, such as NASA or AI. It cannot tell acronyms apart when your whole text is in capitals." },
     { question: "Can I convert only part of my text, or undo a case?", answer: "Yes. Highlight the part you want to change and pick a case. The rest stays as it is. To remove a case, tap the green button again and your original text comes back. Undo and Redo also work, and so do Ctrl+Z and Ctrl+Shift+Z." },
-    { question: "What is the difference between camelCase, snake_case and kebab-case?", answer: "camelCase joins words with no spaces and capitalises every word except the first, like “userFirstName”. snake_case uses underscores and kebab-case uses hyphens. Snake case is common in Python and databases, kebab case in URLs and CSS." },
+    { question: "What is the difference between camelCase, snake_case and kebab-case?", answer: "camelCase joins words with no spaces and capitalizes every word except the first, like “userFirstName”. snake_case uses underscores and kebab-case uses hyphens. Snake case is common in Python and databases, kebab case in URLs and CSS." },
     { question: "Will I lose my text if I refresh, and does it work on my phone?", answer: "Your text is saved in this browser until you press Clear. It works in any modern mobile browser." },
   ],
 

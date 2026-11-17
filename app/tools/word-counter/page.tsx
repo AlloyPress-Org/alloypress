@@ -42,7 +42,6 @@ const content: ToolContent = {
           title: "Live counts as you type",
           text: "Everything updates together, so there is no switching tools and no manual counting.",
           list: ["Words and characters", "Sentences and reading time", "AI token estimate", "Keywords and long sentences"],
-          highlight: true,
         },
         {
           icon: "free",
