@@ -69,13 +69,13 @@ export const TOOLS: ToolDef[] = [
   {
     slug: "markdown-viewer",
     name: "Markdown Viewer",
-    shortDescription: "Open and read .md files from ChatGPT, Claude and coding agents.",
+    shortDescription: "Preview .md files and Markdown text with tables, code, diagrams and math.",
     category: "markdown",
     phase: 2,
-    status: "soon",
+    status: "live",
     keyword: "markdown viewer",
-    related: ["markdown-to-pdf"],
-    updatedAt: "2026-11-10",
+    related: ["ai-text-cleaner", "text-compare", "markdown-to-pdf"],
+    updatedAt: "2026-11-17",
   },
   {
     slug: "markdown-to-pdf",
