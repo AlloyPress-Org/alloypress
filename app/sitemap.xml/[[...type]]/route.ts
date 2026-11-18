@@ -1,6 +1,7 @@
 import { payloadFetch } from "@/lib/payload";
 import { buildSiteUrl } from "@/lib/seo/constants";
 import { liveTools } from "@/lib/tools/registry";
+import { getToolUpdatedAt, getHubUpdatedAt } from "@/lib/tools/dates";
 
 export const revalidate = 3600;
 
@@ -212,28 +213,28 @@ async function fetchAll<T>(basePath: string, limit = 500): Promise<T[]> {
 const getPosts = () =>
   fetchAll<Post>(
     "/posts?depth=0" +
-      "&where[_status][equals]=published" +
-      "&select[slug]=true" +
-      "&select[category]=true" +
-      "&select[includeInSitemap]=true" +
-      "&select[updatedAt]=true" +
-      "&select[publishedAt]=true" +
-      "&select[legacy]=true",
+    "&where[_status][equals]=published" +
+    "&select[slug]=true" +
+    "&select[category]=true" +
+    "&select[includeInSitemap]=true" +
+    "&select[updatedAt]=true" +
+    "&select[publishedAt]=true" +
+    "&select[legacy]=true",
   );
 
 const getPages = () =>
   fetchAll<Page>(
     "/pages?where[status][equals]=published" +
-      "&select[slug]=true&select[updatedAt]=true",
+    "&select[slug]=true&select[updatedAt]=true",
     500,
   );
 
 const getCategories = () =>
   fetchAll<Category>(
     "/categories?depth=0" +
-      "&select[slug]=true" +
-      "&select[parent]=true" +
-      "&select[updatedAt]=true",
+    "&select[slug]=true" +
+    "&select[parent]=true" +
+    "&select[updatedAt]=true",
     100,
   );
 
@@ -378,8 +379,11 @@ async function getPostEntries(): Promise<Entry[]> {
 
 async function getToolEntries(): Promise<Entry[]> {
   return [
-    { url: buildSiteUrl("/tools") },
-    ...liveTools().map((t) => ({ url: buildSiteUrl(`/tools/${t.slug}`) })),
+    { url: buildSiteUrl("/tools"), lastModified: getHubUpdatedAt() },
+    ...liveTools().map((t) => ({
+      url: buildSiteUrl(`/tools/${t.slug}`),
+      lastModified: getToolUpdatedAt(t.slug) ?? t.updatedAt,
+    })),
   ];
 }
 

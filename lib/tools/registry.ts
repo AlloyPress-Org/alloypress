@@ -1,3 +1,4 @@
+import toolDates from "../../data/tool-dates.json";
 export type ToolCategory = "text" | "markdown" | "ai" | "file" | "image";
 export type ToolStatus = "live" | "soon" | "hidden";
 
@@ -21,7 +22,7 @@ export type ToolDef = {
  * hidden → nowhere
  * Launch a tool = build app/tools/<slug>/, then flip status to "live".
  */
-export const TOOLS: ToolDef[] = [
+const RAW_TOOLS: ToolDef[] = [
   {
     slug: "word-counter",
     name: "Word Counter",
@@ -144,6 +145,14 @@ export const TOOLS: ToolDef[] = [
     updatedAt: "2026-11-10",
   },
 ];
+
+const autoDates = toolDates as Record<string, { updatedAt: string }>;
+
+/** updatedAt comes from the auto-generated tool-dates.json; the manual date is only a fallback. */
+export const TOOLS: ToolDef[] = RAW_TOOLS.map((t) => ({
+  ...t,
+  updatedAt: autoDates[t.slug]?.updatedAt?.slice(0, 10) ?? t.updatedAt,
+}));
 
 export const liveTools = () => TOOLS.filter((t) => t.status === "live");
 /** The /tools hub stays unlisted (no nav link, no sitemap, noindex) until this many tools are live. */

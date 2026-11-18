@@ -67,6 +67,27 @@ function writeStore(value: Saved) {
   }
 }
 
+/* ---------- icons ---------- */
+const ICONS = {
+  paste: <><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M16 5h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h2" /></>,
+  sample: <><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" /><path d="M14 3v5h5" /><path d="M9 13h6M9 17h6" /></>,
+  copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 012-2h10" /></>,
+  rich: <><path d="M4 7V5h16v2" /><path d="M12 5v14" /><path d="M9 19h6" /></>,
+  download: <><path d="M12 4v11" /><path d="M7 11l5 5 5-5" /><path d="M5 20h14" /></>,
+  clear: <><path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="M6 7l1 13h10l1-13" /><path d="M9 7V4h6v3" /></>,
+  check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
+};
+
+function IconBtn({ icon, label, onClick, disabled, done }: { icon: keyof typeof ICONS; label: string; onClick: () => void; disabled?: boolean; done?: boolean }) {
+  return (
+    <button type="button" className={`atc-ic${done ? " is-ok" : ""}`} onClick={onClick} disabled={disabled} aria-label={label} title={label}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {done ? ICONS.check : ICONS[icon]}
+      </svg>
+    </button>
+  );
+}
+
 const Check = memo(function Check({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="atc-check" title={hint}>
@@ -269,41 +290,46 @@ export default function AiTextCleaner() {
         </div>
 
         <div className="atc-panes">
-          <div className="atc-pane">
-            <div className="atc-head">
-              <label htmlFor="atc-in" className="atc-label">Your text</label>
-              <div className="atc-btns">
-                <button type="button" className="tl-btn" onClick={onPaste}>Paste</button>
-                <button type="button" className="tl-btn" onClick={() => setText(SAMPLE)}>Sample</button>
-                <button type="button" className="tl-btn" onClick={() => setText("")} disabled={!hasText}>Clear</button>
-              </div>
-            </div>
+          {/* ---------- Input box ---------- */}
+          <div className="atc-box">
             <textarea
               id="atc-in"
+              aria-label="Your text"
               className="atc-textarea"
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Paste text from ChatGPT, Claude, Gemini or any website…"
               spellCheck={false}
             />
-            <span className="atc-count">{fmt(text.length)} characters</span>
+            <div className="atc-tools">
+              <div className="atc-icons" role="toolbar" aria-label="Input tools">
+                <IconBtn icon="paste" label="Paste" onClick={onPaste} />
+                <IconBtn icon="sample" label="Sample text" onClick={() => setText(SAMPLE)} />
+                <IconBtn icon="clear" label="Clear" onClick={() => setText("")} disabled={!hasText} />
+              </div>
+              <span className="atc-count">Characters: {fmt(text.length)}</span>
+            </div>
           </div>
 
-          <div className="atc-pane">
-            <div className="atc-head">
-              <label htmlFor="atc-out" className="atc-label">Cleaned text</label>
-              <div className="atc-btns">
-                <button type="button" className="tl-btn tl-btn--primary" onClick={copyPlain} disabled={!hasText}>
-                  {copied === "plain" ? "Copied ✓" : "Copy"}
-                </button>
-                <button type="button" className="tl-btn" onClick={copyRich} disabled={!hasText} title="Keeps headings, bold and lists as real formatting">
-                  {copied === "rich" ? "Copied ✓" : "Copy Formatted"}
-                </button>
-                <button type="button" className="tl-btn" onClick={onDownload} disabled={!hasText}>Download</button>
+          {/* ---------- Cleaned box ---------- */}
+          <div className="atc-box atc-box--out">
+            <textarea
+              id="atc-out"
+              aria-label="Cleaned text"
+              className="atc-textarea atc-textarea--out"
+              value={result.text}
+              readOnly
+              placeholder="Your cleaned text appears here…"
+              aria-live="polite"
+            />
+            <div className="atc-tools">
+              <div className="atc-icons" role="toolbar" aria-label="Output tools">
+                <IconBtn icon="copy" label={copied === "plain" ? "Copied" : "Copy cleaned text"} onClick={copyPlain} disabled={!hasText} done={copied === "plain"} />
+                <IconBtn icon="rich" label={copied === "rich" ? "Copied" : "Copy Formatted (keeps headings, bold and lists)"} onClick={copyRich} disabled={!hasText} done={copied === "rich"} />
+                <IconBtn icon="download" label="Download .txt" onClick={onDownload} disabled={!hasText} />
               </div>
+              <span className="atc-count">Characters: {fmt(stats.after)} | Words: {fmt(words)}</span>
             </div>
-            <textarea id="atc-out" className="atc-textarea atc-textarea--out" value={result.text} readOnly placeholder="Your cleaned text appears here…" aria-live="polite" />
-            <span className="atc-count">{fmt(stats.after)} characters</span>
           </div>
         </div>
 

@@ -94,6 +94,32 @@ async function writeClipboard(value: string): Promise<boolean> {
     }
 }
 
+const ICONS = {
+    upload: <><path d="M12 16V4" /><path d="M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" /></>,
+    paste: <><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M16 5h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h2" /></>,
+    copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 012-2h10" /></>,
+    clear: <><path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="M6 7l1 13h10l1-13" /><path d="M9 7V4h6v3" /></>,
+    check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
+};
+
+function IconBtn({ icon, label, onClick, disabled, done, expanded }: { icon: keyof typeof ICONS; label: string; onClick: () => void; disabled?: boolean; done?: boolean; expanded?: boolean }) {
+    return (
+        <button
+            type="button"
+            className={`tc-ic${done ? " is-ok" : ""}`}
+            onClick={onClick}
+            disabled={disabled}
+            aria-label={label}
+            title={label}
+            {...(expanded !== undefined ? { "aria-haspopup": "menu" as const, "aria-expanded": expanded } : {})}
+        >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {done ? ICONS.check : ICONS[icon]}
+            </svg>
+        </button>
+    );
+}
+
 export default function TextDiff() {
     const [a, setA] = useState("");
     const [b, setB] = useState("");
@@ -349,19 +375,30 @@ export default function TextDiff() {
     const pane = (side: "a" | "b") => {
         const isA = side === "a";
         const value = isA ? a : b;
+        const stats = isA ? sa : sb;
+        const lines = isA ? linesA : linesB;
         const edt = isA ? editA : editB;
         const ref = isA ? fileA : fileB;
         const load = isA ? loadA : loadB;
+        const name = isA ? "Original" : "Changed";
         return (
-            <div className={`tc-pane${drag === side ? " is-drag" : ""}`} {...dragProps(side)}>
-                <div className="tc-head">
-                    <label htmlFor={`tc-${side}`} className="tc-label"><span className={`tc-dot ${isA ? "tc-dot--del" : "tc-dot--add"}`} />{isA ? "Original text" : "Changed text"}</label>
-                    <div className="tc-actions">
+            <div className={`tc-box${drag === side ? " is-drag" : ""}`} {...dragProps(side)}>
+                <textarea
+                    id={`tc-${side}`}
+                    aria-label={`${name} text`}
+                    className="tc-textarea"
+                    value={value}
+                    onChange={(e) => edt(e.target.value)}
+                    placeholder={isA ? "Paste the original text here, or drop a file…" : "Paste the changed text here, or drop a file…"}
+                    spellCheck={false}
+                />
+                {drag === side && <div className="tc-drop">Drop file to load</div>}
+                <div className="tc-tools">
+                    <div className="tc-icons" role="toolbar" aria-label={`${name} text tools`}>
+                        <span className={`tc-tag ${isA ? "tc-tag--del" : "tc-tag--add"}`}><span className={`tc-dot ${isA ? "tc-dot--del" : "tc-dot--add"}`} />{name}</span>
+                        <span className="tc-sep" aria-hidden="true" />
                         <div className="tc-upwrap">
-                            <button type="button" className="tl-btn tc-up" aria-haspopup="menu" aria-expanded={menu === side} onClick={() => setMenu(menu === side ? "" : side)}>
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4" /><path d="M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" /></svg>
-                                Upload file
-                            </button>
+                            <IconBtn icon="upload" label="Upload file" onClick={() => setMenu(menu === side ? "" : side)} expanded={menu === side} />
                             {menu === side && (
                                 <div className="tc-menu" role="menu">
                                     <p className="tc-menu-t">Choose a file type</p>
@@ -375,21 +412,13 @@ export default function TextDiff() {
                                 </div>
                             )}
                         </div>
-                        <button type="button" className="tl-btn" onClick={pasteInto(edt)}>Paste</button>
-                        <button type="button" className="tl-btn" onClick={() => copy(`in-${side}`, value)} disabled={!value}>{label(`in-${side}`, "Copy")}</button>
-                        <button type="button" className="tl-btn" onClick={() => edt("")} disabled={!value}>Clear</button>
+                        <IconBtn icon="paste" label="Paste" onClick={pasteInto(edt)} />
+                        <IconBtn icon="copy" label={copied === `in-${side}` ? "Copied" : "Copy text"} onClick={() => copy(`in-${side}`, value)} disabled={!value} done={copied === `in-${side}`} />
+                        <IconBtn icon="clear" label="Clear" onClick={() => edt("")} disabled={!value} />
                     </div>
-                    <input ref={ref} type="file" accept={ACCEPT} hidden onChange={onPick(load)} />
+                    <span className="tc-count">Lines: {fmt(lines)} | Words: {fmt(stats.words)} | Characters: {fmt(stats.characters)}</span>
                 </div>
-                <textarea
-                    id={`tc-${side}`}
-                    className="tc-textarea"
-                    value={value}
-                    onChange={(e) => edt(e.target.value)}
-                    placeholder={isA ? "Paste the original text here, or drop a file…" : "Paste the changed text here, or drop a file…"}
-                    spellCheck={false}
-                />
-                {drag === side && <div className="tc-drop">Drop file to load</div>}
+                <input ref={ref} type="file" accept={ACCEPT} hidden onChange={onPick(load)} />
             </div>
         );
     };

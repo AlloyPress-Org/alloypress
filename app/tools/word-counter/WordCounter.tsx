@@ -11,7 +11,7 @@ import {
   topKeywords,
 } from "@/lib/tools/text";
 import { PLATFORM_LIMITS } from "@/lib/tools/text";
-import { CopyButton, StatBar } from "@/components/tools/ui";
+import { StatBar } from "@/components/tools/ui";
 
 const STORAGE_KEY = "ap-tool:word-counter:v1";
 
@@ -36,6 +36,23 @@ function writeStore(value: { text: string; goal: number }) {
   }
 }
 
+const ICONS = {
+  paste: <><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M16 5h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h2" /></>,
+  copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 012-2h10" /></>,
+  download: <><path d="M12 4v11" /><path d="M7 11l5 5 5-5" /><path d="M5 20h14" /></>,
+  clear: <><path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="M6 7l1 13h10l1-13" /><path d="M9 7V4h6v3" /></>,
+  check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
+  case: <><path d="M3 18l5-12 5 12" /><path d="M4.8 14h6.4" /><path d="M15 18v-6a3 3 0 016 0v6" /><path d="M15 15h6" /></>,
+};
+
+function Svg({ name }: { name: keyof typeof ICONS }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {ICONS[name]}
+    </svg>
+  );
+}
+
 export default function WordCounter() {
   const [text, setText] = useState("");
   const [goal, setGoal] = useState(500);
@@ -43,6 +60,7 @@ export default function WordCounter() {
   const [ignoreCommon, setIgnoreCommon] = useState(true);
   const [longOnly, setLongOnly] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [copied, setCopied] = useState(false);
   const loaded = useRef(false);
 
   // Restore after mount (avoids hydration mismatch)
@@ -91,6 +109,17 @@ export default function WordCounter() {
     }
   };
 
+  const onCopy = async () => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard blocked: ignore */
+    }
+  };
+
   const onDownload = () => {
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
     const a = document.createElement("a");
@@ -114,6 +143,7 @@ export default function WordCounter() {
   const onClear = () => setText("");
 
   const hasText = text.length > 0;
+  const lineCount = hasText ? deferred.split("\n").length : 0;
 
   const statBar = [
     { value: fmt(stats.words), label: "Words" },
@@ -138,24 +168,40 @@ export default function WordCounter() {
       {/* ---------- Editor + details ---------- */}
       <div className="tl-toolcard">
         <div className="tl-editor">
-          <label htmlFor="wc-text" className="tl-label">Your text</label>
-          <textarea
-            id="wc-text"
-            className="tl-textarea"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Start typing or paste your text here…"
-            spellCheck
-          />
-
-          <div className="tl-actions">
-            <button type="button" className="tl-btn" onClick={onPaste}>Paste</button>
-            <CopyButton text={text} disabled={!hasText} />
-            <button type="button" className="tl-btn" onClick={onClear} disabled={!hasText}>Clear</button>
-            <button type="button" className="tl-btn tl-btn--primary" onClick={onDownload} disabled={!hasText}>Download .txt</button>
-            <Link href="/tools/case-converter" className="tl-link-btn" onClick={sendToCaseConverter}>
-              Change case →
-            </Link>
+          <div className="wc-box">
+            <textarea
+              id="wc-text"
+              aria-label="Your text"
+              className="tl-textarea wc-textarea"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Start typing or paste your text here…"
+              spellCheck
+            />
+            <div className="wc-tools">
+              <div className="wc-icons" role="toolbar" aria-label="Text tools">
+                <button type="button" className="wc-ic" onClick={onPaste} aria-label="Paste" title="Paste"><Svg name="paste" /></button>
+                <button
+                  type="button"
+                  className={`wc-ic${copied ? " is-ok" : ""}`}
+                  onClick={onCopy}
+                  disabled={!hasText}
+                  aria-label={copied ? "Copied" : "Copy text"}
+                  title={copied ? "Copied" : "Copy text"}
+                >
+                  <Svg name={copied ? "check" : "copy"} />
+                </button>
+                <button type="button" className="wc-ic" onClick={onDownload} disabled={!hasText} aria-label="Download .txt" title="Download .txt"><Svg name="download" /></button>
+                <button type="button" className="wc-ic" onClick={onClear} disabled={!hasText} aria-label="Clear" title="Clear"><Svg name="clear" /></button>
+                <span className="wc-sep" aria-hidden="true" />
+                <Link href="/tools/case-converter" className="wc-ic wc-ic--link" onClick={sendToCaseConverter} aria-label="Change case" title="Change case">
+                  <Svg name="case" />
+                </Link>
+              </div>
+              <span className="wc-stats" aria-live="polite">
+                Characters: {fmt(stats.characters)} | Words: {fmt(stats.words)} | Lines: {fmt(lineCount)}
+              </span>
+            </div>
           </div>
 
           <span className="tl-private">

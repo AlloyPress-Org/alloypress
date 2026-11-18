@@ -1,0 +1,22 @@
+{
+  "ai-text-cleaner": {
+    "hash": "d85dd4a5a536a194d102002ee03958908312d4fa",
+    "updatedAt": "2026-11-18T11:20:48.438Z"
+  },
+  "case-converter": {
+    "hash": "782ef79494bc919ea07a1a47f93089dde6f77bbd",
+    "updatedAt": "2026-11-18T08:18:37.566Z"
+  },
+  "markdown-viewer": {
+    "hash": "eb1180b04fc2d5fd2aa8479109e9f27b6a98d560",
+    "updatedAt": "2026-11-18T08:18:37.566Z"
+  },
+  "text-compare": {
+    "hash": "433d7e42caa7d59f58a0841d3c7a01a124763ffb",
+    "updatedAt": "2026-11-18T11:20:48.438Z"
+  },
+  "word-counter": {
+    "hash": "ba890150e40f4960736ebbb5d5fabcef6dbe70e5",
+    "updatedAt": "2026-11-18T11:20:48.438Z"
+  }
+}

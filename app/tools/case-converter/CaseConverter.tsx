@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
   CASE_DEMO,
@@ -12,7 +12,6 @@ import {
   type CaseOptions,
   type TitleStyle,
 } from "@/lib/tools/text";
-import { CopyButton } from "@/components/tools/ui";
 
 const STORAGE_KEY = "ap-tool:case-converter:v2";
 const HISTORY_LIMIT = 30;
@@ -53,6 +52,28 @@ function writeStore(value: Saved) {
   }
 }
 
+/* ---------- icons ---------- */
+const ICONS: Record<string, ReactNode> = {
+  paste: <><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M16 5h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h2" /></>,
+  sample: <><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" /><path d="M14 3v5h5" /><path d="M9 13h6M9 17h6" /></>,
+  undo: <><path d="M9 14L4 9l5-5" /><path d="M4 9h10a6 6 0 010 12h-3" /></>,
+  redo: <><path d="M15 14l5-5-5-5" /><path d="M20 9H10a6 6 0 000 12h3" /></>,
+  copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 012-2h10" /></>,
+  download: <><path d="M12 4v11" /><path d="M7 11l5 5 5-5" /><path d="M5 20h14" /></>,
+  clear: <><path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="M6 7l1 13h10l1-13" /><path d="M9 7V4h6v3" /></>,
+  check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
+};
+
+function IconBtn({ icon, label, onClick, disabled, active }: { icon: keyof typeof ICONS; label: string; onClick: () => void; disabled?: boolean; active?: boolean }) {
+  return (
+    <button type="button" className={`cc-ic${active ? " is-ok" : ""}`} onClick={onClick} disabled={disabled} aria-label={label} title={label}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {active ? ICONS.check : ICONS[icon]}
+      </svg>
+    </button>
+  );
+}
+
 /**
  * How it works: `text` is what the box shows. While a case is ON (`mode`), `base` holds the
  * original text and text = convert(base). So switching case always starts from the original,
@@ -69,6 +90,7 @@ export default function CaseConverter() {
   const [selLen, setSelLen] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(true);
   const [copiedMode, setCopiedMode] = useState<CaseMode | null>(null);
+  const [copiedMain, setCopiedMain] = useState(false);
 
   const loaded = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -76,6 +98,7 @@ export default function CaseConverter() {
   const lastTyped = useRef(0);
   const latest = useRef<Saved>({ text: "", titleStyle: "ap", keepAcronyms: true });
   const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mainTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   latest.current = { text, titleStyle, keepAcronyms };
 
@@ -105,6 +128,7 @@ export default function CaseConverter() {
     return () => {
       window.removeEventListener("pagehide", flush);
       if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      if (mainTimer.current) clearTimeout(mainTimer.current);
     };
   }, []);
 
@@ -114,7 +138,7 @@ export default function CaseConverter() {
   const source = mode ? base : text;
   const deferred = useDeferredValue(source);
 
-  // All-cases preview: only the first 160 characters are converted, so 14 formats stay cheap on huge text
+  // All-cases preview: only the first 160 characters are converted, so the formats stay cheap on huge text
   const previews = useMemo(() => {
     const trimmed = deferred.trim();
     const src = trimmed ? trimmed.slice(0, 160) : CASE_DEMO;
@@ -126,6 +150,11 @@ export default function CaseConverter() {
   const showStyles = mode === "title";
   const showAcronyms = mode === "title" || mode === "sentence" || mode === "capitalized";
   const styleNote = TITLE_STYLES.find((s) => s.id === titleStyle)?.note;
+
+  const counts = useMemo(() => {
+    const t = text.trim();
+    return { chars: text.length, words: t ? t.split(/\s+/).length : 0, lines: text ? text.split("\n").length : 0 };
+  }, [text]);
 
   /* ---------- selection tracking ---------- */
   const resetSelection = () => {
@@ -299,6 +328,18 @@ export default function CaseConverter() {
     }
   };
 
+  const onCopy = async () => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMain(true);
+      if (mainTimer.current) clearTimeout(mainTimer.current);
+      mainTimer.current = setTimeout(() => setCopiedMain(false), 1500);
+    } catch {
+      /* clipboard blocked: ignore */
+    }
+  };
+
   const onDownload = () => {
     const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
     const a = document.createElement("a");
@@ -343,21 +384,12 @@ export default function CaseConverter() {
   return (
     <div className="tl-tool">
       <div className="cc-card">
-        {/* ---------- 1. Input: Undo/Redo/Clear top right, Copy/Download bottom right ---------- */}
-        <div className="cc-pane">
-          <div className="cc-head">
-            <label htmlFor="cc-input" className="cc-label">
-              Your text{selLen > 0 && <span className="cc-sel"> · {fmt(selLen)} selected</span>}
-            </label>
-            <div className="cc-actions">
-              <button type="button" className="tl-btn" onClick={undo} disabled={!past.length} aria-label="Undo">Undo</button>
-              <button type="button" className="tl-btn" onClick={redo} disabled={!future.length} aria-label="Redo">Redo</button>
-              <button type="button" className="tl-btn" onClick={onClearAll} disabled={!hasText && !mode}>Clear</button>
-            </div>
-          </div>
+        {/* ---------- Input box with the icon toolbar inside ---------- */}
+        <div className="cc-box">
           <textarea
             id="cc-input"
             ref={inputRef}
+            aria-label="Your text"
             className="cc-textarea"
             value={text}
             onChange={onType}
@@ -371,19 +403,26 @@ export default function CaseConverter() {
             placeholder="Type or paste your text, then tap a case below. Tap it again to remove it. Highlight part of the text to convert only that part."
             spellCheck
           />
-          <div className="cc-foot">
-            <div className="cc-actions">
-              <button type="button" className="tl-btn" onClick={onPaste}>Paste</button>
-              <button type="button" className="tl-btn" onClick={() => setSource(SAMPLE)}>Sample</button>
+          <div className="cc-tools">
+            <div className="cc-icons" role="toolbar" aria-label="Text tools">
+              <IconBtn icon="paste" label="Paste" onClick={onPaste} />
+              <IconBtn icon="sample" label="Sample text" onClick={() => setSource(SAMPLE)} />
+              <span className="cc-sep" aria-hidden="true" />
+              <IconBtn icon="undo" label="Undo" onClick={undo} disabled={!past.length} />
+              <IconBtn icon="redo" label="Redo" onClick={redo} disabled={!future.length} />
+              <span className="cc-sep" aria-hidden="true" />
+              <IconBtn icon="copy" label={copiedMain ? "Copied" : "Copy text"} onClick={onCopy} disabled={!hasText} active={copiedMain} />
+              <IconBtn icon="download" label="Download .txt" onClick={onDownload} disabled={!hasText} />
+              <IconBtn icon="clear" label="Clear" onClick={onClearAll} disabled={!hasText && !mode} />
             </div>
-            <div className="cc-actions">
-              <CopyButton text={text} disabled={!hasText} />
-              <button type="button" className="tl-btn" onClick={onDownload} disabled={!hasText}>Download .txt</button>
-            </div>
+            <span className="cc-stats" aria-live="polite">
+              {selLen > 0 && <span className="cc-sel">{fmt(selLen)} selected · </span>}
+              Characters: {fmt(counts.chars)} | Words: {fmt(counts.words)} | Lines: {fmt(counts.lines)}
+            </span>
           </div>
         </div>
 
-        {/* ---------- 2. Pick a case (below the input) ---------- */}
+        {/* ---------- Pick a case (right under the box) ---------- */}
         <div className="cc-choose">
           {renderGroup("text", "Text case")}
           {renderGroup("code", "Code case")}
@@ -419,12 +458,12 @@ export default function CaseConverter() {
         </div>
 
         <span className="cc-private">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 018 0v4" /></svg>
           Runs on your device. Nothing is uploaded. Saved in this browser.
         </span>
       </div>
 
-      {/* ---------- 3. All cases preview ---------- */}
+      {/* ---------- All cases preview ---------- */}
       <section className="cc-card" aria-labelledby="cc-prev-h">
         <div className="cc-preview-head">
           <div>

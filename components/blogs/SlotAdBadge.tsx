@@ -42,12 +42,10 @@ export default function SlotAdBadge() {
         e.stopPropagation();
       }}
     >
-      <span className="post-image-slot-badge-label">Ad</span>
-
       <button
         type="button"
-        className="post-image-slot-badge-info"
-        aria-label="Advertisement disclosure"
+        className="post-image-slot-badge-trigger"
+        aria-label="Partner advertisement disclosure"
         aria-expanded={open}
         aria-describedby={open ? tipId : undefined}
         onPointerDown={(e) => {
@@ -62,12 +60,13 @@ export default function SlotAdBadge() {
         }}
         onBlur={() => setOpen(false)}
       >
-        i
+        Partner
       </button>
 
       {open ? (
         <span role="tooltip" id={tipId} className="post-image-slot-badge-tip">
-          We may earn a commission if you purchase through this link, at no extra cost to you.
+          We may earn a commission if you purchase through this link, at no
+          extra cost to you.
         </span>
       ) : null}
     </span>
