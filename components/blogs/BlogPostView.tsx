@@ -1567,13 +1567,10 @@ function RenderNode({
             </div>
           ) : null}
 
-          {richBody ? (
+          {(richBody || body) ? (
             <div className="styled-box-body">
-              <StyledBoxRichBody value={fields.bodyRich} />
-            </div>
-          ) : body ? (
-            <div className="styled-box-body">
-              {body}
+              {body ? <p>{body}</p> : null}
+              {richBody ? <StyledBoxRichBody value={fields.bodyRich} /> : null}
             </div>
           ) : null}
         </aside>
