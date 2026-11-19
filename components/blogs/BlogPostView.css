@@ -6495,3 +6495,50 @@ html[data-theme="dark"] .single-post .ai-panel {
 .post-image-slot-badge-trigger {
   cursor:  pointer;
 }
+
+
+.single-post .post-image-slot-bar .post-image-slot-badge-tip {
+  top: auto;
+  bottom: calc(100% + 10px);
+  left: 0;
+  z-index: 60;
+}
+.single-post .post-image-slot-bar .post-image-slot-badge-tip::after {
+  top: auto;
+  bottom: -6px;
+}
+.single-post .post-image-slot-bar { z-index: 50; }
+
+
+/* ===== Portal tooltip (rendered in <body>, position: fixed) ===== */
+.post-image-slot-badge-tip.is-portal {
+  position: fixed;
+  right: auto;
+  bottom: auto;
+  z-index: 2000;
+  max-width: calc(100vw - 16px);
+  pointer-events: none;
+}
+
+.post-image-slot-badge-tip.is-portal::after {
+  left: var(--arrow-left, 12px);
+  right: auto;
+}
+
+/* tooltip ABOVE the label -> arrow at the bottom */
+.post-image-slot-badge-tip.is-portal.is-top::after {
+  top: auto;
+  bottom: -6px;
+  border: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* flipped BELOW the label -> arrow at the top */
+.post-image-slot-badge-tip.is-portal.is-bottom::after {
+  bottom: auto;
+  top: -6px;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
