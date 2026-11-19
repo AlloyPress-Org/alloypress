@@ -13,7 +13,7 @@ const marked = new Marked(
         emptyLangClass: "hljs",
         langPrefix: "hljs language-",
         highlight(code, lang) {
-            if (lang === "mermaid") return code; // rendered later as a diagram
+            if ((lang ?? "").trim().split(/\s+/)[0].toLowerCase() === "mermaid") return code; // rendered later as a diagram
             if (lang && hljs.getLanguage(lang)) return hljs.highlight(code, { language: lang }).value;
             return esc(code);
         },
@@ -26,7 +26,8 @@ const marked = new Marked(
             // Mermaid blocks become placeholders; the component turns them into SVG
             code({ text, lang }) {
                 if ((lang ?? "").trim().split(/\s+/)[0].toLowerCase() === "mermaid") {
-                    return `<div class="mv-mermaid" data-src="${esc(text)}"></div>`;
+                    // Encoded on purpose: DOMPurify strips attributes containing "-->" or "]>"
+                    return `<div class="mv-mermaid" data-src="${encodeURIComponent(text)}"></div>`;
                 }
                 return false;
             },
@@ -65,14 +66,23 @@ body{margin:0;background:#fff;color:#1f2328;font:16px/1.75 -apple-system,BlinkMa
 .md th,.md td{padding:8px 12px;border:1px solid #d0d7de}
 .md th{background:#f6f8fa}
 .md img{max-width:100%;height:auto}
-.md .mv-mermaid{display:flex;justify-content:center;overflow-x:auto}
+.md .mv-mermaid{display:flex;justify-content:center;overflow-x:auto;margin:0 0 16px}
+.md .mv-mermaid svg{max-width:100%;height:auto}
 .hljs-keyword,.hljs-literal,.hljs-selector-tag{color:#cf222e}
 .hljs-string,.hljs-regexp,.hljs-meta .hljs-string{color:#0a3069}
 .hljs-number,.hljs-symbol,.hljs-variable.constant_{color:#0550ae}
 .hljs-comment,.hljs-quote{color:#6e7781}
 .hljs-title,.hljs-title.function_,.hljs-section{color:#8250df}
 .hljs-attr,.hljs-attribute,.hljs-built_in,.hljs-type{color:#116329}
-@media print{.md{padding:0;max-width:none}pre{white-space:pre-wrap}pre,table,img,.mv-mermaid{break-inside:avoid}}
+@media print{
+.md{padding:0;max-width:none}
+pre{white-space:pre-wrap}
+h1,h2,h3,h4,h5,h6{break-after:avoid-page;page-break-after:avoid}
+h1+.mv-mermaid,h2+.mv-mermaid,h3+.mv-mermaid,h4+.mv-mermaid,h2+p,h3+p{break-before:avoid}
+.mv-mermaid{break-inside:auto;overflow:visible}
+.mv-mermaid svg{max-width:100%;max-height:230mm;width:auto;height:auto;break-inside:avoid}
+table,img,blockquote{break-inside:avoid}
+}
 `;
 
 /** Standalone HTML file. Math fonts load from the KaTeX CDN stylesheet. */

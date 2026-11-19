@@ -2,7 +2,7 @@
 
 import "katex/dist/katex.min.css";
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { readFileText } from "@/lib/tools/fileText";
 import { analyzeText, formatNumber as fmt } from "@/lib/tools/text";
@@ -63,6 +63,25 @@ type Engine = typeof import("@/lib/tools/markdown");
 
 let mermaidSeq = 0;
 
+/**
+ * Fix Mermaid block-beta circular JSON error in React.
+ *
+ * React attaches circular Fiber references to DOM elements.
+ * Mermaid's block layout tries to JSON.stringify a DOM reference.
+ */
+function preventMermaidBlockStringifyCrash(): void {
+    const html = document.documentElement;
+
+    if (Object.prototype.hasOwnProperty.call(html, "toJSON")) {
+        return;
+    }
+
+    Object.defineProperty(html, "toJSON", {
+        value: () => ({}),
+        configurable: true,
+    });
+}
+
 function readStore(): Saved | null {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -112,12 +131,35 @@ function save(name: string, content: string, type: string) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/* ---------- icons ---------- */
+const ICONS: Record<string, ReactNode> = {
+    upload: <><path d="M12 16V4" /><path d="M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" /></>,
+    paste: <><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M16 5h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h2" /></>,
+    sample: <><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z" /><path d="M14 3v5h5" /><path d="M9 13h6M9 17h6" /></>,
+    copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 012-2h10" /></>,
+    code: <><path d="M8 7l-5 5 5 5" /><path d="M16 7l5 5-5 5" /><path d="M14 4l-4 16" /></>,
+    rich: <><path d="M4 7V5h16v2" /><path d="M12 5v14" /><path d="M9 19h6" /></>,
+    download: <><path d="M12 4v11" /><path d="M7 11l5 5 5-5" /><path d="M5 20h14" /></>,
+    clear: <><path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="M6 7l1 13h10l1-13" /><path d="M9 7V4h6v3" /></>,
+    check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
+};
+
+function IconBtn({ icon, label, text, onClick, disabled, done }: { icon: keyof typeof ICONS; label: string; text?: string; onClick: () => void; disabled?: boolean; done?: boolean }) {
+    return (
+        <button type="button" className={`mv-ic${done ? " is-ok" : ""}${text ? " mv-ic--txt" : ""}`} onClick={onClick} disabled={disabled} aria-label={label} title={label}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                {done ? ICONS.check : ICONS[icon]}
+            </svg>
+            {text && <span>{text}</span>}
+        </button>
+    );
+}
+
 export default function MarkdownViewer() {
     const [text, setText] = useState("");
     const [view, setView] = useState<View>("split");
     const [name, setName] = useState("");
     const [engine, setEngine] = useState<Engine | null>(null);
-    const [dark, setDark] = useState(true);
     const [drag, setDrag] = useState(false);
     const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
     const [copied, setCopied] = useState("");
@@ -130,15 +172,6 @@ export default function MarkdownViewer() {
         let alive = true;
         import("@/lib/tools/markdown").then((m) => alive && setEngine(m));
         return () => { alive = false; };
-    }, []);
-
-    // Follow the site theme (used for Mermaid colors)
-    useEffect(() => {
-        const read = () => setDark(document.documentElement.getAttribute("data-theme") !== "light");
-        read();
-        const mo = new MutationObserver(read);
-        mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-        return () => mo.disconnect();
     }, []);
 
     // Restore saved text
@@ -168,6 +201,7 @@ export default function MarkdownViewer() {
         }
     }, [engine, deferred]);
     const stats = useMemo(() => analyzeText(deferred), [deferred]);
+    const lineCount = useMemo(() => (text ? text.split("\n").length : 0), [text]);
 
     // Turn Mermaid placeholders into SVG diagrams (Mermaid loads only when a diagram exists)
     useEffect(() => {
@@ -178,27 +212,75 @@ export default function MarkdownViewer() {
         let cancelled = false;
         (async () => {
             const mermaid = (await import("mermaid")).default;
-            mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: dark ? "dark" : "default" });
+
+            if (cancelled) return;
+
+            // Work around Mermaid's React block diagram serialization bug.
+            preventMermaidBlockStringifyCrash();
+
+            mermaid.initialize({
+                startOnLoad: false,
+                securityLevel: "strict",
+                theme: "default",
+                flowchart: {
+                    htmlLabels: false,
+                    useMaxWidth: true,
+                },
+            });
             for (const el of nodes) {
-                const src = el.getAttribute("data-src") ?? "";
+                if (cancelled) return;
+                const raw = el.getAttribute("data-src") ?? "";
+                let src = raw;
+                try { src = decodeURIComponent(raw); } catch { /* keep raw */ }
+                if (!src.trim()) {
+                    el.textContent = "";
+                    continue;
+                }
                 const id = `mv-m-${++mermaidSeq}`;
                 try {
-                    const { svg } = await mermaid.render(id, src);
+                    let svg: string;
+                    try {
+                        ({ svg } = await mermaid.render(id, src));
+                    } catch (first) {
+                        // Some diagram types (e.g. block-beta) crash in strict mode: retry once in loose mode
+                        document.getElementById(`d${id}`)?.remove();
+                        document.getElementById(id)?.remove();
+                        mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "default", flowchart: { htmlLabels: false, useMaxWidth: true } });
+                        try {
+                            ({ svg } = await mermaid.render(`${id}r`, src));
+                        } finally {
+                            mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "default", flowchart: { htmlLabels: false, useMaxWidth: true } });
+                        }
+                        void first;
+                    }
                     if (!cancelled) el.innerHTML = svg;
                 } catch (e) {
-                    document.getElementById(`d${id}`)?.remove();
-                    document.getElementById(id)?.remove();
+                    ["", "r"].forEach((s) => {
+                        document.getElementById(`d${id}${s}`)?.remove();
+                        document.getElementById(`${id}${s}`)?.remove();
+                    });
                     if (!cancelled) {
+                        const why = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "invalid syntax";
+                        const circular = /circular structure/i.test(why);
+                        const wrap = document.createElement("div");
+                        wrap.className = "mv-fallback";
+                        const note = document.createElement("p");
+                        note.className = "mv-err";
+                        note.textContent = circular
+                            ? "This diagram type could not be drawn in the browser. Its source is shown instead."
+                            : `Diagram error: ${why}`;
                         const pre = document.createElement("pre");
-                        pre.className = "mv-err";
-                        pre.textContent = `Diagram error: ${e instanceof Error ? e.message.slice(0, 200) : "invalid syntax"}`;
-                        el.replaceChildren(pre);
+                        const code = document.createElement("code");
+                        code.textContent = src;
+                        pre.appendChild(code);
+                        wrap.append(note, pre);
+                        el.replaceChildren(wrap);
                     }
                 }
             }
         })();
         return () => { cancelled = true; };
-    }, [html, dark]);
+    }, [html]);
 
     const hasText = text.length > 0;
     const base = (name.replace(/\.[^.]+$/, "") || "markdown").replace(/[^\w.-]+/g, "-");
@@ -208,7 +290,6 @@ export default function MarkdownViewer() {
         setCopied(k);
         setTimeout(() => setCopied((c) => (c === k ? "" : c)), 1500);
     };
-    const label = (k: string, idle: string) => (copied === k ? "Copied ✓" : idle);
 
     const loadFile = async (f?: File | null) => {
         if (!f) return;
@@ -305,35 +386,16 @@ export default function MarkdownViewer() {
                 </div>
 
                 <div className={`mv-panes mv-panes--${view}`}>
-                    {/* ---------- Editor ---------- */}
+                    {/* ---------- Editor box ---------- */}
                     <div
-                        className={`mv-pane${writeOff ? " is-off" : ""}${drag ? " is-drag" : ""}`}
+                        className={`mv-box${writeOff ? " is-off" : ""}${drag ? " is-drag" : ""}`}
                         onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
                         onDragLeave={() => setDrag(false)}
                         onDrop={(e) => { e.preventDefault(); setDrag(false); void loadFile(e.dataTransfer.files?.[0]); }}
                     >
-                        <div className="mv-head">
-                            <label htmlFor="mv-in" className="mv-label">Markdown{name && <span className="mv-file"> · {name}</span>}</label>
-                            <div className="mv-actions">
-                                <button type="button" className="tl-btn mv-up" onClick={() => fileRef.current?.click()}>
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 16V4" /><path d="M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" /></svg>
-                                    Upload .md
-                                </button>
-                                <button type="button" className="tl-btn" onClick={onPaste}>Paste</button>
-                                <button type="button" className="tl-btn" onClick={() => { setText(SAMPLE); setName(""); }}>Sample</button>
-                                <button type="button" className="tl-btn" onClick={() => copyText("md", text)} disabled={!hasText}>{label("md", "Copy")}</button>
-                                <button type="button" className="tl-btn" onClick={clearAll} disabled={!hasText}>Clear</button>
-                            </div>
-                            <input
-                                ref={fileRef}
-                                type="file"
-                                accept={ACCEPT}
-                                hidden
-                                onChange={(e) => { void loadFile(e.target.files?.[0]); e.target.value = ""; }}
-                            />
-                        </div>
                         <textarea
                             id="mv-in"
+                            aria-label="Markdown"
                             className="mv-textarea"
                             value={text}
                             onChange={(e) => setText(e.target.value)}
@@ -341,20 +403,28 @@ export default function MarkdownViewer() {
                             spellCheck={false}
                         />
                         {drag && <div className="mv-drop">Drop file to load</div>}
+                        <div className="mv-tools">
+                            <div className="mv-icons" role="toolbar" aria-label="Markdown tools">
+                                <IconBtn icon="upload" label="Upload .md file" onClick={() => fileRef.current?.click()} />
+                                <IconBtn icon="paste" label="Paste" onClick={onPaste} />
+                                <IconBtn icon="sample" label="Sample" onClick={() => { setText(SAMPLE); setName(""); }} />
+                                <IconBtn icon="copy" label={copied === "md" ? "Copied" : "Copy Markdown"} onClick={() => copyText("md", text)} disabled={!hasText} done={copied === "md"} />
+                                <IconBtn icon="clear" label="Clear" onClick={clearAll} disabled={!hasText} />
+                            </div>
+                            <span className="mv-count">{name && <span className="mv-file">{name} · </span>}Lines: {fmt(lineCount)} | Words: {fmt(stats.words)}</span>
+                        </div>
+                        <input
+                            ref={fileRef}
+                            type="file"
+                            accept={ACCEPT}
+                            hidden
+                            onChange={(e) => { void loadFile(e.target.files?.[0]); e.target.value = ""; }}
+                        />
                     </div>
 
-                    {/* ---------- Preview ---------- */}
-                    <div className={`mv-pane${previewOff ? " is-off" : ""}`}>
-                        <div className="mv-head">
-                            <span className="mv-label">Preview{hasText && <span className="mv-file"> · {fmt(stats.words)} words</span>}</span>
-                            <div className="mv-actions">
-                                <button type="button" className="tl-btn" onClick={() => copyText("html", renderedHtml())} disabled={!html}>{label("html", "Copy HTML")}</button>
-                                <button type="button" className="tl-btn" onClick={copyRich} disabled={!html}>{label("rich", "Copy formatted")}</button>
-                                <button type="button" className="tl-btn" onClick={downloadHtml} disabled={!html}>Download HTML</button>
-                                <button type="button" className="tl-btn" onClick={downloadPdf} disabled={!html}>Download PDF</button>
-                            </div>
-                        </div>
-                        <div className="mv-print mv-prev">
+                    {/* ---------- Preview box ---------- */}
+                    <div className={`mv-box mv-box--prev${previewOff ? " is-off" : ""}`}>
+                        <div className="mv-prev" aria-label="Preview">
                             {!hasText ? (
                                 <p className="mv-empty">Paste Markdown, upload a .md file, or try the Sample to see the preview here.</p>
                             ) : !engine ? (
@@ -362,6 +432,16 @@ export default function MarkdownViewer() {
                             ) : (
                                 <article ref={previewRef} className="mv-md" dangerouslySetInnerHTML={{ __html: html }} />
                             )}
+                        </div>
+                        <div className="mv-tools">
+                            <div className="mv-icons" role="toolbar" aria-label="Preview tools">
+                                <IconBtn icon="code" label={copied === "html" ? "Copied" : "Copy HTML"} onClick={() => copyText("html", renderedHtml())} disabled={!html} done={copied === "html"} />
+                                <IconBtn icon="rich" label={copied === "rich" ? "Copied" : "Copy formatted (rich text)"} onClick={copyRich} disabled={!html} done={copied === "rich"} />
+                                <span className="mv-sep" aria-hidden="true" />
+                                <IconBtn icon="download" text="HTML" label="Download HTML" onClick={downloadHtml} disabled={!html} />
+                                <IconBtn icon="download" text="PDF" label="Download PDF (opens print dialog)" onClick={downloadPdf} disabled={!html} />
+                            </div>
+                            <span className="mv-count">Preview</span>
                         </div>
                     </div>
                 </div>

@@ -46,9 +46,100 @@ const content: ToolContent = {
       id: "how",
       title: "How to view a Markdown file",
       items: [
-        { title: "Upload or paste", text: "Click Upload .md, drop a file on the editor, or paste Markdown into the box." },
+        { title: "Upload or paste", text: "Click the upload icon, drop a file on the editor, or paste Markdown into the box." },
         { title: "Read the preview", text: "The rendered page updates as you type. Use Split, Write or Preview to change the layout." },
         { title: "Copy or download", text: "Copy HTML, copy formatted text, or download the page as HTML or PDF." },
+      ],
+    },
+    {
+      kind: "split",
+      id: "mermaid",
+      eyebrow: "Diagrams",
+      title: "Preview Mermaid Diagrams Instantly",
+      intro: "Write a diagram as text inside a mermaid code block and the viewer draws it next to your Markdown. No plugin and no sign-up.",
+      rows: [
+        {
+          badge: "Flowcharts",
+          title: "Turn a few lines of text into a flow",
+          text: "Describe steps and decisions in plain text. The viewer draws the chart as you type.",
+          list: ["Flowchart, top-down or left-right", "State diagram and Git graph", "Mindmap and timeline"],
+          visual: (
+            <div className="tl-demo">
+              <span className="tl-demo-tag">mermaid</span>
+              <pre className="tl-demo-code">{`flowchart LR\n  A[Paste] --> B{Valid?}\n  B -->|Yes| C[Preview]`}</pre>
+              <div className="tl-demo-arrow">↓</div>
+              <div className="tl-mini-flow"><span>Paste</span><i>→</i><span className="is-d">Valid?</span><i>→</i><span className="is-ok">Preview</span></div>
+            </div>
+          ),
+        },
+        {
+          badge: "Systems and data",
+          title: "Show how the parts of a system talk",
+          text: "Sequence, class, ER, Gantt and pie diagrams all use the same simple text format.",
+          list: ["Sequence and class diagrams", "Entity relationship (ER)", "Gantt chart and pie chart"],
+          visual: (
+            <div className="tl-demo">
+              <span className="tl-demo-tag">Supported diagram types</span>
+              <div className="tl-chips">
+                {["Flowchart", "Sequence", "Class", "State", "ER", "Gantt", "Pie", "Git graph", "Mindmap", "Timeline"].map((t) => <span key={t}>{t}</span>)}
+              </div>
+            </div>
+          ),
+        },
+        {
+          badge: "Fail-safe",
+          title: "One broken diagram never breaks the page",
+          text: "A syntax mistake shows a clear message. A type that cannot be drawn shows its source instead.",
+          list: ["Drawn on a white card", "Readable in dark mode and in PDF", "The rest of your page keeps working"],
+          visual: (
+            <div className="tl-demo">
+              <span className="tl-demo-tag">Syntax mistake</span>
+              <div className="tl-demo-err">Diagram error: Parse error on line 2</div>
+              <span className="tl-demo-tag">Cannot be drawn</span>
+              <pre className="tl-demo-code">{`block-beta\n  columns 2\n  a b`}</pre>
+            </div>
+          ),
+        },
+      ],
+    },
+    {
+      kind: "split",
+      id: "math-code",
+      eyebrow: "Math and code",
+      title: "Formulas and Code That Look Right",
+      intro: "Technical notes need more than headings and bullets. The viewer typesets math and colors code the way GitHub does.",
+      rows: [
+        {
+          badge: "KaTeX",
+          title: "Write formulas with dollar signs",
+          text: "Use LaTeX inside a sentence or on its own line. Math also works in the HTML and PDF export.",
+          list: ["$...$ inside a sentence", "$$...$$ for a centered formula", "Fractions, sums and integrals"],
+          visual: (
+            <div className="tl-demo">
+              <span className="tl-demo-tag">You type</span>
+              <pre className="tl-demo-code">{`Energy: $E = mc^2$`}</pre>
+              <div className="tl-demo-arrow">↓</div>
+              <div className="tl-demo-out tl-math"><i>E</i> = <i>mc</i><sup>2</sup></div>
+              <div className="tl-demo-out tl-math">∫₀¹ <i>x</i><sup>2</sup> <i>dx</i> = ⅓</div>
+            </div>
+          ),
+        },
+        {
+          badge: "Highlighting",
+          title: "Code with colors, in 35 languages",
+          text: "Add the language after the opening fence and keywords, strings and comments get their colors.",
+          list: ["JavaScript, TypeScript and Python", "Java, C, C++, C# and Go", "SQL, HTML, CSS, JSON, YAML and Bash"],
+          visual: (
+            <div className="tl-demo">
+              <span className="tl-demo-tag">js</span>
+              <pre className="tl-demo-code">
+                <span className="tl-c">{`// say hello\n`}</span>
+                <span className="tl-k">const</span> <span className="tl-f">greet</span> = (name) =&gt;{" "}
+                <span className="tl-s">{"`Hello, ${name}!`"}</span>;
+              </pre>
+            </div>
+          ),
+        },
       ],
     },
     {
@@ -69,17 +160,31 @@ const content: ToolContent = {
       ],
     },
     {
+      kind: "tiles",
+      id: "use-cases",
+      eyebrow: "Use cases",
+      title: "Open READMEs and AI Output in Seconds",
+      intro: "Markdown is everywhere now. Here are the files people open most.",
+      items: [
+        { icon: "device", title: "GitHub README files", text: "Check how a README will look before you push it." },
+        { icon: "bolt", title: "ChatGPT and Claude answers", text: "Read AI output as a clean page, not a wall of symbols." },
+        { icon: "search", title: "Cursor and agent files", text: "Open plans, specs and notes written by coding agents." },
+        { icon: "chart", title: "Tables and task lists", text: "See GitHub-style tables and checkboxes rendered properly." },
+        { icon: "free", title: "Obsidian and Notion exports", text: "Preview notes exported as .md before sharing them." },
+        { icon: "limit", title: "Docs and changelogs", text: "Check project docs and blog drafts before publishing." },
+      ],
+    },
+    {
       kind: "prose",
-      id: "diagrams-math",
-      title: "Mermaid diagrams and math",
+      id: "pdf-note",
+      title: "Need page size, margins or page numbers?",
       paragraphs: [
-        "Start a code block with the word mermaid and write your diagram inside it. The viewer draws it as a chart. If the syntax has a mistake, you see an error message in place of the diagram.",
-        "Wrap math in single dollar signs for a formula inside a sentence, or double dollar signs for a formula on its own line. Math is typeset with KaTeX.",
+        "Download PDF here prints the preview exactly as it looks, which is quick and good for most files. If you want to choose the page size, margins and page numbers, use the Markdown to PDF tool instead.",
+        "This viewer is for reading and copying. Use it when you want to see what a Markdown file says, check how it renders, or copy it into another app.",
       ],
       chips: [
-        "```mermaid → Flowchart, sequence or Gantt chart",
-        "$a^2 + b^2 = c^2$ → Inline formula",
-        "$$ ... $$ → Centered block formula",
+        "Read or copy a .md file → Markdown Viewer",
+        "Page size, margins, page numbers → Markdown to PDF",
       ],
     },
     {
@@ -97,12 +202,14 @@ const content: ToolContent = {
 
   faq: [
     { question: "Is my file uploaded anywhere?", answer: "No. Files and text are read and rendered in your browser. Open your browser’s network tab while you use the tool and you’ll see no requests carrying your content." },
-    { question: "Which files can I upload?", answer: "Markdown files (.md, .markdown, .mdown, .mkd) and plain .txt files, up to 5 MB. You can click Upload .md or drop a file on the editor." },
+    { question: "Which files can I upload?", answer: "Markdown files (.md, .markdown, .mdown, .mkd) and plain .txt files, up to 5 MB. You can click the upload icon or drop a file on the editor." },
+    { question: "Can I preview a GitHub README?", answer: "Yes. Paste the README text or upload the README.md file. Tables, task lists, code blocks and links render the way they do on GitHub." },
     { question: "Does it support GitHub Flavored Markdown?", answer: "Yes. Tables, task lists, strikethrough, autolinks and fenced code blocks all render the way they do on GitHub." },
     { question: "Which languages get code highlighting?", answer: "About 35 common languages, including JavaScript, TypeScript, Python, Java, C, C++, C#, Go, Rust, PHP, Ruby, SQL, HTML, CSS, JSON, YAML, Bash and Markdown. Add the language after the opening fence, like ```python." },
-    { question: "How do I add a Mermaid diagram?", answer: "Open a code block with ```mermaid, write your diagram, and close the block. Flowcharts, sequence diagrams, Gantt charts and more are supported. A syntax mistake shows an error instead of the diagram." },
+    { question: "How do I add a Mermaid diagram?", answer: "Open a code block with ```mermaid, write your diagram, and close the block. Flowcharts, sequence, class, state, ER, Gantt, pie, Git graph, mindmap and timeline diagrams are supported. A syntax mistake shows an error message in place of the diagram." },
+    { question: "Why does a diagram show its source instead of a drawing?", answer: "A few diagram types, such as block diagrams, cannot be drawn in the browser yet. The viewer shows the diagram source instead, so the rest of your page still works." },
     { question: "How do I write math?", answer: "Use $...$ for a formula inside a sentence and $$...$$ on separate lines for a centered formula. Math uses LaTeX syntax and is rendered with KaTeX." },
-    { question: "How do I save the preview as a PDF?", answer: "Click Download PDF. Your browser’s print dialog opens, and you choose “Save as PDF” as the printer. Only the preview is printed, in light colors." },
+    { question: "How do I save the preview as a PDF?", answer: "Click the PDF button. Your browser’s print dialog opens, and you choose “Save as PDF” as the printer. Only the preview is printed, in light colors. For page size, margins and page numbers, use the Markdown to PDF tool." },
     { question: "What is the difference between Copy HTML and Copy formatted?", answer: "Copy HTML copies the HTML code, which you can paste into a CMS or an editor’s code view. Copy formatted copies the rendered page as rich text, so it keeps its look when you paste into Word, Google Docs or email." },
     { question: "Is HTML inside my Markdown safe?", answer: "Safe HTML such as details, tables and images works. Scripts, inline event handlers and javascript: links are removed before the preview is shown." },
     { question: "Will I lose my text if I refresh?", answer: "No. Your text is saved in this browser until you press Clear. Very large files are not saved." },

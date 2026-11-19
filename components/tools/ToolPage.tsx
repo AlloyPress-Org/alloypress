@@ -47,6 +47,25 @@ export type ToolSection =
     note?: string;
   }
   /** `widget` is a key into the `widgets` prop that the tool's page.tsx passes to <ToolPage>. */
+  /** Alternating rows: text on one side, a demo card on the other */
+  | {
+    kind: "split";
+    id?: string;
+    eyebrow?: string;
+    title: string;
+    intro?: string;
+    rows: { badge?: string; title: string; text: string; list?: string[]; visual: ReactNode }[];
+  }
+  /** Grid of small icon tiles */
+  | {
+    kind: "tiles";
+    id?: string;
+    eyebrow?: string;
+    title: string;
+    intro?: string;
+    items: { icon: ToolIcon; title: string; text: string }[];
+  }
+  /** `widget` is a key into the `widgets` prop that the tool's page.tsx passes to <ToolPage>. */
   | { kind: "widget"; id?: string; title: string; intro?: string; widget: string }
   | { kind: "ad" };
 
@@ -131,7 +150,7 @@ function Tick() {
    Slot 2 = one in-content ad (disabled for now). Both stay away from inputs and buttons. */
 
 const AD_SLOTS: Record<number, string | undefined> = {
-  1: process.env.NEXT_PUBLIC_ADSENSE_SIDEBAR_SLOT_ID,//NEXT_PUBLIC_ADSENSE_SLOT_TOOL_1,
+  1: process.env.NEXT_PUBLIC_ADSENSE_SLOT_TOOL_1,
   2: process.env.NEXT_PUBLIC_ADSENSE_SLOT_TOOL_2,
 };
 
@@ -264,6 +283,56 @@ function Section({ s, widgets }: { s: ToolSection; widgets: Record<string, React
             </table>
           </div>
           {s.note && <p className="tl-note">{s.note}</p>}
+        </section>
+      );
+
+    case "split":
+      return (
+        <section className="tl-section" id={s.id}>
+          <div className="tl-section-head">
+            {s.eyebrow && <span className="eyebrow">{s.eyebrow}</span>}
+            <h2 className="tl-h2">{s.title}</h2>
+            {s.intro && <p className="tl-muted">{s.intro}</p>}
+          </div>
+          <div className="tl-split">
+            {s.rows.map((r, i) => (
+              <div key={r.title} className={`tl-split-row${i % 2 ? " is-flip" : ""}`}>
+                <div className="tl-split-copy">
+                  {r.badge && <span className="tl-split-badge">{r.badge}</span>}
+                  <h3>{r.title}</h3>
+                  <p>{r.text}</p>
+                  {r.list && (
+                    <ul className="tl-split-list">
+                      {r.list.map((l) => <li key={l}><Tick />{l}</li>)}
+                    </ul>
+                  )}
+                </div>
+                <div className="tl-split-vis" aria-hidden="true">{r.visual}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+      );
+
+    case "tiles":
+      return (
+        <section className="tl-section" id={s.id}>
+          <div className="tl-section-head">
+            {s.eyebrow && <span className="eyebrow">{s.eyebrow}</span>}
+            <h2 className="tl-h2">{s.title}</h2>
+            {s.intro && <p className="tl-muted">{s.intro}</p>}
+          </div>
+          <div className="tl-tiles">
+            {s.items.map((it) => (
+              <div key={it.title} className="tl-tile">
+                <Icon name={it.icon} />
+                <div>
+                  <h3>{it.title}</h3>
+                  <p>{it.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
       );
 
