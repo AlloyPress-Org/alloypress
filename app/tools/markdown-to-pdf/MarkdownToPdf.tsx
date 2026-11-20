@@ -14,7 +14,8 @@ const ACCEPT = ".md,.markdown,.mdown,.mkd,.txt,text/markdown,text/plain";
 
 type Engine = typeof import("@/lib/tools/markdown");
 type Opts = import("@/lib/tools/markdown").PdfOptions;
-type Preset = { id: string; label: string; opts: Partial<Opts>; sample: string };
+type Preset = { id: string; label: string; hint: string; opts: Partial<Opts>; sample: string };
+type Menu = "" | "tpl" | "set";
 
 const NOTES = `# Study Notes: How Caching Works
 
@@ -127,11 +128,11 @@ const SHEET = `# Git Cheat Sheet
 `;
 
 const PRESETS: Preset[] = [
-    { id: "ai", label: "AI notes", opts: { margin: "normal", font: "medium", family: "sans", pageNumbers: true }, sample: NOTES },
-    { id: "docs", label: "README / docs", opts: { margin: "normal", font: "medium", family: "sans", pageNumbers: true }, sample: README },
-    { id: "resume", label: "Resume", opts: { margin: "narrow", font: "small", family: "sans", pageNumbers: false, header: "", footer: "" }, sample: RESUME },
-    { id: "sheet", label: "Cheat sheet", opts: { margin: "narrow", font: "small", family: "sans", pageNumbers: true }, sample: SHEET },
-    { id: "study", label: "Study notes", opts: { margin: "wide", font: "large", family: "serif", pageNumbers: true }, sample: NOTES },
+    { id: "ai", label: "AI notes", hint: "ChatGPT / Claude answers", opts: { margin: "normal", font: "medium", family: "sans", pageNumbers: true }, sample: NOTES },
+    { id: "docs", label: "README / docs", hint: "Technical docs and guides", opts: { margin: "normal", font: "medium", family: "sans", pageNumbers: true }, sample: README },
+    { id: "resume", label: "Resume", hint: "Compact, one-page layout", opts: { margin: "narrow", font: "small", family: "sans", pageNumbers: false, header: "", footer: "" }, sample: RESUME },
+    { id: "sheet", label: "Cheat sheet", hint: "Dense, printable reference", opts: { margin: "narrow", font: "small", family: "sans", pageNumbers: true }, sample: SHEET },
+    { id: "study", label: "Study notes", hint: "Large serif text, wide margins", opts: { margin: "wide", font: "large", family: "serif", pageNumbers: true }, sample: NOTES },
 ];
 
 const DEFAULTS: Opts = { size: "letter", margin: "normal", font: "medium", family: "sans", pageNumbers: true, header: "", footer: "" };
@@ -184,14 +185,23 @@ const ICONS: Record<string, ReactNode> = {
     download: <><path d="M12 4v11" /><path d="M7 11l5 5 5-5" /><path d="M5 20h14" /></>,
     clear: <><path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="M6 7l1 13h10l1-13" /><path d="M9 7V4h6v3" /></>,
     check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
+    template: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" /></>,
+    sliders: <><path d="M4 6h10" /><path d="M18 6h2" /><circle cx="16" cy="6" r="2" /><path d="M4 12h2" /><path d="M10 12h10" /><circle cx="8" cy="12" r="2" /><path d="M4 18h12" /><path d="M20 18h0" /><circle cx="18" cy="18" r="2" /></>,
+    chevron: <path d="M6 9l6 6 6-6" />,
 };
+
+function Svg({ icon, size = 18, sw = 2 }: { icon: string; size?: number; sw?: number }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            {ICONS[icon]}
+        </svg>
+    );
+}
 
 function IconBtn({ icon, label, text, onClick, disabled, done }: { icon: string; label: string; text?: string; onClick: () => void; disabled?: boolean; done?: boolean }) {
     return (
         <button type="button" className={`mv-ic${done ? " is-ok" : ""}${text ? " mv-ic--txt" : ""}`} onClick={onClick} disabled={disabled} aria-label={label} title={label}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                {done ? ICONS.check : ICONS[icon]}
-            </svg>
+            <Svg icon={done ? "check" : icon} />
             {text && <span>{text}</span>}
         </button>
     );
@@ -199,13 +209,24 @@ function IconBtn({ icon, label, text, onClick, disabled, done }: { icon: string;
 
 function Seg<T extends string>({ label, value, items, onChange }: { label: string; value: T; items: [T, string][]; onChange: (v: T) => void }) {
     return (
-        <div className="mp-opt">
+        <div className="mp-row">
             <span className="mp-opt-l">{label}</span>
-            <div className="mv-seg" role="group" aria-label={label}>
+            <div className="mv-seg mp-seg" role="group" aria-label={label}>
                 {items.map(([v, l]) => (
                     <button key={v} type="button" className={value === v ? "is-on" : ""} aria-pressed={value === v} onClick={() => onChange(v)}>{l}</button>
                 ))}
             </div>
+        </div>
+    );
+}
+
+function Switch({ label, on, onChange }: { label: string; on: boolean; onChange: (v: boolean) => void }) {
+    return (
+        <div className="mp-switch-row">
+            <span className="mp-sw-l">{label}</span>
+            <button type="button" role="switch" aria-checked={on} aria-label={label} className={`mp-sw${on ? " is-on" : ""}`} onClick={() => onChange(!on)}>
+                <i />
+            </button>
         </div>
     );
 }
@@ -220,9 +241,13 @@ export default function MarkdownToPdf() {
     const [drag, setDrag] = useState(false);
     const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
     const [copied, setCopied] = useState("");
+    const [menu, setMenu] = useState<Menu>("");
+    const [hdrOn, setHdrOn] = useState(false);
+    const [ftrOn, setFtrOn] = useState(false);
     const loaded = useRef(false);
     const fileRef = useRef<HTMLInputElement>(null);
     const previewRef = useRef<HTMLElement>(null);
+    const barRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         let alive = true;
@@ -246,6 +271,21 @@ export default function MarkdownToPdf() {
         const id = setTimeout(() => writeStore({ text, name, opts, preset }), 500);
         return () => clearTimeout(id);
     }, [text, name, opts, preset]);
+
+    // dropdowns: close on outside click or Escape
+    useEffect(() => {
+        if (!menu) return;
+        const onDown = (e: MouseEvent) => {
+            if (barRef.current && !barRef.current.contains(e.target as Node)) setMenu("");
+        };
+        const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMenu(""); };
+        document.addEventListener("mousedown", onDown);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("mousedown", onDown);
+            document.removeEventListener("keydown", onKey);
+        };
+    }, [menu]);
 
     const deferred = useDeferredValue(text);
     const html = useMemo(() => {
@@ -320,7 +360,10 @@ export default function MarkdownToPdf() {
     const pickPreset = (p: Preset) => {
         setOpts((o) => ({ ...o, ...p.opts }));
         setPreset(p.id);
+        if (p.opts.header !== undefined) setHdrOn(false);
+        if (p.opts.footer !== undefined) setFtrOn(false);
         if (!text.trim()) { setText(p.sample); setName(""); }
+        setMenu("");
     };
 
     const loadFile = async (f?: File | null) => {
@@ -375,53 +418,106 @@ export default function MarkdownToPdf() {
         "--pg-ff": opts.family === "serif" ? `Georgia,"Times New Roman",serif` : "inherit",
     } as CSSProperties;
 
+    const activePreset = PRESETS.find((p) => p.id === preset);
+    const showHdr = hdrOn || opts.header !== "";
+    const showFtr = ftrOn || opts.footer !== "";
+    const toggle = (m: Menu) => setMenu((c) => (c === m ? "" : m));
+
     return (
         <div className="tl-tool">
             <section className="mv-card mp-card" aria-label="Markdown to PDF">
-                {/* ---------- top bar: presets + download ---------- */}
+                {/* ---------- top bar: Template dropdown | Editor dropdown | Download ---------- */}
                 <div className="mp-top">
-                    <div className="mp-presets" role="group" aria-label="Presets">
-                        <span className="mp-opt-l">Make a PDF for</span>
-                        {PRESETS.map((p) => (
-                            <button key={p.id} type="button" className={`mp-chip${preset === p.id ? " is-on" : ""}`} aria-pressed={preset === p.id} onClick={() => pickPreset(p)}>
-                                {p.label}
+                    <div className="mp-bar" ref={barRef}>
+                        {/* Template */}
+                        <div className="mp-menu">
+                            <button type="button" className={`mp-trig${menu === "tpl" ? " is-open" : ""}`} aria-haspopup="listbox" aria-expanded={menu === "tpl"} onClick={() => toggle("tpl")}>
+                                <Svg icon="template" size={17} />
+                                <span className="mp-trig-t">
+                                    <small>Template</small>
+                                    <b>{activePreset ? activePreset.label : "Choose template"}</b>
+                                </span>
+                                <Svg icon="chevron" size={16} />
                             </button>
-                        ))}
+                            {menu === "tpl" && (
+                                <div className="mp-pop mp-pop--list" role="listbox" aria-label="Templates">
+                                    <p className="mp-pop-h">Make a PDF for</p>
+                                    {PRESETS.map((p) => (
+                                        <button key={p.id} type="button" role="option" aria-selected={preset === p.id} className={`mp-item${preset === p.id ? " is-on" : ""}`} onClick={() => pickPreset(p)}>
+                                            <span className="mp-item-t">
+                                                <b>{p.label}</b>
+                                                <small>{p.hint}</small>
+                                            </span>
+                                            {preset === p.id && <Svg icon="check" size={16} sw={2.4} />}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Editor (document setup) */}
+                        <div className="mp-menu">
+                            <button type="button" className={`mp-trig${menu === "set" ? " is-open" : ""}`} aria-haspopup="dialog" aria-expanded={menu === "set"} onClick={() => toggle("set")}>
+                                <Svg icon="sliders" size={17} />
+                                <span className="mp-trig-t">
+                                    <small>Editor</small>
+                                    <b>Document setup</b>
+                                </span>
+                                <Svg icon="chevron" size={16} />
+                            </button>
+                            {menu === "set" && (
+                                <div className="mp-pop mp-pop--set" role="dialog" aria-label="Document setup">
+                                    <p className="mp-pop-h">Document setup</p>
+
+                                    <Seg label="Page size" value={opts.size} items={[["letter", "Letter"], ["a4", "A4"]]} onChange={(v) => setOpt("size", v)} />
+                                    <Seg label="Margins" value={opts.margin} items={[["narrow", "Narrow"], ["normal", "Normal"], ["wide", "Wide"]]} onChange={(v) => setOpt("margin", v)} />
+                                    <Seg label="Font family" value={opts.family} items={[["sans", "Sans"], ["serif", "Serif"]]} onChange={(v) => setOpt("family", v)} />
+                                    <Seg label="Font size" value={opts.font} items={[["small", "Small"], ["medium", "Medium"], ["large", "Large"]]} onChange={(v) => setOpt("font", v)} />
+
+                                    <div className="mp-divider" />
+
+                                    <Switch label="Page numbers" on={opts.pageNumbers} onChange={(v) => setOpt("pageNumbers", v)} />
+
+                                    <Switch
+                                        label="Header"
+                                        on={showHdr}
+                                        onChange={(v) => {
+                                            setHdrOn(v);
+                                            if (!v) setOpt("header", "");
+                                        }}
+                                    />
+                                    {showHdr && (
+                                        <input className="mp-input" type="text" value={opts.header} maxLength={80} placeholder="Top of every page" aria-label="Header text" onChange={(e) => setOpt("header", e.target.value)} />
+                                    )}
+
+                                    <Switch
+                                        label="Footer"
+                                        on={showFtr}
+                                        onChange={(v) => {
+                                            setFtrOn(v);
+                                            if (!v) setOpt("footer", "");
+                                        }}
+                                    />
+                                    {showFtr && (
+                                        <input className="mp-input" type="text" value={opts.footer} maxLength={80} placeholder="Bottom of every page" aria-label="Footer text" onChange={(e) => setOpt("footer", e.target.value)} />
+                                    )}
+
+                                    <div className="mp-divider" />
+
+                                    <label className="mp-field">
+                                        <span className="mp-opt-l">File name</span>
+                                        <input className="mp-input" type="text" value={fileName} maxLength={60} placeholder={base} onChange={(e) => setFileName(e.target.value)} />
+                                    </label>
+                                </div>
+                            )}
+                        </div>
                     </div>
+
                     <button type="button" className="tl-btn tl-btn--primary mp-dl" onClick={downloadPdf} disabled={!html}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS.download}</svg>
+                        <Svg icon="download" sw={2.2} />
                         Download PDF
                     </button>
                 </div>
-
-                {/* ---------- page options ---------- */}
-                <div className="mp-options">
-                    <Seg label="Page" value={opts.size} items={[["letter", "Letter"], ["a4", "A4"]]} onChange={(v) => setOpt("size", v)} />
-                    <Seg label="Margins" value={opts.margin} items={[["narrow", "Narrow"], ["normal", "Normal"], ["wide", "Wide"]]} onChange={(v) => setOpt("margin", v)} />
-                    <Seg label="Text" value={opts.font} items={[["small", "Small"], ["medium", "Medium"], ["large", "Large"]]} onChange={(v) => setOpt("font", v)} />
-                    <Seg label="Font" value={opts.family} items={[["sans", "Sans"], ["serif", "Serif"]]} onChange={(v) => setOpt("family", v)} />
-                    <label className="mp-check">
-                        <input type="checkbox" checked={opts.pageNumbers} onChange={(e) => setOpt("pageNumbers", e.target.checked)} />
-                        Page numbers
-                    </label>
-
-                    <details className="mp-more">
-                        <summary>Header, footer and file name</summary>
-                        <div className="mp-fields">
-                            <label className="mp-field"><span>Header text</span>
-                                <input type="text" value={opts.header} maxLength={80} placeholder="Top of every page" onChange={(e) => setOpt("header", e.target.value)} />
-                            </label>
-                            <label className="mp-field"><span>Footer text</span>
-                                <input type="text" value={opts.footer} maxLength={80} placeholder="Bottom of every page" onChange={(e) => setOpt("footer", e.target.value)} />
-                            </label>
-                            <label className="mp-field"><span>File name</span>
-                                <input type="text" value={fileName} maxLength={60} placeholder={base} onChange={(e) => setFileName(e.target.value)} />
-                            </label>
-                        </div>
-                    </details>
-                </div>
-
-
 
                 {/* ---------- editor | paper preview ---------- */}
                 <div className="mv-panes mv-panes--split">
@@ -457,7 +553,7 @@ export default function MarkdownToPdf() {
                     <div className="mv-box mv-box--prev">
                         <div className="mv-prev mp-stage" aria-label="PDF preview" style={pageVars}>
                             {!hasText ? (
-                                <p className="mv-empty">Paste Markdown, upload a .md file, or pick a preset to see the PDF page here.</p>
+                                <p className="mv-empty">Paste Markdown, upload a .md file, or pick a template to see the PDF page here.</p>
                             ) : !engine ? (
                                 <p className="mv-empty">Loading preview…</p>
                             ) : (
