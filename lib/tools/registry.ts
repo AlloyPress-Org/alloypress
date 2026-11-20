@@ -114,13 +114,13 @@ const RAW_TOOLS: ToolDef[] = [
   {
     slug: "pdf-to-markdown",
     name: "PDF to Markdown",
-    shortDescription: "Convert PDFs to Markdown for ChatGPT and Claude.",
+    shortDescription: "Convert PDF text, headings, lists and tables to Markdown for ChatGPT and Claude.",
     category: "file",
     phase: 3,
-    status: "soon",
+    status: "live",
     keyword: "pdf to markdown converter",
-    related: ["markdown-viewer"],
-    updatedAt: "2026-11-10",
+    related: ["markdown-viewer", "markdown-to-pdf", "ai-text-cleaner"],
+    updatedAt: "2026-11-20",
   },
   {
     slug: "photo-metadata",

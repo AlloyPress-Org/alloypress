@@ -93,11 +93,20 @@ export type ToolContent = {
 ------------------------------------------------------------------- */
 
 export function toolMetadata(slug: string, content: ToolContent): Metadata {
-  return buildPageMetadata({
+  const base = buildPageMetadata({
     title: content.metaTitle,
     description: content.metaDescription,
     canonicalPath: `/tools/${slug}`,
   });
+
+  // OG image lives in /public and is named after the tool slug: public/<slug>.png
+  const image = { url: `${SITE_URL}/${slug}.png`, width: 1200, height: 630, alt: content.metaTitle };
+
+  return {
+    ...base,
+    openGraph: { ...base.openGraph, images: [image] },
+    twitter: { ...base.twitter, card: "summary_large_image", images: [image.url] },
+  };
 }
 
 /* =========================================================

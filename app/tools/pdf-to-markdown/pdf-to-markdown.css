@@ -1,0 +1,80 @@
+/* PDF to Markdown: tool-specific styles. Boxes, toolbar and preview reuse markdown-viewer.css. */
+.pm-left { gap: 14px; padding: 14px; }
+@media (min-width: 900px) { .pm-left { min-height: calc(var(--mv-h) + 50px); } }
+
+.pm-drop {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 30px 16px;
+  border: 2px dashed var(--border); border-radius: var(--radius-lg); background: var(--card); color: var(--text-primary);
+  text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
+}
+.pm-drop:hover:not(:disabled), .mv-box.is-drag .pm-drop { border-color: var(--brand); background: var(--brand-soft); }
+.pm-drop:disabled { cursor: progress; opacity: .8; }
+.pm-drop b { font-size: var(--text-md); }
+.pm-drop span:last-child { font-size: var(--text-xs); color: var(--text-muted); }
+.pm-drop-ic, .pm-file-ic { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; color: var(--brand); background: var(--brand-soft); border: 1px solid var(--brand-subtle); }
+
+.pm-file { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); flex-wrap: wrap; }
+.pm-file-ic { width: 42px; height: 42px; flex: none; }
+.pm-file-t { display: flex; flex-direction: column; min-width: 0; flex: 1 1 140px; }
+.pm-file-t b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-sm); }
+.pm-file-t span { font-size: var(--text-xs); color: var(--text-muted); }
+
+.pm-prog { display: flex; flex-direction: column; gap: 6px; font-size: var(--text-xs); color: var(--text-muted); }
+.pm-bar { height: 7px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.pm-bar span { display: block; height: 100%; background: var(--brand); transition: width .2s; }
+
+.pm-alert { margin: 0; padding: 10px 12px; border: 1px solid #d97706; border-radius: var(--radius-md); background: rgba(217, 119, 6, .08); color: var(--text-primary); font-size: var(--text-sm); line-height: 1.5; }
+.pm-alert.is-bad { border-color: var(--error); background: color-mix(in srgb, var(--error) 10%, transparent); color: var(--error); }
+
+.pm-opts { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+.pm-l { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.pm-togs { display: flex; flex-wrap: wrap; gap: 8px; }
+.pm-tog { min-height: 34px; padding: 0 13px; border: 1px solid var(--border); border-radius: 999px; background: var(--card); color: var(--text-secondary); font-size: 13px; font-weight: 650; cursor: pointer; transition: border-color .15s, background .15s; }
+.pm-tog:hover { border-color: var(--brand); }
+.pm-tog.is-on { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); }
+.pm-tog.is-on::before { content: "✓ "; }
+
+.pm-range { display: flex; flex-direction: column; gap: 5px; }
+.pm-range input { min-height: 40px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--card); color: var(--text-primary); font-size: 16px; width: 100%; min-width: 0; }
+.pm-range input:focus { border-color: var(--brand); outline: none; box-shadow: 0 0 0 3px var(--brand-soft); }
+
+.pm-togs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 20px; }
+@media (max-width: 480px) { .pm-togs { grid-template-columns: 1fr; } }
+
+.pm-chk {
+  display: flex; align-items: center; gap: 12px; min-height: 28px;
+  color: var(--text-primary); font-size: 14px; font-weight: 500; line-height: 1.3;
+  cursor: pointer; user-select: none;
+}
+
+.pm-chk input {
+  appearance: none; -webkit-appearance: none; flex: none; display: grid; place-content: center;
+  width: 20px; height: 20px; margin: 0; border: 1.5px solid var(--border); border-radius: 5px;
+  background: var(--card); cursor: pointer; transition: background .15s, border-color .15s;
+}
+.pm-chk:hover input:not(:checked) { border-color: var(--brand); }
+.pm-chk input:checked { background: var(--brand); border-color: var(--brand); }
+.pm-chk input:checked::after {
+  content: ""; width: 5px; height: 10px; border: solid #fff; border-width: 0 2.2px 2.2px 0;
+  transform: translate(0, -1px) rotate(45deg);
+}
+.pm-chk input:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--brand-soft); }
+
+/* ---------- guide sections (options + page range) ---------- */
+.pg-opts { border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); overflow: hidden; }
+.pg-opt { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; }
+.pg-opt + .pg-opt { border-top: 1px solid var(--border-soft, var(--border)); }
+.pg-box { flex: none; display: grid; place-items: center; width: 20px; height: 20px; margin-top: 2px; border-radius: 5px; background: var(--brand); color: #fff; font-size: 13px; font-weight: 800; line-height: 1; }
+.pg-opt-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pg-opt-t b { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.pg-opt-t span { font-size: 13px; line-height: 1.45; color: var(--text-secondary); }
+.pg-opt-t em { font-style: normal; font-size: 12px; color: var(--text-muted); }
+
+.pg-range { display: flex; flex-direction: column; gap: 14px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--card); }
+.pg-input { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 12px; border: 1px solid var(--brand); border-radius: var(--radius-md); box-shadow: 0 0 0 3px var(--brand-soft); }
+.pg-input span { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.pg-input code { padding: 0; background: none; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.pg-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.pg-tiles span { display: grid; place-items: center; aspect-ratio: 4 / 5; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-weight: 700; color: var(--text-muted); background: var(--surface-2, transparent); transition: background .15s; }
+.pg-tiles span.is-on { background: var(--brand); border-color: var(--brand); color: #fff; box-shadow: 0 4px 10px rgba(0, 0, 0, .12); }
+.pg-note { margin: 0; font-size: 13px; color: var(--text-secondary); }
