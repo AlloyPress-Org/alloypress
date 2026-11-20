@@ -103,3 +103,51 @@ ${body}
 </body>
 </html>`;
 }
+
+/* ---------- PDF export with page options ---------- */
+export type PdfOptions = {
+    size: "letter" | "a4";
+    margin: "narrow" | "normal" | "wide";
+    font: "small" | "medium" | "large";
+    family: "sans" | "serif";
+    pageNumbers: boolean;
+    header: string;
+    footer: string;
+};
+
+export const PDF_MARGINS = { narrow: "12mm", normal: "18mm", wide: "25mm" } as const;
+export const PDF_FONTS = { small: "13px", medium: "15px", large: "17px" } as const;
+export const PDF_FAMILIES = {
+    sans: `-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif`,
+    serif: `Georgia,"Times New Roman",serif`,
+} as const;
+
+const cssStr = (s: string) => s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/[\r\n]+/g, " ").slice(0, 120);
+
+/** Standalone HTML made for printing. Page numbers and header/footer use @page margin boxes (Chrome 131+, Edge, Safari). */
+export function buildPdfDocument(body: string, title: string, o: PdfOptions): string {
+    const header = o.header.trim();
+    const footer = o.footer.trim();
+    const foot = [footer ? `"${cssStr(footer)}"` : "", o.pageNumbers ? `"Page " counter(page) " of " counter(pages)` : ""].filter(Boolean).join(` "  ·  " `);
+    const box = "font:10px -apple-system,Segoe UI,Roboto,sans-serif;color:#6b7280;";
+    const page =
+        `@page{size:${o.size === "a4" ? "A4" : "Letter"};margin:${PDF_MARGINS[o.margin]};` +
+        (header ? `@top-center{content:"${cssStr(header)}";${box}}` : "") +
+        (foot ? `@bottom-center{content:${foot};${box}}` : "") +
+        `}`;
+    const css = `${EXPORT_CSS}\n${page}\n.md{max-width:none;margin:0;padding:0;font-size:${PDF_FONTS[o.font]};font-family:${PDF_FAMILIES[o.family]}}`;
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>${esc(title)}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>${css}</style>
+</head>
+<body>
+<article class="md">
+${body}
+</article>
+</body>
+</html>`;
+}

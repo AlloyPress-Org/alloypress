@@ -81,13 +81,13 @@ const RAW_TOOLS: ToolDef[] = [
   {
     slug: "markdown-to-pdf",
     name: "Markdown to PDF",
-    shortDescription: "Turn Markdown into a clean, styled PDF.",
+    shortDescription: "Convert Markdown, README files, AI notes and resumes into a clean PDF.",
     category: "markdown",
     phase: 2,
-    status: "soon",
+    status: "live",
     keyword: "markdown to pdf",
-    related: ["markdown-viewer"],
-    updatedAt: "2026-11-10",
+    related: ["markdown-viewer", "ai-text-cleaner", "text-compare"],
+    updatedAt: "2026-11-19",
   },
   {
     slug: "ai-token-counter",
