@@ -376,3 +376,41 @@ export function convertPdf(data: PdfData, o: ConvOpts): string {
     }
     return out.length ? out.join("") + "\n" : "";
 }
+
+/* ---------- sample PDF (built in code, so no file is needed) ---------- */
+export function samplePdf(): PdfData {
+    const it = (s: string, x: number, y: number, size = 12, b = false): Item => ({ s, x, y, w: s.length * size * 0.5, size, b, i: false, m: false });
+    const items: Item[] = [
+        it("Quarterly Report", 72, 720, 24, true),
+        it("Summary", 72, 676, 12, true),
+        it("Revenue grew 12% this quarter, driven by new customers in", 72, 652),
+        it("Europe and a strong renewal rate across all plans.", 72, 637),
+        it("Next steps", 72, 600, 12, true),
+        it("• Launch the mobile app in May", 72, 576),
+        it("• Collect feedback from 50 customers", 72, 561),
+        it("Plan", 72, 510), it("Price", 300, 510),
+        it("Basic", 72, 492), it("$5", 300, 492),
+        it("Pro", 72, 474), it("$12", 300, 474),
+    ];
+    return { pages: [{ w: 612, h: 792, items }], total: 1, chars: items.reduce((n, i) => n + i.s.length, 0), truncated: false };
+}
+
+/* ---------- copy helpers ---------- */
+export function toPlain(md: string): string {
+    return md
+        .replace(/```[\w-]*\n?/g, "")
+        .replace(/^\|?\s*(?:-{3,}\s*\|?\s*)+$/gm, "")
+        .replace(/^\|(.+)\|$/gm, (_m, r: string) => r.split("|").map((c) => c.trim()).join("\t"))
+        .replace(/^#{1,6}\s+/gm, "")
+        .replace(/\*\*\*?|__|`/g, "")
+        .replace(/(^|[^*\w])\*(?=\S)([^*\n]+)\*/g, "$1$2")
+        .replace(/^\s*---\s*$/gm, "")
+        .replace(/^(\s*)[-*]\s+/gm, "$1• ")
+        .replace(/\\([\\`*<])/g, "$1")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim() + "\n";
+}
+
+/** Wraps the Markdown so it can be pasted into ChatGPT or Claude as context. */
+export const forAi = (md: string, name: string) =>
+    `The text below was converted from the PDF "${name.replace(/"/g, "'")}". Use it as context for my next question.\n\n<document name="${name.replace(/"/g, "'")}">\n${md.trim()}\n</document>\n`;

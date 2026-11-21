@@ -4,7 +4,7 @@ import "../markdown-viewer/markdown-viewer.css"; // shared box, toolbar and prev
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
-import { DEFAULT_OPTS, MAX_BYTES, convertPdf, extractPdf, type ConvOpts, type PdfData } from "@/lib/tools/pdfToMarkdown";
+import { DEFAULT_OPTS, MAX_BYTES, convertPdf, extractPdf, forAi, samplePdf, toPlain, type ConvOpts, type PdfData } from "@/lib/tools/pdfToMarkdown";
 import { formatNumber as fmt } from "@/lib/tools/text";
 
 const STORAGE_KEY = "ap-tool:pdf-to-markdown:v1";
@@ -12,6 +12,7 @@ const STORAGE_KEY = "ap-tool:pdf-to-markdown:v1";
 type Engine = typeof import("@/lib/tools/markdown");
 type Status = "idle" | "loading" | "ready" | "error";
 type View = "md" | "preview";
+type CopyKind = "" | "md" | "ai" | "plain";
 type Info = { name: string; size: number; pages: number; total: number; truncated: boolean };
 
 class UserError extends Error {}
@@ -97,7 +98,7 @@ export default function PdfToMarkdown() {
     const [view, setView] = useState<View>("md");
     const [engine, setEngine] = useState<Engine | null>(null);
     const [drag, setDrag] = useState(false);
-    const [copied, setCopied] = useState(false);
+    const [copied, setCopied] = useState<CopyKind>("");
     const loaded = useRef(false);
     const token = useRef(0);
     const fileRef = useRef<HTMLInputElement>(null);
@@ -112,7 +113,7 @@ export default function PdfToMarkdown() {
         if (loaded.current) writeOpts(opts);
     }, [opts]);
 
-    // The renderer is only needed for the Preview tab
+    // The renderer (and anything it pulls in) is only needed for the Preview tab
     useEffect(() => {
         if (view !== "preview" || engine) return;
         let alive = true;
@@ -134,8 +135,17 @@ export default function PdfToMarkdown() {
 
     const set = <K extends keyof ConvOpts>(k: K, v: ConvOpts[K]) => setOpts((o) => ({ ...o, [k]: v }));
 
-    const loadFile = async (f?: File | null) => {
-        if (!f) return;
+    const openSample = () => {
+        token.current++;
+        const d = samplePdf();
+        setError("");
+        setData(d);
+        setInfo({ name: "sample.pdf", size: 0, pages: d.pages.length, total: d.total, truncated: false });
+        setView("md");
+        setStatus("ready");
+    };
+
+    const open = async (f: File) => {
         const id = ++token.current;
         setError("");
         setStatus("loading");
@@ -149,6 +159,7 @@ export default function PdfToMarkdown() {
             if (id !== token.current) return;
             setData(d);
             setInfo({ name: f.name, size: f.size, pages: d.pages.length, total: d.total, truncated: d.truncated });
+            setView("md");
             setStatus("ready");
         } catch (e) {
             if (id !== token.current) return;
@@ -157,6 +168,10 @@ export default function PdfToMarkdown() {
             setStatus("error");
             setError(friendly(e));
         }
+    };
+
+    const loadFile = (f?: File | null) => {
+        if (f) void open(f);
     };
 
     const reset = () => {
@@ -170,15 +185,18 @@ export default function PdfToMarkdown() {
 
     const base = (info?.name.replace(/\.pdf$/i, "") || "document").replace(/[^\w.-]+/g, "-");
     const hasMd = md.trim().length > 0;
-    const scanned = status === "ready" && !!data && data.chars < 40;
+    // Image-only PDF: almost no text for the number of pages. Checked as soon as the file is read.
+    const scanned = status === "ready" && !!data && data.chars < Math.max(40, (info?.pages ?? 1) * 10);
     const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
     const words = useMemo(() => (md ? md.split(/\s+/).filter(Boolean).length : 0), [md]);
     const lineCount = useMemo(() => (md ? md.split("\n").length : 0), [md]);
 
-    const copyMd = async () => {
-        if (hasMd && (await writeClipboard(md))) {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
+    const copy = async (kind: Exclude<CopyKind, "">) => {
+        if (!hasMd) return;
+        const text = kind === "md" ? md : kind === "plain" ? toPlain(md) : forAi(md, info?.name ?? "document.pdf");
+        if (await writeClipboard(text)) {
+            setCopied(kind);
+            setTimeout(() => setCopied(""), 1500);
         }
     };
 
@@ -213,26 +231,33 @@ export default function PdfToMarkdown() {
                         className={`mv-box pm-left${drag ? " is-drag" : ""}`}
                         onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
                         onDragLeave={() => setDrag(false)}
-                        onDrop={(e) => { e.preventDefault(); setDrag(false); void loadFile(e.dataTransfer.files?.[0]); }}
+                        onDrop={(e) => { e.preventDefault(); setDrag(false); loadFile(e.dataTransfer.files?.[0]); }}
                     >
                         {info ? (
                             <div className="pm-file">
                                 <span className="pm-file-ic"><Svg name="pdf" size={22} /></span>
                                 <div className="pm-file-t">
                                     <b title={info.name}>{info.name}</b>
-                                    <span>{fmt(info.pages)} {info.pages === 1 ? "page" : "pages"} · {size(info.size)}</span>
+                                    <span>{fmt(info.pages)} {info.pages === 1 ? "page" : "pages"}{info.size ? ` · ${size(info.size)}` : " · sample"}</span>
                                 </div>
                                 <button type="button" className="tl-btn" onClick={() => fileRef.current?.click()}>Replace</button>
                                 <button type="button" className="tl-btn" onClick={reset}>Remove</button>
                             </div>
                         ) : (
-                            <button type="button" className="pm-drop" onClick={() => fileRef.current?.click()} disabled={status === "loading"}>
-                                <span className="pm-drop-ic"><Svg name="upload" size={26} /></span>
-                                <b>{status === "loading" ? "Reading your PDF…" : "Drop a PDF here, or click to upload"}</b>
-                                <span>Text-based PDFs up to 25 MB. Nothing is uploaded.</span>
-                            </button>
+                            <>
+                                <button type="button" className="pm-drop" onClick={() => fileRef.current?.click()} disabled={status === "loading"}>
+                                    <span className="pm-drop-ic"><Svg name="upload" size={26} /></span>
+                                    <b>{status === "loading" ? "Reading your PDF…" : "Drop a PDF here, or click to upload"}</b>
+                                    <span>Text-based PDFs up to 25 MB. Nothing is uploaded.</span>
+                                </button>
+                                <div style={{ textAlign: "center", marginTop: 10 }}>
+                                    <button type="button" className="tl-btn" onClick={openSample} disabled={status === "loading"}>
+                                        Try a sample PDF
+                                    </button>
+                                </div>
+                            </>
                         )}
-                        <input ref={fileRef} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => { void loadFile(e.target.files?.[0]); e.target.value = ""; }} />
+                        <input ref={fileRef} type="file" accept="application/pdf,.pdf" hidden onChange={(e) => { loadFile(e.target.files?.[0]); e.target.value = ""; }} />
 
                         {status === "loading" && (
                             <div className="pm-prog" role="status">
@@ -241,7 +266,11 @@ export default function PdfToMarkdown() {
                             </div>
                         )}
                         {error && <p className="pm-alert is-bad" role="alert">{error}</p>}
-                        {scanned && <p className="pm-alert" role="status">No text found. This PDF looks scanned (pictures of pages), so it needs OCR. This tool reads real text only.</p>}
+                        {scanned && (
+                            <p className="pm-alert is-bad" role="alert">
+                                This looks scanned (pictures of pages), so there is no text to read. We can’t read images yet. Run OCR on the file first, then upload it again.
+                            </p>
+                        )}
                         {info?.truncated && <p className="pm-alert" role="status">Only the first 300 of {fmt(info.total)} pages were read.</p>}
 
                         <div className="pm-opts">
@@ -269,13 +298,19 @@ export default function PdfToMarkdown() {
                                 className="mv-textarea"
                                 value={md}
                                 onChange={(e) => setMd(e.target.value)}
-                                placeholder={status === "ready" && !hasMd ? "No text matched these settings." : "Your Markdown appears here. You can edit it before you copy or download."}
+                                placeholder={
+                                    scanned
+                                        ? "Nothing to show. This PDF has no readable text (it looks scanned)."
+                                        : status === "ready" && !hasMd
+                                          ? "No text matched these settings."
+                                          : "Your Markdown appears here. You can edit it before you copy or download."
+                                }
                                 spellCheck={false}
                             />
                         ) : (
                             <div className="mv-prev" aria-label="Preview">
                                 {!hasMd ? (
-                                    <p className="mv-empty">Upload a PDF to see the Markdown preview here.</p>
+                                    <p className="mv-empty">{scanned ? "This PDF has no readable text (it looks scanned)." : "Upload a PDF, or try the sample, to see the Markdown preview here."}</p>
                                 ) : !engine ? (
                                     <p className="mv-empty">Loading preview…</p>
                                 ) : (
@@ -285,7 +320,9 @@ export default function PdfToMarkdown() {
                         )}
                         <div className="mv-tools">
                             <div className="mv-icons" role="toolbar" aria-label="Output tools">
-                                <IconBtn icon="copy" label={copied ? "Copied" : "Copy Markdown"} onClick={copyMd} disabled={!hasMd} done={copied} />
+                                <IconBtn icon="copy" label={copied === "md" ? "Copied" : "Copy Markdown"} onClick={() => void copy("md")} disabled={!hasMd} done={copied === "md"} />
+                                <IconBtn icon="copy" text={copied === "ai" ? "Copied" : "For AI"} label="Copy for ChatGPT or Claude (Markdown wrapped for a prompt)" onClick={() => void copy("ai")} disabled={!hasMd} done={copied === "ai"} />
+                                <IconBtn icon="copy" text={copied === "plain" ? "Copied" : "Plain text"} label="Copy as plain text (no Markdown symbols)" onClick={() => void copy("plain")} disabled={!hasMd} done={copied === "plain"} />
                                 <IconBtn icon="download" text=".md" label="Download .md file" onClick={downloadMd} disabled={!hasMd} />
                                 <IconBtn icon="clear" label="Clear output" onClick={() => setMd("")} disabled={!hasMd} />
                             </div>

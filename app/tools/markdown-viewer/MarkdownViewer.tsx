@@ -1,7 +1,5 @@
 "use client";
 
-import "katex/dist/katex.min.css";
-
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { readFileText } from "@/lib/tools/fileText";
@@ -63,6 +61,13 @@ type Engine = typeof import("@/lib/tools/markdown");
 
 let mermaidSeq = 0;
 
+/** Wait for the browser to be idle, so the Mermaid chunk never competes with first paint. */
+const idle = () =>
+    new Promise<void>((resolve) => {
+        if (typeof window !== "undefined" && "requestIdleCallback" in window) window.requestIdleCallback(() => resolve(), { timeout: 1500 });
+        else setTimeout(resolve, 200);
+    });
+
 /**
  * Fix Mermaid block-beta circular JSON error in React.
  *
@@ -80,6 +85,21 @@ function preventMermaidBlockStringifyCrash(): void {
         value: () => ({}),
         configurable: true,
     });
+}
+
+/** Shows a short message and the diagram source in place of a diagram that could not be drawn. */
+function showDiagramFallback(el: HTMLElement, note: string, src: string) {
+    const wrap = document.createElement("div");
+    wrap.className = "mv-fallback";
+    const p = document.createElement("p");
+    p.className = "mv-err";
+    p.textContent = note;
+    const pre = document.createElement("pre");
+    const code = document.createElement("code");
+    code.textContent = src;
+    pre.appendChild(code);
+    wrap.append(p, pre);
+    el.replaceChildren(wrap);
 }
 
 function readStore(): Saved | null {
@@ -156,10 +176,11 @@ function IconBtn({ icon, label, text, onClick, disabled, done }: { icon: keyof t
 }
 
 export default function MarkdownViewer() {
-    const [text, setText] = useState("");
+    const [text, setText] = useState(SAMPLE); // pre-filled so the preview shows a table, diagram and math at once
     const [view, setView] = useState<View>("split");
     const [name, setName] = useState("");
     const [engine, setEngine] = useState<Engine | null>(null);
+    const [extrasV, setExtrasV] = useState(0); // 0 = highlighter and KaTeX not checked yet; bumps when one finishes loading
     const [drag, setDrag] = useState(false);
     const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
     const [copied, setCopied] = useState("");
@@ -167,7 +188,7 @@ export default function MarkdownViewer() {
     const fileRef = useRef<HTMLInputElement>(null);
     const previewRef = useRef<HTMLElement>(null);
 
-    // Load the renderer in the browser only (marked, highlight.js, DOMPurify)
+    // Load the renderer in the browser only (marked, DOMPurify). highlight.js and KaTeX come later, only if needed.
     useEffect(() => {
         let alive = true;
         import("@/lib/tools/markdown").then((m) => alive && setEngine(m));
@@ -192,14 +213,39 @@ export default function MarkdownViewer() {
     }, [text, view, name]);
 
     const deferred = useDeferredValue(text);
+
+    // highlight.js and the KaTeX renderer load only when the text has a fenced code language or a "$"
+    useEffect(() => {
+        if (!engine) return;
+        let alive = true;
+        engine.loadExtras(deferred).then(
+            (changed) => alive && setExtrasV((v) => (changed || v === 0 ? v + 1 : v)),
+            () => alive && setExtrasV((v) => (v === 0 ? 1 : v)),
+        );
+        return () => { alive = false; };
+    }, [engine, deferred]);
+
+    // KaTeX stylesheet loads only when the document contains "$"
+    const [mathCss, setMathCss] = useState(false);
+    const needsMath = deferred.includes("$");
+    useEffect(() => {
+        if (!needsMath || mathCss) return;
+        let alive = true;
+        // @ts-ignore: plain .css has no type declaration
+        import("katex/dist/katex.min.css").then(() => alive && setMathCss(true), () => alive && setMathCss(true));
+        return () => { alive = false; };
+    }, [needsMath, mathCss]);
+
     const html = useMemo(() => {
         if (!engine || !deferred) return "";
+        if (extrasV === 0) return ""; // first render waits once for the highlighter and KaTeX, so nothing flashes unstyled
+        if (needsMath && !mathCss) return ""; // wait for the stylesheet, so math never flashes unstyled
         try {
             return engine.renderMarkdown(deferred);
         } catch {
             return "<p>Could not render this Markdown.</p>";
         }
-    }, [engine, deferred]);
+    }, [engine, deferred, needsMath, mathCss, extrasV]);
     const stats = useMemo(() => analyzeText(deferred), [deferred]);
     const lineCount = useMemo(() => (text ? text.split("\n").length : 0), [text]);
 
@@ -211,7 +257,23 @@ export default function MarkdownViewer() {
         if (!nodes.length) return;
         let cancelled = false;
         (async () => {
-            const mermaid = (await import("mermaid")).default;
+            await idle();
+            if (cancelled) return;
+
+            // If the Mermaid chunk cannot load (offline, blocked), show the diagram source instead of leaving blank boxes
+            let mermaid: (typeof import("mermaid"))["default"];
+            try {
+                mermaid = (await import("mermaid")).default;
+            } catch {
+                if (cancelled) return;
+                for (const el of nodes) {
+                    const raw = el.getAttribute("data-src") ?? "";
+                    let src = raw;
+                    try { src = decodeURIComponent(raw); } catch { /* keep raw */ }
+                    if (src.trim()) showDiagramFallback(el, "Diagrams could not be loaded. Check your connection and try again. Its source is shown instead.", src);
+                }
+                return;
+            }
 
             if (cancelled) return;
 
@@ -238,21 +300,7 @@ export default function MarkdownViewer() {
                 }
                 const id = `mv-m-${++mermaidSeq}`;
                 try {
-                    let svg: string;
-                    try {
-                        ({ svg } = await mermaid.render(id, src));
-                    } catch (first) {
-                        // Some diagram types (e.g. block-beta) crash in strict mode: retry once in loose mode
-                        document.getElementById(`d${id}`)?.remove();
-                        document.getElementById(id)?.remove();
-                        mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "default", flowchart: { htmlLabels: false, useMaxWidth: true } });
-                        try {
-                            ({ svg } = await mermaid.render(`${id}r`, src));
-                        } finally {
-                            mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "default", flowchart: { htmlLabels: false, useMaxWidth: true } });
-                        }
-                        void first;
-                    }
+                    const { svg } = await mermaid.render(id, src);
                     if (!cancelled) el.innerHTML = svg;
                 } catch (e) {
                     ["", "r"].forEach((s) => {
@@ -262,19 +310,11 @@ export default function MarkdownViewer() {
                     if (!cancelled) {
                         const why = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "invalid syntax";
                         const circular = /circular structure/i.test(why);
-                        const wrap = document.createElement("div");
-                        wrap.className = "mv-fallback";
-                        const note = document.createElement("p");
-                        note.className = "mv-err";
-                        note.textContent = circular
-                            ? "This diagram type could not be drawn in the browser. Its source is shown instead."
-                            : `Diagram error: ${why}`;
-                        const pre = document.createElement("pre");
-                        const code = document.createElement("code");
-                        code.textContent = src;
-                        pre.appendChild(code);
-                        wrap.append(note, pre);
-                        el.replaceChildren(wrap);
+                        showDiagramFallback(
+                            el,
+                            circular ? "This diagram type could not be drawn in the browser. Its source is shown instead." : `Diagram error: ${why}`,
+                            src,
+                        );
                     }
                 }
             }
@@ -405,11 +445,11 @@ export default function MarkdownViewer() {
                         {drag && <div className="mv-drop">Drop file to load</div>}
                         <div className="mv-tools">
                             <div className="mv-icons" role="toolbar" aria-label="Markdown tools">
-                                <IconBtn icon="upload" label="Upload .md file" onClick={() => fileRef.current?.click()} />
-                                <IconBtn icon="paste" label="Paste" onClick={onPaste} />
-                                <IconBtn icon="sample" label="Sample" onClick={() => { setText(SAMPLE); setName(""); }} />
+                                <IconBtn icon="upload" text="Upload" label="Upload .md file" onClick={() => fileRef.current?.click()} />
+                                <IconBtn icon="paste" text="Paste" label="Paste from clipboard" onClick={onPaste} />
+                                <IconBtn icon="sample" text="Sample" label="Load sample document (table, diagram, math)" onClick={() => { setText(SAMPLE); setName(""); }} />
                                 <IconBtn icon="copy" label={copied === "md" ? "Copied" : "Copy Markdown"} onClick={() => copyText("md", text)} disabled={!hasText} done={copied === "md"} />
-                                <IconBtn icon="clear" label="Clear" onClick={clearAll} disabled={!hasText} />
+                                <IconBtn icon="clear" label="Clear the editor" onClick={clearAll} disabled={!hasText} />
                             </div>
                             <span className="mv-count">{name && <span className="mv-file">{name} · </span>}Lines: {fmt(lineCount)} | Words: {fmt(stats.words)}</span>
                         </div>

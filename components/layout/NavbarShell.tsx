@@ -772,7 +772,7 @@ export default function NavbarShell({ featuredArticle }: NavbarProps) {
                 menu.intro && (
                   <div className="mega-intro">
                     <span className="mega-eyebrow">{menu.intro.eyebrow}</span>
-                    <h3 className="mega-intro-title">{menu.intro.title}</h3>
+                    <span>{menu.intro.title}</span>
                     <p className="mega-intro-desc">{menu.intro.description}</p>
                     {menu.intro.cta && (
                       <Link

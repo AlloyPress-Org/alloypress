@@ -190,7 +190,7 @@ function Section({ s, widgets }: { s: ToolSection; widgets: Record<string, React
     case "steps":
       return (
         <section className="tl-section" id={s.id}>
-          <h2 className="tl-h2">{s.title}</h2>
+          <div className="tl-section-head"><h2 className="tl-h2">{s.title}</h2></div>
           <ol className="tl-steps">
             {s.items.map((it, i) => (
               <li key={it.title} className="tl-card">
@@ -207,7 +207,6 @@ function Section({ s, widgets }: { s: ToolSection; widgets: Record<string, React
       return (
         <section className="tl-section" id={s.id}>
           <div className="tl-section-head">
-            {s.eyebrow && <span className="eyebrow">{s.eyebrow}</span>}
             <h2 className="tl-h2">{s.title}</h2>
             {s.intro && <p className="tl-muted">{s.intro}</p>}
           </div>

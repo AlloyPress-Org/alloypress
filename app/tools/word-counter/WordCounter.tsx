@@ -88,9 +88,6 @@ export default function WordCounter() {
   const over = stats.characters > platform.limit;
   const platformPct = Math.min(100, (stats.characters / platform.limit) * 100);
 
-  const safeGoal = Math.max(1, goal || 1);
-  const goalPct = Math.min(100, Math.round((stats.words / safeGoal) * 100));
-
   const maxKw = keywords[0]?.count ?? 1;
 
   const sentences = useMemo(
@@ -172,6 +169,7 @@ export default function WordCounter() {
             <textarea
               id="wc-text"
               aria-label="Your text"
+              style={{ height: 220, minHeight: 0 }}
               className="tl-textarea wc-textarea"
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -218,14 +216,6 @@ export default function WordCounter() {
             ))}
           </dl>
           <p className="tl-details-note">Reading at 238 and speaking at 150 words a minute.</p>
-
-          <div className="tl-goal">
-            <label htmlFor="wc-goal" className="tl-kicker">Word goal</label>
-            <input id="wc-goal" type="number" min={1} inputMode="numeric" value={goal || ""} placeholder="e.g. 500"
-              onChange={(e) => setGoal(parseInt(e.target.value, 10) || 0)} />
-            <div className="tl-bar"><span style={{ width: `${goalPct}%` }} /></div>
-            <span className="tl-small">{fmt(stats.words)} of {fmt(safeGoal)} words ({goalPct}%)</span>
-          </div>
         </aside>
       </div>
 

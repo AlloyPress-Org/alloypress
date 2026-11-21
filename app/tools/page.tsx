@@ -19,7 +19,7 @@ export default function ToolsHub() {
   return (
     <div className="tl-page">
       <header className="tl-hero">
-        <h1 className="tl-h1">Free <span className="tl-accent">AI &amp; Writing Tools</span></h1>
+        <h1 className="tl-h1">Fast and Free<span className="tl-accent"> Online Tools</span></h1>
         <p className="tl-lead">Simple tools for text, AI, files and photos. Free, no sign-up. Your text and files stay on your device.</p>
       </header>
       <div className="tl-body">

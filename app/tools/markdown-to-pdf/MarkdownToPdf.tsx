@@ -1,6 +1,5 @@
 "use client";
 
-import "katex/dist/katex.min.css";
 import "../markdown-viewer/markdown-viewer.css"; // shared box, toolbar and rendered-Markdown styles
 
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
@@ -14,10 +13,11 @@ const ACCEPT = ".md,.markdown,.mdown,.mkd,.txt,text/markdown,text/plain";
 
 type Engine = typeof import("@/lib/tools/markdown");
 type Opts = import("@/lib/tools/markdown").PdfOptions;
-type Preset = { id: string; label: string; hint: string; opts: Partial<Opts>; sample: string };
-type Menu = "" | "tpl" | "set";
+type Menu = "" | "set";
 
-const NOTES = `# Study Notes: How Caching Works
+class UserError extends Error {}
+
+const SAMPLE = `# Study Notes: How Caching Works
 
 > Summary from a ChatGPT session. Edit freely, then download.
 
@@ -48,98 +48,33 @@ flowchart LR
 \`\`\`
 `;
 
-const README = `# Project Atlas
-
-A small API for tracking tasks.
-
-## Install
-
-\`\`\`bash
-npm install
-npm run dev
-\`\`\`
-
-## Usage
-
-\`\`\`js
-const res = await fetch("/api/tasks");
-console.log(await res.json());
-\`\`\`
-
-## Endpoints
-
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | /api/tasks | List tasks |
-| POST | /api/tasks | Create a task |
-
-## Changelog
-
-- [x] v1.1 Add filters
-- [ ] v1.2 Add webhooks
-`;
-
-const RESUME = `# Alex Morgan
-
-Full-stack developer · alex@example.com · github.com/alexmorgan · Austin, TX
-
-## Summary
-
-Developer with 3 years of experience building fast web apps with React, TypeScript and Node.js.
-
-## Experience
-
-### Frontend Developer, Brightwave
-*2024 – Present*
-
-- Built a design system used by 4 product teams.
-- Cut page load time by 38% with code splitting and caching.
-
-### Junior Developer, Northlight
-*2022 – 2024*
-
-- Shipped 20+ features for a customer portal.
-- Wrote tests that raised coverage from 40% to 82%.
-
-## Skills
-
-**Languages:** TypeScript, JavaScript, Python, SQL
-**Tools:** React, Next.js, Node.js, PostgreSQL, Git
-
-## Education
-
-B.S. Computer Science, University of Texas, 2022
-`;
-
-const SHEET = `# Git Cheat Sheet
-
-| Command | What it does |
-| --- | --- |
-| \`git status\` | Show changed files |
-| \`git add .\` | Stage all changes |
-| \`git commit -m "msg"\` | Save a snapshot |
-| \`git push\` | Upload commits |
-| \`git pull\` | Download and merge |
-
-## Undo
-
-- \`git restore file\` discards changes
-- \`git reset --soft HEAD~1\` undoes the last commit
-`;
-
-const PRESETS: Preset[] = [
-    { id: "ai", label: "AI notes", hint: "ChatGPT / Claude answers", opts: { margin: "normal", font: "medium", family: "sans", pageNumbers: true }, sample: NOTES },
-    { id: "docs", label: "README / docs", hint: "Technical docs and guides", opts: { margin: "normal", font: "medium", family: "sans", pageNumbers: true }, sample: README },
-    { id: "resume", label: "Resume", hint: "Compact, one-page layout", opts: { margin: "narrow", font: "small", family: "sans", pageNumbers: false, header: "", footer: "" }, sample: RESUME },
-    { id: "sheet", label: "Cheat sheet", hint: "Dense, printable reference", opts: { margin: "narrow", font: "small", family: "sans", pageNumbers: true }, sample: SHEET },
-    { id: "study", label: "Study notes", hint: "Large serif text, wide margins", opts: { margin: "wide", font: "large", family: "serif", pageNumbers: true }, sample: NOTES },
-];
-
 const DEFAULTS: Opts = { size: "letter", margin: "normal", font: "medium", family: "sans", pageNumbers: true, header: "", footer: "" };
 
-type Saved = { text: string; name: string; opts: Opts; preset: string };
+type Saved = { text: string; name: string; opts: Opts };
 
 let mermaidSeq = 0;
+
+/** Mermaid's block layout tries to JSON.stringify a DOM node that React has decorated with circular Fiber refs. */
+function preventMermaidBlockStringifyCrash(): void {
+    const html = document.documentElement;
+    if (Object.prototype.hasOwnProperty.call(html, "toJSON")) return;
+    Object.defineProperty(html, "toJSON", { value: () => ({}), configurable: true });
+}
+
+/** Shows a short message and the diagram source in place of a diagram that could not be drawn. */
+function showDiagramFallback(el: HTMLElement, note: string, src: string) {
+    const wrap = document.createElement("div");
+    wrap.className = "mv-fallback";
+    const p = document.createElement("p");
+    p.className = "mv-err";
+    p.textContent = note;
+    const pre = document.createElement("pre");
+    const code = document.createElement("code");
+    code.textContent = src;
+    pre.appendChild(code);
+    wrap.append(p, pre);
+    el.replaceChildren(wrap);
+}
 
 function readStore(): Saved | null {
     try {
@@ -176,6 +111,9 @@ function save(name: string, content: string, type: string) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+/** jsPDF's built-in fonts only cover Latin text, so anything else in a header or footer is replaced. */
+const latin = (s: string) => s.replace(/[^\x20-\x7E\u00A0-\u00FF]/g, "?");
+
 const ICONS: Record<string, ReactNode> = {
     upload: <><path d="M12 16V4" /><path d="M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3" /></>,
     paste: <><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M16 5h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2h2" /></>,
@@ -183,9 +121,9 @@ const ICONS: Record<string, ReactNode> = {
     copy: <><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 012-2h10" /></>,
     code: <><path d="M8 7l-5 5 5 5" /><path d="M16 7l5 5-5 5" /><path d="M14 4l-4 16" /></>,
     download: <><path d="M12 4v11" /><path d="M7 11l5 5 5-5" /><path d="M5 20h14" /></>,
+    print: <><path d="M7 9V3h10v6" /><rect x="5" y="14" width="14" height="7" rx="1" /><path d="M5 17H4a2 2 0 01-2-2v-4a2 2 0 012-2h16a2 2 0 012 2v4a2 2 0 01-2 2h-1" /></>,
     clear: <><path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="M6 7l1 13h10l1-13" /><path d="M9 7V4h6v3" /></>,
     check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
-    template: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" /></>,
     sliders: <><path d="M4 6h10" /><path d="M18 6h2" /><circle cx="16" cy="6" r="2" /><path d="M4 12h2" /><path d="M10 12h10" /><circle cx="8" cy="12" r="2" /><path d="M4 18h12" /><path d="M20 18h0" /><circle cx="18" cy="18" r="2" /></>,
     chevron: <path d="M6 9l6 6 6-6" />,
 };
@@ -236,12 +174,13 @@ export default function MarkdownToPdf() {
     const [name, setName] = useState("");
     const [fileName, setFileName] = useState("");
     const [opts, setOpts] = useState<Opts>(DEFAULTS);
-    const [preset, setPreset] = useState("");
     const [engine, setEngine] = useState<Engine | null>(null);
+    const [extrasV, setExtrasV] = useState(0); // 0 = highlighter and KaTeX not checked yet; bumps when one finishes loading
     const [drag, setDrag] = useState(false);
     const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
     const [copied, setCopied] = useState("");
     const [menu, setMenu] = useState<Menu>("");
+    const [busy, setBusy] = useState(false);
     const [hdrOn, setHdrOn] = useState(false);
     const [ftrOn, setFtrOn] = useState(false);
     const loaded = useRef(false);
@@ -261,18 +200,17 @@ export default function MarkdownToPdf() {
             setText(s.text ?? "");
             setName(s.name ?? "");
             if (s.opts) setOpts({ ...DEFAULTS, ...s.opts });
-            if (s.preset) setPreset(s.preset);
         }
         loaded.current = true;
     }, []);
 
     useEffect(() => {
         if (!loaded.current) return;
-        const id = setTimeout(() => writeStore({ text, name, opts, preset }), 500);
+        const id = setTimeout(() => writeStore({ text, name, opts }), 500);
         return () => clearTimeout(id);
-    }, [text, name, opts, preset]);
+    }, [text, name, opts]);
 
-    // dropdowns: close on outside click or Escape
+    // dropdown: close on outside click or Escape
     useEffect(() => {
         if (!menu) return;
         const onDown = (e: MouseEvent) => {
@@ -288,18 +226,43 @@ export default function MarkdownToPdf() {
     }, [menu]);
 
     const deferred = useDeferredValue(text);
+
+    // highlight.js and the KaTeX renderer load only when the text has a fenced code language or a "$"
+    useEffect(() => {
+        if (!engine) return;
+        let alive = true;
+        engine.loadExtras(deferred).then(
+            (changed) => alive && setExtrasV((v) => (changed || v === 0 ? v + 1 : v)),
+            () => alive && setExtrasV((v) => (v === 0 ? 1 : v)),
+        );
+        return () => { alive = false; };
+    }, [engine, deferred]);
+
+    // KaTeX stylesheet loads only when the document contains "$"
+    const [mathCss, setMathCss] = useState(false);
+    const needsMath = deferred.includes("$");
+    useEffect(() => {
+        if (!needsMath || mathCss) return;
+        let alive = true;
+        // @ts-ignore: plain .css has no type declaration
+        import("katex/dist/katex.min.css").then(() => alive && setMathCss(true), () => alive && setMathCss(true));
+        return () => { alive = false; };
+    }, [needsMath, mathCss]);
+
     const html = useMemo(() => {
         if (!engine || !deferred) return "";
+        if (extrasV === 0) return ""; // first render waits once for the highlighter and KaTeX
+        if (needsMath && !mathCss) return ""; // wait for the stylesheet, so math never flashes unstyled
         try {
             return engine.renderMarkdown(deferred);
         } catch {
             return "<p>Could not render this Markdown.</p>";
         }
-    }, [engine, deferred]);
+    }, [engine, deferred, needsMath, mathCss, extrasV]);
     const stats = useMemo(() => analyzeText(deferred), [deferred]);
     const lineCount = useMemo(() => (text ? text.split("\n").length : 0), [text]);
 
-    // Mermaid placeholders -> SVG (loads Mermaid only when a diagram exists). A diagram that cannot be drawn shows its source.
+    // Mermaid placeholders -> SVG (Mermaid loads only when a diagram exists). A diagram that cannot be drawn shows its source.
     useEffect(() => {
         const root = previewRef.current;
         if (!root) return;
@@ -307,35 +270,62 @@ export default function MarkdownToPdf() {
         if (!nodes.length) return;
         let cancelled = false;
         (async () => {
-            const mermaid = (await import("mermaid")).default;
+            const srcOf = (el: HTMLElement) => {
+                const raw = el.getAttribute("data-src") ?? "";
+                try { return decodeURIComponent(raw); } catch { return raw; }
+            };
+
+            let mermaid: (typeof import("mermaid"))["default"];
+            try {
+                mermaid = (await import("mermaid")).default;
+            } catch {
+                if (cancelled) return;
+                for (const el of nodes) {
+                    const src = srcOf(el);
+                    if (src.trim()) showDiagramFallback(el, "Diagrams could not be loaded. Check your connection and try again. Its source is shown instead.", src);
+                }
+                return;
+            }
             if (cancelled) return;
-            mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "default", flowchart: { htmlLabels: false, useMaxWidth: true } });
+
+            preventMermaidBlockStringifyCrash();
+            const strict = { startOnLoad: false, securityLevel: "strict" as const, theme: "default" as const, flowchart: { htmlLabels: false, useMaxWidth: true } };
+            mermaid.initialize(strict);
+
             for (const el of nodes) {
                 if (cancelled) return;
-                const raw = el.getAttribute("data-src") ?? "";
-                let src = raw;
-                try { src = decodeURIComponent(raw); } catch { /* keep raw */ }
+                const src = srcOf(el);
                 if (!src.trim()) { el.textContent = ""; continue; }
                 const id = `mp-m-${++mermaidSeq}`;
                 try {
-                    const { svg } = await mermaid.render(id, src);
+                    let svg: string;
+                    try {
+                        ({ svg } = await mermaid.render(id, src));
+                    } catch (first) {
+                        // Some diagram types (e.g. block-beta) crash in strict mode: retry once in loose mode
+                        document.getElementById(`d${id}`)?.remove();
+                        document.getElementById(id)?.remove();
+                        mermaid.initialize({ ...strict, securityLevel: "loose" });
+                        try {
+                            ({ svg } = await mermaid.render(`${id}r`, src));
+                        } finally {
+                            mermaid.initialize(strict);
+                        }
+                        void first;
+                    }
                     if (!cancelled) el.innerHTML = svg;
                 } catch (e) {
-                    document.getElementById(`d${id}`)?.remove();
-                    document.getElementById(id)?.remove();
+                    ["", "r"].forEach((s) => {
+                        document.getElementById(`d${id}${s}`)?.remove();
+                        document.getElementById(`${id}${s}`)?.remove();
+                    });
                     if (cancelled) return;
                     const why = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "invalid syntax";
-                    const wrap = document.createElement("div");
-                    wrap.className = "mv-fallback";
-                    const note = document.createElement("p");
-                    note.className = "mv-err";
-                    note.textContent = /circular structure/i.test(why) ? "This diagram type could not be drawn in the browser. Its source is shown instead." : `Diagram error: ${why}`;
-                    const pre = document.createElement("pre");
-                    const code = document.createElement("code");
-                    code.textContent = src;
-                    pre.appendChild(code);
-                    wrap.append(note, pre);
-                    el.replaceChildren(wrap);
+                    showDiagramFallback(
+                        el,
+                        /circular structure/i.test(why) ? "This diagram type could not be drawn in the browser. Its source is shown instead." : `Diagram error: ${why}`,
+                        src,
+                    );
                 }
             }
         })();
@@ -352,19 +342,7 @@ export default function MarkdownToPdf() {
         setTimeout(() => setCopied((c) => (c === k ? "" : c)), 1500);
     };
 
-    const setOpt = <K extends keyof Opts>(k: K, v: Opts[K]) => {
-        setOpts((o) => ({ ...o, [k]: v }));
-        setPreset("");
-    };
-
-    const pickPreset = (p: Preset) => {
-        setOpts((o) => ({ ...o, ...p.opts }));
-        setPreset(p.id);
-        if (p.opts.header !== undefined) setHdrOn(false);
-        if (p.opts.footer !== undefined) setFtrOn(false);
-        if (!text.trim()) { setText(p.sample); setName(""); }
-        setMenu("");
-    };
+    const setOpt = <K extends keyof Opts>(k: K, v: Opts[K]) => setOpts((o) => ({ ...o, [k]: v }));
 
     const loadFile = async (f?: File | null) => {
         if (!f) return;
@@ -389,7 +367,105 @@ export default function MarkdownToPdf() {
 
     const renderedHtml = () => previewRef.current?.innerHTML ?? "";
 
-    const downloadPdf = () => {
+    /**
+     * Direct download: the print-ready page is drawn in a hidden frame, captured with html2canvas,
+     * cut into pages (never through the middle of a paragraph, row or code block that fits on one page) and saved with jsPDF.
+     */
+    const downloadPdf = async () => {
+        if (!engine || !html || busy) return;
+        setBusy(true);
+        setMsg(null);
+        let frame: HTMLIFrameElement | null = null;
+        try {
+            const mm = parseFloat(engine.PDF_MARGINS[opts.margin]);
+            const pageW = opts.size === "a4" ? 210 : 215.9;
+            const pageH = opts.size === "a4" ? 297 : 279.4;
+            const hdr = latin(opts.header.trim());
+            const ftr = latin(opts.footer.trim());
+            const top = mm + (hdr ? 6 : 0);
+            const bottom = mm + (ftr || opts.pageNumbers ? 6 : 0);
+            const contentW = pageW - mm * 2; // mm
+            const contentH = pageH - top - bottom; // mm
+            const contentPx = Math.round((contentW / 25.4) * 96);
+
+            frame = document.createElement("iframe");
+            frame.setAttribute("aria-hidden", "true");
+            frame.tabIndex = -1;
+            frame.style.cssText = `position:fixed;left:-10000px;top:0;width:${contentPx}px;height:1200px;border:0;`;
+            const ready = new Promise<void>((resolve) => { frame!.onload = () => resolve(); });
+            frame.srcdoc = engine.buildPdfDocument(renderedHtml(), outName, opts);
+            document.body.appendChild(frame);
+            await ready;
+
+            const doc = frame.contentDocument;
+            if (!doc) throw new Error("frame");
+            try { await doc.fonts?.ready; } catch { /* ignore */ }
+            const body = doc.body;
+            const bodyH = body.scrollHeight;
+            frame.style.height = `${bodyH}px`;
+
+            // Keep the canvas inside browser limits (long documents are drawn at a lower resolution)
+            const scale = Math.min(2, 16000 / bodyH, Math.sqrt(14_000_000 / (contentPx * bodyH)));
+            if (scale < 0.6) throw new UserError("This document is too long to save directly. Use Print, or split it into parts.");
+
+            const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas"), import("jspdf")]);
+            const canvas = await html2canvas(body, { scale, backgroundColor: "#ffffff", useCORS: true, logging: false, windowWidth: contentPx });
+
+            // Safe places to start a new page: top edges of blocks that fit on one page
+            const sliceH = Math.floor((contentH / contentW) * canvas.width);
+            const origin = body.getBoundingClientRect().top;
+            const blocks = Array.from(body.querySelectorAll<HTMLElement>(".md > *, .md li, .md tr"))
+                .map((el) => {
+                    const r = el.getBoundingClientRect();
+                    return { top: (r.top - origin) * scale, bottom: (r.bottom - origin) * scale };
+                })
+                .filter((b) => b.bottom - b.top > 1 && b.bottom - b.top <= sliceH);
+
+            const slices: [number, number][] = [];
+            let y = 0;
+            while (y < canvas.height - 1) {
+                let end = Math.min(y + sliceH, canvas.height);
+                if (end < canvas.height) {
+                    const hit = blocks.filter((b) => b.top < end && b.bottom > end && b.top > y + sliceH * 0.3).sort((a, b) => b.top - a.top)[0];
+                    if (hit) end = Math.floor(hit.top);
+                }
+                slices.push([y, end]);
+                y = end;
+            }
+
+            const pdf = new jsPDF({ unit: "mm", format: opts.size === "a4" ? "a4" : "letter", orientation: "portrait", compress: true });
+            pdf.setProperties({ title: outName });
+            const total = slices.length;
+            slices.forEach(([from, to], i) => {
+                if (i) pdf.addPage();
+                const h = to - from;
+                const piece = document.createElement("canvas");
+                piece.width = canvas.width;
+                piece.height = h;
+                const ctx = piece.getContext("2d");
+                if (!ctx) throw new Error("canvas");
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, piece.width, piece.height);
+                ctx.drawImage(canvas, 0, from, canvas.width, h, 0, 0, canvas.width, h);
+                pdf.addImage(piece.toDataURL("image/jpeg", 0.95), "JPEG", mm, top, contentW, h * (contentW / canvas.width));
+
+                pdf.setFontSize(9);
+                pdf.setTextColor(107, 114, 128);
+                if (hdr) pdf.text(hdr, pageW / 2, Math.max(7, mm * 0.6), { align: "center" });
+                const foot = [ftr, opts.pageNumbers ? `Page ${i + 1} of ${total}` : ""].filter(Boolean).join("  ·  ");
+                if (foot) pdf.text(foot, pageW / 2, pageH - Math.max(6, mm * 0.5), { align: "center" });
+            });
+            pdf.save(`${outName}.pdf`);
+        } catch (e) {
+            setMsg({ ok: false, text: e instanceof UserError ? e.message : "Could not create the PDF. Try Print, or a shorter document." });
+        } finally {
+            frame?.remove();
+            setBusy(false);
+        }
+    };
+
+    /** Browser print engine: slower to set up, but the PDF text stays selectable and searchable. */
+    const printPdf = () => {
         if (!engine || !html) return;
         const frame = document.createElement("iframe");
         frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden;";
@@ -409,7 +485,7 @@ export default function MarkdownToPdf() {
         save(`${outName}.html`, engine.buildPdfDocument(renderedHtml(), title, opts), "text/html;charset=utf-8");
     };
 
-    const clearAll = () => { setText(""); setName(""); setMsg(null); setPreset(""); };
+    const clearAll = () => { setText(""); setName(""); setMsg(null); };
 
     const pageVars = {
         "--pg-w": opts.size === "a4" ? "210mm" : "215.9mm",
@@ -418,7 +494,6 @@ export default function MarkdownToPdf() {
         "--pg-ff": opts.family === "serif" ? `Georgia,"Times New Roman",serif` : "inherit",
     } as CSSProperties;
 
-    const activePreset = PRESETS.find((p) => p.id === preset);
     const showHdr = hdrOn || opts.header !== "";
     const showFtr = ftrOn || opts.footer !== "";
     const toggle = (m: Menu) => setMenu((c) => (c === m ? "" : m));
@@ -426,36 +501,9 @@ export default function MarkdownToPdf() {
     return (
         <div className="tl-tool">
             <section className="mv-card mp-card" aria-label="Markdown to PDF">
-                {/* ---------- top bar: Template dropdown | Editor dropdown | Download ---------- */}
+                {/* ---------- top bar: Document setup dropdown | Download ---------- */}
                 <div className="mp-top">
                     <div className="mp-bar" ref={barRef}>
-                        {/* Template */}
-                        <div className="mp-menu">
-                            <button type="button" className={`mp-trig${menu === "tpl" ? " is-open" : ""}`} aria-haspopup="listbox" aria-expanded={menu === "tpl"} onClick={() => toggle("tpl")}>
-                                <Svg icon="template" size={17} />
-                                <span className="mp-trig-t">
-                                    <small>Template</small>
-                                    <b>{activePreset ? activePreset.label : "Choose template"}</b>
-                                </span>
-                                <Svg icon="chevron" size={16} />
-                            </button>
-                            {menu === "tpl" && (
-                                <div className="mp-pop mp-pop--list" role="listbox" aria-label="Templates">
-                                    <p className="mp-pop-h">Make a PDF for</p>
-                                    {PRESETS.map((p) => (
-                                        <button key={p.id} type="button" role="option" aria-selected={preset === p.id} className={`mp-item${preset === p.id ? " is-on" : ""}`} onClick={() => pickPreset(p)}>
-                                            <span className="mp-item-t">
-                                                <b>{p.label}</b>
-                                                <small>{p.hint}</small>
-                                            </span>
-                                            {preset === p.id && <Svg icon="check" size={16} sw={2.4} />}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Editor (document setup) */}
                         <div className="mp-menu">
                             <button type="button" className={`mp-trig${menu === "set" ? " is-open" : ""}`} aria-haspopup="dialog" aria-expanded={menu === "set"} onClick={() => toggle("set")}>
                                 <Svg icon="sliders" size={17} />
@@ -513,9 +561,9 @@ export default function MarkdownToPdf() {
                         </div>
                     </div>
 
-                    <button type="button" className="tl-btn tl-btn--primary mp-dl" onClick={downloadPdf} disabled={!html}>
+                    <button type="button" className="tl-btn tl-btn--primary mp-dl" onClick={() => void downloadPdf()} disabled={!html || busy} aria-busy={busy}>
                         <Svg icon="download" sw={2.2} />
-                        Download PDF
+                        {busy ? "Making PDF…" : "Download PDF"}
                     </button>
                 </div>
 
@@ -539,11 +587,11 @@ export default function MarkdownToPdf() {
                         {drag && <div className="mv-drop">Drop file to load</div>}
                         <div className="mv-tools">
                             <div className="mv-icons" role="toolbar" aria-label="Markdown tools">
-                                <IconBtn icon="upload" label="Upload .md file" onClick={() => fileRef.current?.click()} />
-                                <IconBtn icon="paste" label="Paste" onClick={onPaste} />
-                                <IconBtn icon="sample" label="Sample" onClick={() => { setText(NOTES); setName(""); }} />
+                                <IconBtn icon="upload" text="Upload" label="Upload .md file" onClick={() => fileRef.current?.click()} />
+                                <IconBtn icon="paste" text="Paste" label="Paste from clipboard" onClick={onPaste} />
+                                <IconBtn icon="sample" text="Sample" label="Load sample document (table, diagram, math)" onClick={() => { setText(SAMPLE); setName(""); }} />
                                 <IconBtn icon="copy" label={copied === "md" ? "Copied" : "Copy Markdown"} onClick={async () => { if (text && (await writeClipboard(text))) flash("md"); }} disabled={!hasText} done={copied === "md"} />
-                                <IconBtn icon="clear" label="Clear" onClick={clearAll} disabled={!hasText} />
+                                <IconBtn icon="clear" label="Clear the editor" onClick={clearAll} disabled={!hasText} />
                             </div>
                             <span className="mv-count">{name && <span className="mv-file">{name} · </span>}Lines: {fmt(lineCount)} | Words: {fmt(stats.words)}</span>
                         </div>
@@ -553,7 +601,7 @@ export default function MarkdownToPdf() {
                     <div className="mv-box mv-box--prev">
                         <div className="mv-prev mp-stage" aria-label="PDF preview" style={pageVars}>
                             {!hasText ? (
-                                <p className="mv-empty">Paste Markdown, upload a .md file, or pick a template to see the PDF page here.</p>
+                                <p className="mv-empty">Paste Markdown, upload a .md file, or try the Sample to see the PDF page here.</p>
                             ) : !engine ? (
                                 <p className="mv-empty">Loading preview…</p>
                             ) : (
@@ -566,6 +614,7 @@ export default function MarkdownToPdf() {
                             <div className="mv-icons" role="toolbar" aria-label="Preview tools">
                                 <IconBtn icon="code" label={copied === "html" ? "Copied" : "Copy HTML"} onClick={async () => { if (html && (await writeClipboard(renderedHtml()))) flash("html"); }} disabled={!html} done={copied === "html"} />
                                 <IconBtn icon="download" text="HTML" label="Download HTML" onClick={downloadHtml} disabled={!html} />
+                                <IconBtn icon="print" text="Print" label="Print or save with your browser (keeps the PDF text selectable)" onClick={printPdf} disabled={!html} />
                             </div>
                             <span className="mv-count">{opts.size === "a4" ? "A4" : "Letter"} · {opts.margin} margins</span>
                         </div>
@@ -573,7 +622,7 @@ export default function MarkdownToPdf() {
                 </div>
 
                 {msg && <p className={`mv-msg${msg.ok ? " is-ok" : " is-bad"}`} role="status">{msg.text}</p>}
-                <p className="mv-note">Download PDF opens your print dialog. Choose “Save as PDF” as the printer, and turn off “Headers and footers” for a clean page.</p>
+                <p className="mv-note">Download PDF saves the file straight away, with each page drawn as an image. Use Print if you need selectable, searchable text.</p>
             </section>
         </div>
     );

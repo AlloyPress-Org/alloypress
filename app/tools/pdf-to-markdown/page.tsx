@@ -3,7 +3,7 @@ import ToolPage, { toolMetadata, type ToolContent } from "@/components/tools/Too
 import "./pdf-to-markdown.css";
 import PdfToMarkdown from "./PdfToMarkdown";
 
-/* ---------- small visuals used by the two guide sections ---------- */
+/* ---------- small visual used by the options guide ---------- */
 type Opt = { label: string; does: string; off: string };
 
 function OptionList({ items }: { items: Opt[] }) {
@@ -23,31 +23,14 @@ function OptionList({ items }: { items: Opt[] }) {
   );
 }
 
-function PageGrid({ typed, picked, note, total = 10 }: { typed: string; picked: number[]; note: string; total?: number }) {
-  return (
-    <div className="pg-range">
-      <div className="pg-input">
-        <span>Pages</span>
-        <code>{typed}</code>
-      </div>
-      <div className="pg-tiles" aria-hidden="true">
-        {Array.from({ length: total }, (_, i) => i + 1).map((n) => (
-          <span key={n} className={picked.includes(n) ? "is-on" : ""}>{n}</span>
-        ))}
-      </div>
-      <p className="pg-note">{note}</p>
-    </div>
-  );
-}
-
 const content: ToolContent = {
   metaTitle: "PDF to Markdown: Convert PDF to .md Online (Free)",
   metaDescription:
-    "Convert a PDF to Markdown with headings, lists, tables and bold text kept. Ready for ChatGPT and Claude. Free, private, runs in your browser.",
+    "Convert a PDF to Markdown in your browser. Keeps headings, lists, tables and bold text, ready for ChatGPT and Claude. Free, nothing uploaded.",
   h1: "Free PDF to Markdown Converter",
   h1Accent: "PDF to Markdown",
   intro:
-    "Upload a text-based PDF and get clean Markdown with headings, lists and tables. Copy it into ChatGPT or Claude, or download a .md file. Your PDF never leaves your browser.",
+    "Upload a text-based PDF, or try the sample, and get clean Markdown with headings, lists and tables. Copy it for ChatGPT or Claude, feed it to a RAG pipeline, or download a .md file. Your PDF never leaves your browser.",
 
   sections: [
     {
@@ -73,34 +56,32 @@ const content: ToolContent = {
           icon: "lock",
           title: "Private and free",
           text: "No sign-ups or paywalls. Your PDF stays on your device.",
-          list: ["Nothing is uploaded", "No account needed", "No page limit under 300 pages", "Works on any device"],
+          list: ["Nothing is uploaded", "No account needed", "Up to 25 MB and 300 pages", "Works on any device"],
         },
       ],
     },
     { kind: "ad" },
     {
-      kind: "tiles",
-      id: "use-cases",
-      eyebrow: "Use cases",
-      title: "What People Convert",
-      intro: "Anything with real text inside works best.",
-      items: [
-        { icon: "bolt", title: "PDFs for ChatGPT and Claude", text: "Paste clean Markdown instead of a messy PDF copy." },
-        { icon: "search", title: "Research papers and reports", text: "Pull out headings, lists and tables to read or quote." },
-        { icon: "device", title: "Documentation and manuals", text: "Move a PDF guide into a README, wiki or docs site." },
-        { icon: "limit", title: "Lecture notes and study guides", text: "Edit and reorganize notes in Obsidian or Notion." },
-        { icon: "free", title: "Resumes and CVs", text: "Get the text of a PDF resume as editable Markdown." },
-        { icon: "chart", title: "Ebooks and long articles", text: "Convert a chapter at a time with the page range." },
-      ],
-    },
-    {
       kind: "steps",
       id: "how",
       title: "How to convert a PDF to Markdown",
       items: [
-        { title: "Upload your PDF", text: "Drop a PDF on the left box or click to choose one. It is read in your browser." },
-        { title: "Choose what to detect", text: "Turn headings, tables, bold text and the cleanup options on or off. Set a page range if you only need some pages." },
-        { title: "Copy or download", text: "Check the Markdown, edit it if you like, then copy it or download a .md file." },
+        { title: "Upload your PDF", text: "Drop a PDF on the left box, click to choose one, or press Try a sample PDF to see the result first." },
+        { title: "Choose what to detect", text: "Turn headings, tables, bold text and cleanup options on or off. In the Pages box, type 1-5 or 1-3, 8 to convert only some pages. Leave it empty for all pages." },
+        { title: "Copy or download", text: "Check the Markdown, edit it if you like, then copy it (as Markdown, for AI, or as plain text) or download a .md file." },
+      ],
+    },
+    {
+      kind: "tiles",
+      id: "ai",
+      eyebrow: "For AI",
+      title: "PDF to Markdown for ChatGPT, Claude and RAG",
+      intro: "Models read Markdown better than a raw PDF copy. Headings and tables survive, and page numbers do not waste tokens.",
+      items: [
+        { icon: "bolt", title: "ChatGPT and Claude", text: "Press Copy for AI to paste a prompt-ready block." },
+        { icon: "search", title: "RAG pipelines", text: "Split the .md by heading for cleaner chunks." },
+        { icon: "limit", title: "Long PDFs", text: "Use the Pages box to send only the part you need." },
+        { icon: "device", title: "Notes and wikis", text: "Move it into Obsidian, Notion or a README." },
       ],
     },
     {
@@ -113,8 +94,8 @@ const content: ToolContent = {
         {
           badge: "Structure",
           title: "Choose what to keep",
-          text: "These three decide how headings, tables and emphasis appear in your Markdown.",
-          list: ["Headings come from larger or bold text", "Tables come from aligned columns", "Bold and italic come from the font style"],
+          text: "Headings come from larger or bold text, tables from aligned columns, and bold and italic from the font style. Check tables, because PDFs do not mark them.",
+          list: ["Largest text becomes #, then ##, then ###", "First table row becomes the header", "Works best on simple grids"],
           visual: (
             <OptionList
               items={[
@@ -143,70 +124,6 @@ const content: ToolContent = {
       ],
     },
     {
-      kind: "split",
-      id: "page-range",
-      eyebrow: "Pages box",
-      title: "Convert Only the Pages You Need",
-      intro: "Type a page range in the Pages box. Leave it empty to convert the whole PDF.",
-      rows: [
-        {
-          badge: "One range",
-          title: "Type 1-5 for a chapter",
-          text: "Use a dash for a run of pages. It is the quickest way to pull out one chapter or section.",
-          list: ["A single number picks one page", "Pages outside the PDF are ignored", "The output updates as you type"],
-          visual: <PageGrid typed="1-5" picked={[1, 2, 3, 4, 5]} note="Pages 1 to 5 are converted." />,
-        },
-        {
-          badge: "Mixed pages",
-          title: "Combine a range with single pages",
-          text: "Separate parts with commas. Skip the cover and index by leaving them out.",
-          list: ["Commas join separate parts", "Pages are read in order", "Great for sending part of a PDF to an AI chat"],
-          visual: <PageGrid typed="1-3, 8" picked={[1, 2, 3, 8]} note="Pages 1, 2, 3 and 8 are converted." />,
-        },
-      ],
-    },
-    {
-      kind: "split",
-      id: "structure",
-      eyebrow: "How it works",
-      title: "From Page Layout to Markdown",
-      intro: "A PDF only stores where each piece of text sits on a page. The tool uses font size, font style and spacing to rebuild the structure.",
-      rows: [
-        {
-          badge: "Headings and lists",
-          title: "Bigger text becomes a heading",
-          text: "The most common size is the body text. Larger text becomes a heading, and lines that start with a bullet or number become list items.",
-          list: ["Largest text becomes #, then ##, then ###", "Short bold lines become small headings", "Wrapped list items are joined"],
-          visual: (
-            <div className="tl-demo">
-              <span className="tl-demo-tag">In the PDF</span>
-              <div className="tl-demo-out">
-                <strong style={{ fontSize: 18 }}>Project Plan</strong><br />
-                <strong>Goals</strong><br />
-                • Launch in May<br />
-                • Collect feedback
-              </div>
-              <div className="tl-demo-arrow">↓</div>
-              <span className="tl-demo-tag">Markdown</span>
-              <pre className="tl-demo-code">{`# Project Plan\n\n#### Goals\n\n- Launch in May\n- Collect feedback`}</pre>
-            </div>
-          ),
-        },
-        {
-          badge: "Tables",
-          title: "Aligned columns become a table",
-          text: "Rows with the same number of widely spaced columns are turned into a GitHub-style table. Check tables, because PDFs do not mark them.",
-          list: ["First row becomes the header", "Works best on simple grids", "Switch Tables off if a layout is misread"],
-          visual: (
-            <div className="tl-demo">
-              <span className="tl-demo-tag">Markdown</span>
-              <pre className="tl-demo-code">{`| Plan | Price |\n| --- | --- |\n| Basic | $5 |\n| Pro | $12 |`}</pre>
-            </div>
-          ),
-        },
-      ],
-    },
-    {
       kind: "table",
       id: "limits",
       title: "What converts well, and what does not",
@@ -220,7 +137,7 @@ const content: ToolContent = {
         ["Two-column pages", "Use Two columns", "Turn the option on to read left then right"],
         ["Images and charts", "Not included", "Only text is extracted"],
         ["Math formulas", "As plain text", "Complex formulas may look broken"],
-        ["Scanned PDFs", "Not supported", "They are pictures and need OCR first"],
+        ["Scanned PDFs", "Detected, not read", "The tool shows a message. Run OCR first"],
         ["Password-protected PDFs", "Not supported", "Remove the password first"],
       ],
     },
@@ -240,30 +157,27 @@ const content: ToolContent = {
     {
       kind: "prose",
       id: "privacy",
-      title: "Privacy and safety",
+      title: "Privacy of your PDF",
       bullets: [
-        "Your PDF is read in your browser. Nothing is uploaded, and nothing is logged.",
-        "The file is not saved. Only your option choices are remembered in this browser.",
-        "Unsafe HTML in the text is removed before the preview is shown.",
-        "The PDF reader runs as a script from this site, so it works without an internet connection after the page loads.",
+        "Contracts, invoices and papers are read by a script in your browser tab. No request carries the file, so you can check this in the network tab.",
+        "The PDF itself is never saved. Only your option choices are kept in this browser, and the page range is not.",
+        "The sample PDF is built in your browser too, so trying it fetches nothing.",
+        "The Preview tab strips unsafe HTML that the PDF text may contain before showing it.",
       ],
     },
   ],
 
   faq: [
     { question: "Is my PDF uploaded anywhere?", answer: "No. The PDF is read and converted in your browser. Open your browser’s network tab while you use the tool and you’ll see no requests carrying your file." },
-    { question: "How do I convert a PDF to Markdown?", answer: "Drop a PDF on the left box, choose what to detect, then copy the Markdown or download a .md file." },
-    { question: "Can I use the result in ChatGPT or Claude?", answer: "Yes. Copy the Markdown and paste it into the chat. Markdown is plain text, so headings, lists and tables stay clear. Check the output first, especially tables." },
-    { question: "Does it work on scanned PDFs?", answer: "No. A scanned PDF is a set of pictures with no text inside, so it needs OCR first. The tool tells you when it finds no text." },
+    { question: "How do I convert a PDF to Markdown?", answer: "Drop a PDF on the left box, choose what to detect, then copy the Markdown or download a .md file. Press Try a sample PDF if you want to see the output first." },
+    { question: "Can I use the result in ChatGPT or Claude?", answer: "Yes. Press Copy for AI to get the Markdown wrapped in a prompt-ready block, or Copy Markdown for the plain result. Headings, lists and tables stay clear. Check the output first, especially tables." },
+    { question: "Is the output good for RAG?", answer: "It is a good starting point. Headings give you natural places to split chunks, and tables stay as rows. Download the .md file and chunk it by heading in your own pipeline." },
+    { question: "Does it work on scanned PDFs?", answer: "No. A scanned PDF is a set of pictures with no text inside, so it needs OCR first. The tool detects this as soon as the file is read and tells you, so it does not look broken." },
     { question: "How accurate is the conversion?", answer: "It is good on PDFs made from Word, Google Docs or web pages, and weaker on complex layouts. A PDF does not store headings or tables, so the tool infers them from font size and spacing. Review the result before you rely on it." },
-    { question: "What do the options do?", answer: "Headings, Tables and Bold and italic decide which structure is kept. Remove headers and footers cleans repeated lines, Two columns fixes reading order, and Page separators adds a line between pages. The Pages box limits which pages are converted." },
     { question: "Why is a heading missing or wrong?", answer: "Headings are found from larger or bold text. If a heading is the same size as the body text, it may not be detected. You can edit the Markdown in the output box." },
     { question: "Why is my table broken?", answer: "Tables are found from aligned columns, so merged cells or tables with empty cells can be misread. Turn Tables off, or fix the rows in the output box." },
-    { question: "Can I convert only some pages?", answer: "Yes. Type a page range such as 1-5, or 1-3, 8 in the Pages box." },
     { question: "What about two-column PDFs?", answer: "Turn on Two columns. The tool reads the left column first, then the right column, on every page." },
-    { question: "Are images included?", answer: "No. Only the text is extracted. Images, charts and drawings are left out." },
-    { question: "Is there a size limit?", answer: "PDFs up to 25 MB, and the first 300 pages. For a bigger file, use the page range or split the PDF." },
-    { question: "Can I open a password-protected PDF?", answer: "No. Remove the password in a PDF app first, then upload the file." },
+    { question: "Is there a size limit?", answer: "PDFs up to 25 MB, and the first 300 pages. For a bigger file, type a page range in the Pages box or split the PDF." },
   ],
 
   blogSlugs: ["best-ai-blog-writing-tools", "what-is-chat-gpt", "ai-hallucinations-explained"],

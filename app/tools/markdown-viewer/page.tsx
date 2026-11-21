@@ -4,9 +4,9 @@ import "./markdown-viewer.css";
 import MarkdownViewer from "./MarkdownViewer";
 
 const content: ToolContent = {
-  metaTitle: "Markdown Viewer: Open and Preview .md Files Online",
+  metaTitle: "Free Markdown Viewer: Open & Preview .md Files Online",
   metaDescription:
-    "Open a .md file or paste Markdown and see it rendered live, with tables, code highlighting, Mermaid diagrams and math. Free, private, runs in your browser.",
+    "Open a .md file or paste Markdown and see it rendered. Supports tables, code, Mermaid diagrams and math. Free, nothing uploaded, runs in your browser.",
   h1: "Free Markdown Viewer",
   h1Accent: "Markdown Viewer",
   intro:
@@ -44,7 +44,7 @@ const content: ToolContent = {
     {
       kind: "steps",
       id: "how",
-      title: "How to view a Markdown file",
+      title: "How to open a Markdown file and get a Markdown preview",
       items: [
         { title: "Upload or paste", text: "Click the upload icon, drop a file on the editor, or paste Markdown into the box." },
         { title: "Read the preview", text: "The rendered page updates as you type. Use Split, Write or Preview to change the layout." },
@@ -86,20 +86,6 @@ const content: ToolContent = {
             </div>
           ),
         },
-        {
-          badge: "Fail-safe",
-          title: "One broken diagram never breaks the page",
-          text: "A syntax mistake shows a clear message. A type that cannot be drawn shows its source instead.",
-          list: ["Drawn on a white card", "Readable in dark mode and in PDF", "The rest of your page keeps working"],
-          visual: (
-            <div className="tl-demo">
-              <span className="tl-demo-tag">Syntax mistake</span>
-              <div className="tl-demo-err">Diagram error: Parse error on line 2</div>
-              <span className="tl-demo-tag">Cannot be drawn</span>
-              <pre className="tl-demo-code">{`block-beta\n  columns 2\n  a b`}</pre>
-            </div>
-          ),
-        },
       ],
     },
     {
@@ -126,7 +112,7 @@ const content: ToolContent = {
         },
         {
           badge: "Highlighting",
-          title: "Code with colors, in 35 languages",
+          title: "Code with colors, in 30+ languages",
           text: "Add the language after the opening fence and keywords, strings and comments get their colors.",
           list: ["JavaScript, TypeScript and Python", "Java, C, C++, C# and Go", "SQL, HTML, CSS, JSON, YAML and Bash"],
           visual: (
@@ -164,14 +150,12 @@ const content: ToolContent = {
       id: "use-cases",
       eyebrow: "Use cases",
       title: "Open READMEs and AI Output in Seconds",
-      intro: "Markdown is everywhere now. Here are the files people open most.",
+      intro: "The files people open most.",
       items: [
         { icon: "device", title: "GitHub README files", text: "Check how a README will look before you push it." },
         { icon: "bolt", title: "ChatGPT and Claude answers", text: "Read AI output as a clean page, not a wall of symbols." },
         { icon: "search", title: "Cursor and agent files", text: "Open plans, specs and notes written by coding agents." },
-        { icon: "chart", title: "Tables and task lists", text: "See GitHub-style tables and checkboxes rendered properly." },
         { icon: "free", title: "Obsidian and Notion exports", text: "Preview notes exported as .md before sharing them." },
-        { icon: "limit", title: "Docs and changelogs", text: "Check project docs and blog drafts before publishing." },
       ],
     },
     {
@@ -180,7 +164,7 @@ const content: ToolContent = {
       title: "Need page size, margins or page numbers?",
       paragraphs: [
         "Download PDF here prints the preview exactly as it looks, which is quick and good for most files. If you want to choose the page size, margins and page numbers, use the Markdown to PDF tool instead.",
-        "This viewer is for reading and copying. Use it when you want to see what a Markdown file says, check how it renders, or copy it into another app.",
+        "This md file viewer is for reading and copying. Use it when you want to see what a Markdown file says, check how it renders, or copy it into another app.",
       ],
       chips: [
         "Read or copy a .md file → Markdown Viewer",
@@ -190,28 +174,28 @@ const content: ToolContent = {
     {
       kind: "prose",
       id: "privacy",
-      title: "Privacy and safety",
+      title: "Privacy: what stays in your browser",
       bullets: [
-        "Files and text are read and rendered in your browser. Nothing is uploaded.",
-        "Scripts, event handlers and unsafe links in your Markdown are removed before the preview is shown.",
-        "Your text is saved only in this browser, and Clear removes it.",
-        "Exported HTML loads the math stylesheet from a public CDN. Everything else is inside the file.",
+        "Files you open and text you paste are rendered inside your browser tab. Nothing is sent to a server.",
+        "Markdown from ChatGPT, Claude or a README can contain raw HTML. Scripts, event handlers and javascript: links are removed before the preview is shown.",
+        "Your draft is saved in this browser so a refresh does not lose it. Clear removes it, and very large files are not saved.",
+        "Diagrams and math are drawn in your browser. Exported HTML loads only the math stylesheet from a public CDN, and everything else is inside the file.",
       ],
     },
   ],
 
   faq: [
     { question: "Is my file uploaded anywhere?", answer: "No. Files and text are read and rendered in your browser. Open your browser’s network tab while you use the tool and you’ll see no requests carrying your content." },
+    { question: "What is an md file viewer?", answer: "An md file viewer opens a Markdown (.md) file and shows it as a formatted page instead of raw symbols. This one runs in your browser, so there is nothing to install and your file is not uploaded." },
+    { question: "How do I get a Markdown preview without installing anything?", answer: "Paste your Markdown into the editor or drop a .md file on it. The Markdown preview updates as you type, and you can switch between Split, Write and Preview layouts." },
     { question: "Which files can I upload?", answer: "Markdown files (.md, .markdown, .mdown, .mkd) and plain .txt files, up to 5 MB. You can click the upload icon or drop a file on the editor." },
-    { question: "Can I preview a GitHub README?", answer: "Yes. Paste the README text or upload the README.md file. Tables, task lists, code blocks and links render the way they do on GitHub." },
-    { question: "Does it support GitHub Flavored Markdown?", answer: "Yes. Tables, task lists, strikethrough, autolinks and fenced code blocks all render the way they do on GitHub." },
-    { question: "Which languages get code highlighting?", answer: "About 35 common languages, including JavaScript, TypeScript, Python, Java, C, C++, C#, Go, Rust, PHP, Ruby, SQL, HTML, CSS, JSON, YAML, Bash and Markdown. Add the language after the opening fence, like ```python." },
+    { question: "Can I preview a GitHub README?", answer: "Yes. Paste the README text or upload the README.md file. GitHub Flavored Markdown renders the way it does on GitHub: tables, task lists, strikethrough, autolinks and fenced code blocks." },
+    { question: "Which languages get code highlighting?", answer: "More than 30 common languages, including JavaScript, TypeScript, Python, Java, C, C++, C#, Go, Rust, PHP, Ruby, SQL, HTML, CSS, JSON, YAML, Bash and Markdown. Add the language after the opening fence, like ```python." },
     { question: "How do I add a Mermaid diagram?", answer: "Open a code block with ```mermaid, write your diagram, and close the block. Flowcharts, sequence, class, state, ER, Gantt, pie, Git graph, mindmap and timeline diagrams are supported. A syntax mistake shows an error message in place of the diagram." },
-    { question: "Why does a diagram show its source instead of a drawing?", answer: "A few diagram types, such as block diagrams, cannot be drawn in the browser yet. The viewer shows the diagram source instead, so the rest of your page still works." },
+    { question: "Why does a diagram show its source instead of a drawing?", answer: "If a diagram has a syntax mistake or a type the browser cannot draw, the viewer shows a message and the diagram source in its place. The rest of your page keeps working, and fixing the diagram text redraws it." },
     { question: "How do I write math?", answer: "Use $...$ for a formula inside a sentence and $$...$$ on separate lines for a centered formula. Math uses LaTeX syntax and is rendered with KaTeX." },
     { question: "How do I save the preview as a PDF?", answer: "Click the PDF button. Your browser’s print dialog opens, and you choose “Save as PDF” as the printer. Only the preview is printed, in light colors. For page size, margins and page numbers, use the Markdown to PDF tool." },
     { question: "What is the difference between Copy HTML and Copy formatted?", answer: "Copy HTML copies the HTML code, which you can paste into a CMS or an editor’s code view. Copy formatted copies the rendered page as rich text, so it keeps its look when you paste into Word, Google Docs or email." },
-    { question: "Is HTML inside my Markdown safe?", answer: "Safe HTML such as details, tables and images works. Scripts, inline event handlers and javascript: links are removed before the preview is shown." },
     { question: "Will I lose my text if I refresh?", answer: "No. Your text is saved in this browser until you press Clear. Very large files are not saved." },
   ],
 

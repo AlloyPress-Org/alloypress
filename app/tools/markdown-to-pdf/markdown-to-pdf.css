@@ -104,3 +104,32 @@
 .mv-md .mv-fallback .mv-err { margin: 0 0 10px; }
 .mv-md .mv-fallback pre { margin: 0; background: #f6f8fa; border-color: #d0d7de; }
 .mv-md .mv-fallback pre code { color: #1f2328; }
+
+/* paper preview is always white, so every element inside must use dark colors in dark mode too */
+.mp-paper,
+.mp-paper .mv-md,
+.mp-paper .mv-md h1,
+.mp-paper .mv-md h2,
+.mp-paper .mv-md h3,
+.mp-paper .mv-md h4,
+.mp-paper .mv-md h5,
+.mp-paper .mv-md h6,
+.mp-paper .mv-md p,
+.mp-paper .mv-md li,
+.mp-paper .mv-md td,
+.mp-paper .mv-md th,
+.mp-paper .mv-md strong,
+.mp-paper .mv-md em { color: #1f2328; }
+.mp-paper .mv-md blockquote,
+.mp-paper .mv-md blockquote p { color: #59636e; }
+.mp-paper .mv-md a { color: #0969da; }
+.mp-paper .mv-md code { color: #1f2328; }
+.mp-paper .mv-md pre,
+.mp-paper .mv-md pre code { color: #1f2328; background: #f6f8fa; }
+.mp-paper .mv-md h1,
+.mp-paper .mv-md h2 { border-bottom-color: #d0d7de; }
+.mp-paper .mv-md th { background: #f6f8fa; }
+.mp-paper .mv-md th,
+.mp-paper .mv-md td { border-color: #d0d7de; }
+.mp-paper .mv-md hr { border-top-color: #d0d7de; }
+.mp-paper .mv-md blockquote { background: #f6f8fa; }
