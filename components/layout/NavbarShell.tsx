@@ -26,7 +26,12 @@ type IconName =
   | "users"
   | "shield"
   | "bolt"
-  | "chart";
+  | "chart"
+  | "hash"
+  | "type"
+  | "eye"
+  | "filedown"
+  | "fileup";
 
 type MenuItem = {
   label: string;
@@ -149,12 +154,27 @@ const brandItems: MenuItem[] = [
   },
 ];
 
-const toolItems: MenuItem[] = liveTools().map((t) => ({
-  label: t.name,
-  description: t.shortDescription,
-  href: `/tools/${t.slug}`,
-  icon: "chart",
-}));
+// One icon and one short description per tool, so the Tools panel stays the same size as Categories.
+// A new tool still works without an entry here: it falls back to its registry description and the chart icon.
+const TOOL_UI: Record<string, { icon: IconName; desc: string }> = {
+  "word-counter": { icon: "hash", desc: "Words, characters and AI tokens" },
+  "case-converter": { icon: "type", desc: "Title, camelCase, snake_case" },
+  "ai-text-cleaner": { icon: "sparkles", desc: "Clean Markdown and AI text" },
+  "text-compare": { icon: "columns", desc: "See what changed between texts" },
+  "markdown-viewer": { icon: "eye", desc: "Preview .md files and Markdown" },
+  "markdown-to-pdf": { icon: "filedown", desc: "Turn Markdown into a clean PDF" },
+  "pdf-to-markdown": { icon: "fileup", desc: "Convert PDFs for ChatGPT, Claude" },
+};
+
+const toolItems: MenuItem[] = liveTools().map((t) => {
+  const ui = TOOL_UI[t.slug];
+  return {
+    label: t.name,
+    description: ui?.desc ?? t.shortDescription,
+    href: `/tools/${t.slug}`,
+    icon: ui?.icon ?? "chart",
+  };
+});
 
 const categoriesMenu: MegaMenu = {
   id: "categories",
@@ -179,25 +199,24 @@ const brandsMenu: MegaMenu = {
   footnote: "Fees cover testing time, never the verdict.",
 };
 
-// Tools uses the same wide panel and 3-card layout as For Brands.
+// Tools uses the same panel size as Categories: intro card on the left, tools in 2 columns.
 const toolsMenu: MegaMenu = {
   id: "tools",
   label: "Tools",
   badge: "New",
-  items: toolItems.slice(0, 6),
-  columns: 3,
-  moreLabel: "Open tool",
+  items: toolItems,
+  columns: 2,
   intro: {
     eyebrow: "Free tools",
     title: "AlloyPress Tools",
     description:
       "Free tools for writing and working with AI. No sign-up, and your text stays in your browser.",
+    cta: { label: "View all tools", href: "/tools" },
   },
-  footnote: "More free tools coming soon.",
 };
 
-// Tools menu ippo hide. Meendum kaattanum na true pannunga.
-const SHOW_TOOLS = false;
+// Set to false to hide the Tools menu again.
+const SHOW_TOOLS = true;
 
 const navEntries: NavEntry[] = [
   { kind: "link", ...homeLink },
@@ -296,6 +315,27 @@ const itemIcons: Record<IconName, ReactNode> = {
   ),
   bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />,
   chart: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
+  // Tool icons
+  hash: <path d="M5 9h14M5 15h14M10 4 8 20M16 4l-2 16" />,
+  type: <path d="M4 7V5h16v2M12 5v14M9 19h6" />,
+  eye: (
+    <>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  filedown: (
+    <>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5M12 11v6m-2.5-2.5L12 17l2.5-2.5" />
+    </>
+  ),
+  fileup: (
+    <>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5M12 17v-6m-2.5 2.5L12 11l2.5 2.5" />
+    </>
+  ),
 };
 
 function ItemIcon({ name, size = 20 }: { name?: IconName; size?: number }) {
