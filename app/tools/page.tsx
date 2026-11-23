@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/components/css-style/tools.css";
+import AdSenseInArticle from "@/components/ads/AdSenseInArticle";
 import ToolsGrid from "@/components/tools/ToolsGrid";
 
 import { hubIsPublic, hubTools } from "@/lib/tools/registry";
@@ -14,6 +15,8 @@ export const metadata: Metadata = {
   // Hub is unlisted until enough tools are live (see HUB_MIN_TOOLS).
 };
 
+const AD_SLOT = process.env.NEXT_PUBLIC_ADSENSE_SLOT_TOOL_2;
+
 export default function ToolsHub() {
   const tools = hubTools();
   return (
@@ -24,6 +27,16 @@ export default function ToolsHub() {
       </header>
       <div className="tl-body">
         <ToolsGrid tools={tools} />
+        <aside className="tl-ad" aria-label="Advertisement">
+          {AD_SLOT ? (
+            <AdSenseInArticle slot={AD_SLOT} />
+          ) : process.env.NODE_ENV !== "production" ? (
+            <>
+              <span className="tl-ad-label">Advertisement</span>
+              <div className="tl-ad-box">Ad slot</div>
+            </>
+          ) : null}
+        </aside>
       </div>
     </div>
   );

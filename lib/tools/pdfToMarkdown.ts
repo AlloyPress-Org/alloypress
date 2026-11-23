@@ -80,6 +80,17 @@ export async function extractPdf(data: ArrayBuffer, onProgress?: (done: number, 
     return { pages, total, chars, truncated: total > count };
 }
 
+/** Characters of real body text. Ignores the top and bottom 10% of each page, where page numbers and running headers sit. */
+export function bodyChars(data: PdfData): number {
+    let n = 0;
+    for (const p of data.pages) {
+        for (const it of p.items) {
+            if (it.y >= p.h * 0.1 && it.y <= p.h * 0.9) n += it.s.trim().length;
+        }
+    }
+    return n;
+}
+
 /* ---------- 2. conversion (pure) ---------- */
 type Run = { t: string; b: boolean; i: boolean; m: boolean };
 type Seg = { x: number; runs: Run[] };
@@ -268,7 +279,7 @@ export function convertPdf(data: PdfData, o: ConvOpts): string {
             while (j < lines.length) {
                 const N = lines[j];
                 if (N.page !== L.page || N.segs.length !== L.segs.length) break;
-                if (rows[rows.length - 1].y - N.y > N.size * 2.4) break;
+                if (rows[rows.length - 1].y - N.y > N.size * 3.4) break;
                 if (Math.abs(N.segs[0].x - L.segs[0].x) > N.size) break;
                 rows.push(N);
                 j++;

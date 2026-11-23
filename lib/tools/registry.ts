@@ -160,7 +160,12 @@ export const HUB_MIN_TOOLS = 4;
 export const hubIsPublic = () => liveTools().length >= HUB_MIN_TOOLS;
 export const hubTools = () => TOOLS.filter((t) => t.status === "live");
 export const getTool = (slug: string) => TOOLS.find((t) => t.slug === slug);
-export const relatedTools = (tool: ToolDef) =>
-  tool.related
+export const RELATED_COUNT = 4;
+
+export const relatedTools = (tool: ToolDef) => {
+  const picked = tool.related
     .map(getTool)
-    .filter((t): t is ToolDef => !!t && t.status === "live");
+    .filter((t): t is ToolDef => !!t && t.status === "live" && t.slug !== tool.slug);
+  const rest = TOOLS.filter((t) => t.status === "live" && t.slug !== tool.slug && !picked.includes(t));
+  return [...picked, ...rest].slice(0, RELATED_COUNT);
+};

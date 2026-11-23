@@ -34,25 +34,27 @@
     "mermaid": "^12.3.0",
     "next": "^16.4.6",
     "pdfjs-dist": "^6.5.438",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "react-icons": "^5.7.0",
-    "react-server-dom-webpack": "19.2.8",
+    "react-server-dom-webpack": "^19.3.1",
     "sharp": "^0.35.5",
     "vinext": "1.0.0-beta.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^22.20.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-rsc": "0.5.35",
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
     "husky": "^9.1.7",
+    "jsdom": "^31.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vite": "8.3.4"
+    "vite": "8.3.4",
+    "vitest": "^5.1.1"
   },
   "type": "module",
   "overrides": {

@@ -4,7 +4,7 @@ import "../markdown-viewer/markdown-viewer.css"; // shared box, toolbar and prev
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
-import { DEFAULT_OPTS, MAX_BYTES, convertPdf, extractPdf, forAi, samplePdf, toPlain, type ConvOpts, type PdfData } from "@/lib/tools/pdfToMarkdown";
+import { DEFAULT_OPTS, MAX_BYTES, bodyChars, convertPdf, extractPdf, forAi, samplePdf, toPlain, type ConvOpts, type PdfData } from "@/lib/tools/pdfToMarkdown";
 import { formatNumber as fmt } from "@/lib/tools/text";
 
 const STORAGE_KEY = "ap-tool:pdf-to-markdown:v1";
@@ -15,7 +15,7 @@ type View = "md" | "preview";
 type CopyKind = "" | "md" | "ai" | "plain";
 type Info = { name: string; size: number; pages: number; total: number; truncated: boolean };
 
-class UserError extends Error {}
+class UserError extends Error { }
 
 function friendly(e: unknown): string {
     if (e instanceof UserError) return e.message;
@@ -186,7 +186,7 @@ export default function PdfToMarkdown() {
     const base = (info?.name.replace(/\.pdf$/i, "") || "document").replace(/[^\w.-]+/g, "-");
     const hasMd = md.trim().length > 0;
     // Image-only PDF: almost no text for the number of pages. Checked as soon as the file is read.
-    const scanned = status === "ready" && !!data && data.chars < Math.max(40, (info?.pages ?? 1) * 10);
+    const scanned = status === "ready" && !!data && bodyChars(data) < Math.max(40, (info?.pages ?? 1) * 10);
     const pct = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
     const words = useMemo(() => (md ? md.split(/\s+/).filter(Boolean).length : 0), [md]);
     const lineCount = useMemo(() => (md ? md.split("\n").length : 0), [md]);
@@ -302,8 +302,8 @@ export default function PdfToMarkdown() {
                                     scanned
                                         ? "Nothing to show. This PDF has no readable text (it looks scanned)."
                                         : status === "ready" && !hasMd
-                                          ? "No text matched these settings."
-                                          : "Your Markdown appears here. You can edit it before you copy or download."
+                                            ? "No text matched these settings."
+                                            : "Your Markdown appears here. You can edit it before you copy or download."
                                 }
                                 spellCheck={false}
                             />

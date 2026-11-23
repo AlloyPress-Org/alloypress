@@ -1,3 +1,4 @@
+/* Markdown render logic: sanitized GFM. Highlighting and math load only when the document needs them. */
 import DOMPurify from "dompurify";
 import { Marked, type MarkedExtension } from "marked";
 import { markedHighlight } from "marked-highlight";
@@ -23,6 +24,7 @@ export const needsHighlight = (md: string) => {
 
 export const needsMath = (md: string) => md.includes("$");
 
+/** Loads the highlighter / KaTeX only when the text needs them. Returns true if something new was loaded. */
 export async function loadExtras(md: string): Promise<boolean> {
     let changed = false;
     const jobs: Promise<void>[] = [];
@@ -36,6 +38,9 @@ export async function loadExtras(md: string): Promise<boolean> {
     if (changed) marked = null;
     return changed;
 }
+
+/** Same function under the name the security test uses. */
+export const prepare = loadExtras;
 
 function build(): Marked {
     const exts: MarkedExtension[] = [
@@ -56,6 +61,7 @@ function build(): Marked {
         renderer: {
             code({ text, lang }) {
                 if (lang1(lang) === "mermaid") {
+                    // Source is encoded because DOMPurify strips attributes that contain "-->"
                     return `<div class="mv-mermaid" data-src="${encodeURIComponent(text)}"></div>`;
                 }
                 return false;
@@ -65,21 +71,43 @@ function build(): Marked {
     return new Marked(...exts);
 }
 
+// KaTeX needs inline styles for layout. Allow ONLY harmless numeric properties, and ONLY inside .katex.
+const KATEX_STYLE =
+    /^(?:\s*(?:height|width|min-width|top|left|margin-left|margin-right|margin-top|padding-left|vertical-align|border-bottom-width)\s*:\s*-?[\d.]+(?:em|ex|px|%)?\s*;?)*\s*$/i;
+
 let hooked = false;
 
+/** Markdown -> sanitized HTML. Scripts, event handlers, javascript: links, forms, style tags and style attributes are removed. */
 export function renderMarkdown(md: string): string {
+    // DOMPurify needs a browser DOM. On the server we return nothing rather than unsanitized HTML.
+    if (!DOMPurify.isSupported) return "";
+
     if (!hooked) {
+        DOMPurify.addHook("uponSanitizeAttribute", (node, data) => {
+            if (data.attrName === "style" && node.closest?.(".katex") && KATEX_STYLE.test(data.attrValue)) {
+                data.forceKeepAttr = true;
+            }
+        });
         DOMPurify.addHook("afterSanitizeAttributes", (node) => {
             if (node.tagName === "A" && /^https?:/i.test(node.getAttribute("href") ?? "")) {
                 node.setAttribute("target", "_blank");
                 node.setAttribute("rel", "noopener noreferrer");
+            }
+            // The only input allowed is a read-only task-list checkbox
+            if (node.tagName === "INPUT") {
+                if (node.getAttribute("type") !== "checkbox") node.remove();
+                else node.setAttribute("disabled", "");
             }
         });
         hooked = true;
     }
     if (!marked) marked = build();
     const raw = marked.parse(md, { async: false }) as string;
-    return DOMPurify.sanitize(raw, { USE_PROFILES: { html: true, svg: true, mathMl: true }, FORBID_TAGS: ["style"] });
+    return DOMPurify.sanitize(raw, {
+        USE_PROFILES: { html: true, svg: true, mathMl: true },
+        FORBID_TAGS: ["form", "style", "button", "textarea", "select", "iframe", "object", "embed"],
+        FORBID_ATTR: ["style"],
+    });
 }
 
 export async function waitForPrintReady(root: ParentNode = document, timeoutMs = 8000): Promise<void> {

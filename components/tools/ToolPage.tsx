@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 
 import "@/components/css-style/tools.css";
 
-import AdSenseInArticle from "@/components/ads/AdSenseInArticle";
+import AdSenseTools from "@/components/ads/AdSenseTools";
 import Image from "@/components/CfImage";
 import NewsletterSection from "@/components/home/NewsletterSection";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -169,7 +169,7 @@ function ToolAd({ slot, tall = false }: { slot: 1 | 2; tall?: boolean }) {
   return (
     <aside className={`tl-ad${tall ? " tl-ad--tall" : ""}`} aria-label="Advertisement">
       {id ? (
-        <AdSenseInArticle slot={id} />
+        <AdSenseTools slot={id} />
       ) : dev ? (
         <>
           <span className="tl-ad-label">Advertisement</span>
