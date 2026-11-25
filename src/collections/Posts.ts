@@ -348,9 +348,27 @@ const buildLinkFeatureFields = ({
 }): any[] => [
     ...defaultFields
       .filter((field) => field.name !== 'rel')
-      .map((field) =>
-        field.name === 'newTab' ? { ...field, defaultValue: true } : field,
-      ),
+      .map((field) => {
+        if (field.name === 'newTab') {
+          return { ...field, defaultValue: true }
+        }
+
+        // Relax URL validation: accept long URLs with ?, &, %, #, etc.
+        if (field.name === 'url') {
+          return {
+            ...field,
+            validate: (value: string | null | undefined) => {
+              if (!value) return 'This field is required.'
+              const v = value.trim()
+              return /^(https?:\/\/|\/|#|mailto:|tel:)/i.test(v)
+                ? true
+                : 'Start with https:// (example: https://google.com), or / for pages on this site'
+            },
+          }
+        }
+
+        return field
+      }),
 
     // NEW: follow behavior dropdown (replaces the old nofollow checkbox in the UI)
     makeFollowModeField(),
