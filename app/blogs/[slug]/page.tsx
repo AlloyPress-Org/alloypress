@@ -626,6 +626,7 @@ export default async function BlogPostPage({
   if (!isDraft && section?.slug === "tutorial") {
     permanentRedirect(`/tutorial/${post.slug}`);
   }
+  
   // ==========================================================
   // RELATED POSTS
   // ==========================================================

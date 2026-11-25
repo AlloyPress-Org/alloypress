@@ -22,7 +22,7 @@ export const proofBrands = [
   { name: "BrandCrowd", src: "/logos/brandcrowd.png" },
   { name: "Onepage", src: "/logos/onepage.png" },
   { name: "DeeVid", src: "/logos/deevid.png" },
-  { name: "Bluehost", src: "/logos/bluehost.png" },
+  //{ name: "Bluehost", src: "/logos/bluehost.png" },
   { name: "Cursor", src: "/logos/cursor.png" },
   { name: "InVideo", src: "/logos/invideo.png" },
 ] as const;

@@ -51,7 +51,7 @@
     "kv_namespaces": [
       {
         "binding": "VINEXT_KV_CACHE",
-        "id": "e4f187f7a4f4471d942188fb8c25f8ad"
+        "id": "e4f187f7a4f4471d942188fb8c25f8ad"   
       }
     ],
     "images": {
