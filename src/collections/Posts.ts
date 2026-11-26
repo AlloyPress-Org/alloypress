@@ -370,6 +370,7 @@ const buildLinkFeatureFields = ({
         return field
       }),
 
+
     // NEW: follow behavior dropdown (replaces the old nofollow checkbox in the UI)
     makeFollowModeField(),
 
@@ -420,6 +421,28 @@ const buildLinkFeatureFields = ({
       },
     },
   ]
+
+const makeLinkRichEditor = () =>
+  lexicalEditor({
+    features: [
+      ParagraphFeature(),
+      BoldFeature(),
+      ItalicFeature(),
+      UnderlineFeature(),
+      LinkFeature({
+        fields: buildLinkFeatureFields,
+      }),
+      InlineToolbarFeature(),
+    ],
+  })
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const lexicalHasText = (node: any): boolean => {
+  if (!node || typeof node !== 'object') return false
+  if (typeof node.text === 'string' && node.text.trim()) return true
+  const children = node.root?.children ?? node.children
+  return Array.isArray(children) && children.some(lexicalHasText)
+}
 
 /* -------------------------------------------------------------------------- */
 /* Main rich-text content field (moved out so the tabs layout stays readable)  */
@@ -1135,11 +1158,32 @@ const contentField: Field = {
                     required: true,
                     label: 'Question',
                   },
-                  {
+                                   {
                     name: 'answer',
                     type: 'textarea',
-                    required: true,
-                    label: 'Answer',
+                    label: 'Answer (old plain text)',
+                    admin: {
+                      condition: (_data, siblingData) =>
+                        Boolean(siblingData?.answer),
+                      description:
+                        'Old plain-text answer. Move this text into "Answer (with links)" below and clear this field.',
+                    },
+                  },
+                  {
+                    name: 'answerRich',
+                    type: 'richText',
+                    label: 'Answer (with links)',
+                    editor: makeLinkRichEditor(),
+                    validate: (value: unknown, { siblingData }: { siblingData?: any }) => {
+                      if (typeof siblingData?.answer === 'string' && siblingData.answer.trim()) {
+                        return true
+                      }
+                      return lexicalHasText(value) ? true : 'Answer is required.'
+                    },
+                    admin: {
+                      description:
+                        'Select words and click the link icon to add a link.',
+                    },
                   },
                 ],
               },
