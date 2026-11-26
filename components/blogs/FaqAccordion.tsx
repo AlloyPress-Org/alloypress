@@ -1,9 +1,12 @@
+import type { ReactNode } from "react";
 import type { FaqItem } from "@/lib/faq-from-html";
+
+type FaqWithRich = FaqItem & { aNode?: ReactNode };
 
 export default function FaqAccordion({
   faqs,
 }: {
-  faqs: FaqItem[];
+  faqs: FaqWithRich[];
 }) {
   if (!faqs.length) return null;
 
@@ -12,7 +15,11 @@ export default function FaqAccordion({
       {faqs.map((faq, index) => (
         <details key={index} className="post-faq-item">
           <summary>{faq.q}</summary>
-          <p>{faq.a}</p>
+          {faq.aNode ? (
+            <div className="post-faq-answer">{faq.aNode}</div>
+          ) : (
+            <p>{faq.a}</p>
+          )}
         </details>
       ))}
     </div>

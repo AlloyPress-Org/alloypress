@@ -11,6 +11,22 @@ function nodeText(nodes: any[] = []): string {
     .join("");
 }
 
+// answerRich (with links) -> plain text, else old plain `answer`
+function faqAnswerText(it: any): string {
+  const paras = it?.answerRich?.root?.children;
+
+  if (Array.isArray(paras)) {
+    const text = paras
+      .map((p: any) => nodeText(p?.children || []))
+      .join(" ")
+      .trim();
+
+    if (text) return text;
+  }
+
+  return String(it?.answer ?? "").trim();
+}
+
 export function collectFaqs(content: unknown): FAQItem[] {
   const out: FAQItem[] = [];
   const seen = new Set<string>();
@@ -41,10 +57,10 @@ export function collectFaqs(content: unknown): FAQItem[] {
         fields.blockType || node.blockType || ""
       ).toLowerCase();
 
-      // 1. Payload FAQ block
+      // 1. Payload FAQ block (answerRich with links, or old plain answer)
       if (node.type === "block" && blockType === "faq") {
         (Array.isArray(fields.items) ? fields.items : []).forEach((it: any) =>
-          push(it?.question, it?.answer)
+          push(it?.question, faqAnswerText(it))
         );
       }
 

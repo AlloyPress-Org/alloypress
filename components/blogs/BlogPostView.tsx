@@ -1582,10 +1582,24 @@ function RenderNode({
       const items = Array.isArray(fields.items) ? fields.items : [];
 
       const faqs = items
-        .map((it: any) => ({
-          q: String(it?.question || "").trim(),
-          a: String(it?.answer || "").trim(),
-        }))
+        .map((it: any) => {
+          const q = String(it?.question || "").trim();
+          const rich = hasRichBody(it?.answerRich);
+
+          // plain text (for filtering / fallback)
+          const a = rich
+            ? it.answerRich.root.children
+              .map((p: any) => textFromNodes(p?.children || []))
+              .join(" ")
+              .trim()
+            : String(it?.answer || "").trim();
+
+          return {
+            q,
+            a,
+            aNode: rich ? <StyledBoxRichBody value={it.answerRich} /> : undefined,
+          };
+        })
         .filter((f: { q: string; a: string }) => f.q && f.a);
 
       if (!faqs.length) return null;
