@@ -2,50 +2,68 @@
 
 import "./AdSenseSidebar.css";
 
-import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 type AdsWindow = Window & { adsbygoogle?: unknown[] };
 
-export default function AdSenseSidebar() {
-  const adRef = useRef<HTMLModElement>(null);
+const FALLBACK_TIMEOUT_MS = 5000;
 
-  const client = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
-  const slot = process.env.NEXT_PUBLIC_ADSENSE_SIDEBAR_SLOT_ID;
+function AdUnit({
+  client,
+  slot,
+  fallback,
+}: {
+  client: string;
+  slot: string;
+  fallback?: ReactNode;
+}) {
+  const adRef = useRef<HTMLModElement>(null);
+  const [unfilled, setUnfilled] = useState(false);
 
   useEffect(() => {
     const ad = adRef.current;
-    if (!ad || !client || !slot) return;
+    if (!ad) return;
 
     let inView = false;
     let done = false;
-    let resizeObs: ResizeObserver | undefined;
-    let intersectObs: IntersectionObserver | undefined;
+    let fallbackTimer: number | undefined;
+
+    // Google set panra data-ad-status-a watch pannu
+    const statusObs = new MutationObserver(() => {
+      const status = ad.dataset.adStatus;
+      if (status === "unfilled") setUnfilled(true);
+      if (status === "filled") {
+        window.clearTimeout(fallbackTimer);
+        setUnfilled(false);
+      }
+    });
+    statusObs.observe(ad, { attributes: true, attributeFilter: ["data-ad-status"] });
 
     const tryInit = () => {
-      if (done || !inView) return;
-      // Hidden container (mobile la sidebar display:none) -> width 0
-      if (ad.offsetWidth === 0) return;
-      if (ad.dataset.adsInitialized === "true") {
-        done = true;
-        return;
-      }
+      if (done || !inView || ad.offsetWidth === 0) return;
+      done = true;
+      intersectObs.disconnect();
+      resizeObs.disconnect();
+
+      if (ad.dataset.adsbygoogleStatus) return; // already pushed
 
       try {
         const w = window as AdsWindow;
-        w.adsbygoogle = w.adsbygoogle || [];
-        // Script late ah load aanalum queue la irundhu process aagum
-        w.adsbygoogle.push({});
-        ad.dataset.adsInitialized = "true";
+        (w.adsbygoogle = w.adsbygoogle || []).push({});
       } catch (error) {
-        console.error("AdSense sidebar initialization failed:", error);
+        console.error("AdSense sidebar init failed:", error);
+        setUnfilled(true);
+        return;
       }
 
-      done = true;
-      resizeObs?.disconnect();
-      intersectObs?.disconnect();
+      // Adblocker / script block aanaa status varave varaadhu -> fallback
+      fallbackTimer = window.setTimeout(() => {
+        if (ad.dataset.adStatus !== "filled") setUnfilled(true);
+      }, FALLBACK_TIMEOUT_MS);
     };
 
-    intersectObs = new IntersectionObserver(
+    const intersectObs = new IntersectionObserver(
       (entries) => {
         inView = entries.some((e) => e.isIntersecting);
         tryInit();
@@ -54,28 +72,39 @@ export default function AdSenseSidebar() {
     );
     intersectObs.observe(ad);
 
-    resizeObs = new ResizeObserver(tryInit);
+    const resizeObs = new ResizeObserver(tryInit);
     resizeObs.observe(ad);
 
     return () => {
-      resizeObs?.disconnect();
-      intersectObs?.disconnect();
+      window.clearTimeout(fallbackTimer);
+      statusObs.disconnect();
+      intersectObs.disconnect();
+      resizeObs.disconnect();
     };
-  }, [client, slot]);
-
-  if (!client || !slot) return null;
+  }, []);
 
   return (
     <div className="sidebar-ad-card">
+      {/* ins-a unmount pannaadha — late fill vandhaa thirumba kaattum */}
       <ins
         ref={adRef}
         className="adsbygoogle sidebar-ad-unit"
-        style={{ display: "block" }}
+        style={{ display: unfilled ? "none" : "inline-block", width: 160, height: 600 }}
         data-ad-client={client}
         data-ad-slot={slot}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
       />
+      {unfilled && fallback}
     </div>
   );
+}
+
+export default function AdSenseSidebar({ fallback }: { fallback?: ReactNode }) {
+  const pathname = usePathname();
+  const client = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+  const slot = process.env.NEXT_PUBLIC_ADSENSE_SIDEBAR_SLOT_ID;
+
+  if (!client || !slot) return <>{fallback}</>;
+
+  // key = pathname -> article to article navigation-ku fresh ad request
+  return <AdUnit key={pathname} client={client} slot={slot} fallback={fallback} />;
 }
