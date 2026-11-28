@@ -8,7 +8,12 @@
   overflow: hidden;
 }
 
+.sidebar-ad-card[hidden] {
+  display: none;
+}
+
 .sidebar-ad-unit {
+  width: 100%;
   max-width: 100%;
 }
 
